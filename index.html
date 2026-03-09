@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LR Training Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .hidden { display: none; }
+        .active-tab { border-bottom: 4px solid #f97316; color: white; font-weight: bold; }
+        #timer-overlay { transition: background-color 0.5s ease; }
+        .timer-green { background-color: rgba(22, 163, 74, 0.95); }
+        .timer-red { background-color: rgba(220, 38, 38, 0.95); }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+
+    <div id="timer-overlay" class="hidden fixed inset-0 z-[100] flex flex-col items-center justify-center text-white">
+        <h2 class="text-4xl font-bold mb-4 uppercase italic">Recupero</h2>
+        <div id="timer-display" class="text-9xl font-black mb-8">00:00</div>
+        <button onclick="stopTimer()" class="bg-white text-black px-10 py-4 rounded-full font-bold text-xl uppercase shadow-2xl">Salta</button>
+    </div>
+
+    <nav class="p-4 bg-gray-800 border-b border-gray-700 sticky top-0 z-50 flex justify-between items-center shadow-lg">
+        <h1 class="text-xl font-black text-orange-500 tracking-tighter cursor-pointer" onclick="showSection('home')">LR TRAINING</h1>
+        <div id="status" class="text-[10px] bg-green-900 text-green-400 px-2 py-1 rounded-full border border-green-700 uppercase italic">Database Online</div>
+    </nav>
+
+    <main class="p-4 max-w-2xl mx-auto">
+
+        <div id="home-section" class="space-y-6 mt-6">
+            <div onclick="showSection('workout')" class="bg-gradient-to-r from-orange-600 to-red-700 p-10 rounded-3xl shadow-2xl transform active:scale-95 transition-all cursor-pointer">
+                <h2 class="text-4xl font-black italic">WORKOUT</h2>
+                <p class="text-orange-100 opacity-80 italic">Scheda Allenamento</p>
+            </div>
+            <div onclick="showSection('salute')" class="bg-gradient-to-r from-emerald-600 to-teal-700 p-10 rounded-3xl shadow-2xl transform active:scale-95 transition-all cursor-pointer">
+                <h2 class="text-4xl font-black italic">DIETA & SALUTE</h2>
+                <p class="text-emerald-100 opacity-80 italic">Peso, Dieta e Spesa</p>
+            </div>
+        </div>
+
+        <div id="workout-section" class="hidden">
+            <button onclick="showSection('home')" class="mb-6 text-gray-400">← Home</button>
+            <select id="filter-group" onchange="loadWorkout(this.value)" class="w-full bg-gray-800 p-4 rounded-2xl mb-6 border-2 border-gray-700 text-lg">
+                <option value="all">Tutta la scheda</option>
+                <option value="Spinte 1">Spinte 1</option>
+                <option value="Gambe 1">Gambe 1</option>
+                <option value="Tirata 1">Tirata 1</option>
+                <option value="Spalle/Petto">Spalle/Petto</option>
+                <option value="Gambe 2">Gambe 2</option>
+                <option value="Schiena 2">Schiena 2</option>
+            </select>
+            <div id="workout-list" class="space-y-5"></div>
+        </div>
+
+        <div id="salute-section" class="hidden">
+            <button onclick="showSection('home')" class="mb-6 text-gray-400">← Home</button>
+            <div class="flex bg-gray-800 rounded-2xl p-1 mb-6">
+                <button id="tab-dieta" onclick="switchSalute('dieta')" class="flex-1 py-3 active-tab rounded-xl">DIETA</button>
+                <button id="tab-peso" onclick="switchSalute('peso')" class="flex-1 py-3 rounded-xl">PESO</button>
+                <button id="tab-spesa" onclick="switchSalute('spesa')" class="flex-1 py-3 rounded-xl">SPESA</button>
+            </div>
+
+            <div id="content-dieta">
+                <label class="text-xs font-bold text-gray-500 uppercase ml-2">Scegli Giorno</label>
+                <select id="select-giorno" onchange="loadDieta(this.value)" class="w-full bg-gray-800 p-4 rounded-2xl mb-6 border-2 border-gray-700 text-lg">
+                    <option value="Lunedì">Lunedì</option>
+                    <option value="Martedì">Martedì</option>
+                    <option value="Mercoledì">Mercoledì</option>
+                    <option value="Giovedì">Giovedì</option>
+                    <option value="Venerdì">Venerdì</option>
+                    <option value="Sabato">Sabato</option>
+                    <option value="Domenica">Domenica</option>
+                </select>
+                <div id="dieta-list" class="space-y-4"></div>
+            </div>
+
+            <div id="content-peso" class="hidden">
+                <div class="bg-gray-800 p-6 rounded-3xl border border-gray-700 mb-6">
+                    <h3 class="text-xl font-bold mb-4">Nuova Pesata</h3>
+                    <div class="flex gap-2">
+                        <input type="number" id="input-kg" step="0.1" placeholder="75.5" class="flex-1 bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-2xl text-center">
+                        <button onclick="saveWeight()" class="bg-emerald-600 px-8 rounded-2xl font-bold uppercase">OK</button>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 p-4 rounded-3xl border border-gray-700 mb-6">
+                    <canvas id="weightChart" style="width:100%; max-height: 250px;"></canvas>
+                    <div id="stats-peso" class="mt-4 text-center text-sm font-bold text-orange-400"></div>
+                </div>
+
+                <div id="peso-history" class="bg-gray-800 rounded-3xl divide-y divide-gray-700 overflow-hidden"></div>
+            </div>
+
+            <div id="content-spesa" class="hidden">
+                <button onclick="generaListaSpesaCompleta()" class="w-full bg-orange-600 py-4 rounded-2xl font-bold mb-6 uppercase shadow-lg">Calcola Spesa Settimanale</button>
+                <div id="lista-spesa" class="bg-gray-800 rounded-3xl p-6 space-y-4"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const SB_URL = "https://vnzrewcbnoqbqvzckome.supabase.co";
+        const SB_KEY = "sb_publishable_Sq9txbu-PmKdbxETSx2cjw_WqWEFBPO";
+        const _supabase = supabase.createClient(SB_URL, SB_KEY);
+
+        let weightChart;
+        let countdown;
+
+        function showSection(id) {
+            document.querySelectorAll('main > div').forEach(d => d.classList.add('hidden'));
+            document.getElementById(id + '-section').classList.remove('hidden');
+            if(id === 'workout') loadWorkout('all');
+            if(id === 'salute') { 
+                const oggi = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"][new Date().getDay()];
+                document.getElementById('select-giorno').value = oggi;
+                loadDieta(oggi); 
+                switchSalute('dieta'); 
+            }
+        }
+
+        function switchSalute(tab) {
+            document.querySelectorAll('#salute-section [id^="content-"]').forEach(d => d.classList.add('hidden'));
+            document.querySelectorAll('#salute-section button').forEach(b => b.classList.remove('active-tab'));
+            document.getElementById('content-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.add('active-tab');
+            if(tab === 'peso') loadWeightHistory();
+        }
+
+        // --- WORKOUT LOGIC (Stessa di prima) ---
+        async function loadWorkout(gruppo) {
+            const container = document.getElementById('workout-list');
+            container.innerHTML = "Caricamento...";
+            let query = _supabase.from('workout').select('*').order('id', { ascending: true });
+            if (gruppo !== 'all') query = query.eq('gruppo_lavoro', gruppo);
+            const { data } = await query;
+            container.innerHTML = data.map(ex => `
+                <div class="bg-gray-800 p-6 rounded-3xl border border-gray-700 shadow-xl">
+                    <div class="flex justify-between items-start mb-4">
+                        <h4 class="font-bold text-xl w-3/4">${ex.esercizi}</h4>
+                        <input type="checkbox" onchange="startRestTimer('${ex.recupero}', this)" class="w-8 h-8 rounded-full accent-green-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-4 text-xs">
+                        <div><label class="text-gray-500 font-bold uppercase">Serie/Rep</label><input id="serie-${ex.id}" type="text" value="${ex.serie}" class="w-full bg-gray-900 p-3 rounded-xl border border-gray-700 text-orange-400"></div>
+                        <div><label class="text-gray-500 font-bold uppercase">Recupero</label><input id="rec-${ex.id}" type="text" value="${ex.recupero}" class="w-full bg-gray-900 p-3 rounded-xl border border-gray-700 text-blue-400"></div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input id="peso-${ex.id}" type="text" value="${ex.avanzamento_pesi || ''}" class="flex-1 bg-gray-900 p-3 rounded-xl border border-gray-700 text-sm" placeholder="Peso...">
+                        <button onclick="updateExercise(${ex.id})" class="bg-orange-600 px-4 rounded-xl font-bold uppercase text-xs">Salva</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function updateExercise(id) {
+            const updates = {
+                serie: document.getElementById('serie-' + id).value,
+                recupero: document.getElementById('rec-' + id).value,
+                avanzamento_pesi: document.getElementById('peso-' + id).value
+            };
+            await _supabase.from('workout').update(updates).eq('id', id);
+            alert("Dati aggiornati!");
+        }
+
+        function startRestTimer(tempo, checkbox) {
+            if(!checkbox.checked) return;
+            const overlay = document.getElementById('timer-overlay');
+            overlay.classList.remove('hidden');
+            let [min, sec] = tempo.split(':').map(Number);
+            let total = (min * 60) + (sec || 0);
+            clearInterval(countdown);
+            countdown = setInterval(() => {
+                total--;
+                document.getElementById('timer-display').innerText = `${Math.floor(total/60).toString().padStart(2,'0')}:${(total%60).toString().padStart(2,'0')}`;
+                overlay.className = total <= 5 ? "fixed inset-0 z-[100] flex flex-col items-center justify-center text-white timer-red" : "fixed inset-0 z-[100] flex flex-col items-center justify-center text-white timer-green";
+                if(total <= 0) stopTimer();
+            }, 1000);
+        }
+
+        function stopTimer() { clearInterval(countdown); document.getElementById('timer-overlay').classList.add('hidden'); }
+
+        // --- DIETA LOGIC (Con selettore giorno) ---
+        async function loadDieta(giorno) {
+            const { data } = await _supabase.from('alimentazione').select('*').eq('giorno', giorno);
+            document.getElementById('dieta-list').innerHTML = data.map(p => `
+                <div class="bg-gray-800 p-5 rounded-3xl border-l-8 border-emerald-500 shadow-xl">
+                    <span class="text-[10px] font-black uppercase text-emerald-500 tracking-widest">${p.pasto}</span>
+                    <h4 class="text-xl font-bold mt-1">${p.alimento_base}</h4>
+                    <p class="text-emerald-200">Quantità: <b>${p.quantita_base}</b></p>
+                    ${p.alternative ? `<div class="mt-3 text-[11px] text-gray-400 bg-black/20 p-3 rounded-xl italic"><b>Alternative:</b> ${p.alternative}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // --- PESO & GRAFICO LOGIC ---
+        async function loadWeightHistory() {
+            const { data, error } = await _supabase.from('registro_peso').select('*').order('created_at', { ascending: true });
+            if (error) return;
+
+            const container = document.getElementById('peso-history');
+            const statsDiv = document.getElementById('stats-peso');
+            
+            // Logica percentuali
+            if (data.length > 1) {
+                const ultimo = data[data.length - 1].kg;
+                const penultimo = data[data.length - 2].kg;
+                const diff = (((ultimo - penultimo) / penultimo) * 100).toFixed(2);
+                const color = diff > 0 ? "text-red-400" : "text-emerald-400";
+                const icon = diff > 0 ? "📈" : "📉";
+                statsDiv.innerHTML = `${icon} Variazione: <span class="${color}">${diff}% rispetto all'ultima volta</span>`;
+            }
+
+            // Render Lista
+            container.innerHTML = data.slice().reverse().map(p => `
+                <div class="flex justify-between items-center p-4 bg-gray-800/50">
+                    <div class="text-sm text-gray-400">${new Date(p.created_at).toLocaleDateString()}</div>
+                    <div class="text-xl font-bold">${p.kg} <span class="text-xs font-normal">kg</span></div>
+                </div>
+            `).join('');
+
+            // Render Grafico
+            renderChart(data);
+        }
+
+        function renderChart(data) {
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            if (weightChart) weightChart.destroy();
+
+            weightChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(p => new Date(p.created_at).toLocaleDateString()),
+                    datasets: [{
+                        label: 'Peso (kg)',
+                        data: data.map(p => p.kg),
+                        borderColor: '#f97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } },
+                        x: { grid: { display: false }, ticks: { color: '#9ca3af' } }
+                    }
+                }
+            });
+        }
+
+        async function saveWeight() {
+            const kg = document.getElementById('input-kg').value;
+            if(!kg) return;
+            const { error } = await _supabase.from('registro_peso').insert([{ kg: parseFloat(kg) }]);
+            if(!error) { 
+                document.getElementById('input-kg').value = "";
+                loadWeightHistory();
+            }
+        }
+
+        // --- SPESA LOGIC (Stessa di prima) ---
+        async function generaListaSpesaCompleta() {
+            const { data } = await _supabase.from('alimentazione').select('alimento_base, quantita_base');
+            const spesa = {};
+            data.forEach(item => {
+                const nome = item.alimento_base.split('+')[0].trim();
+                const qtaMatch = item.quantita_base.match(/(\d+)/);
+                const qta = qtaMatch ? parseInt(qtaMatch[0]) : 0;
+                spesa[nome] = (spesa[nome] || 0) + qta;
+            });
+            document.getElementById('lista-spesa').innerHTML = Object.keys(spesa).map(prod => `
+                <label class="flex justify-between items-center p-4 bg-gray-900 rounded-2xl">
+                    <div class="flex items-center gap-3"><input type="checkbox" class="w-6 h-6 accent-orange-500"><span>${prod}</span></div>
+                    <span class="font-bold text-orange-400">${spesa[prod] > 0 ? spesa[prod] + 'g' : 'Q.b.'}</span>
+                </label>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
