@@ -1,0 +1,16 @@
+{
+    "name": "LR Training Pro",
+    "short_name": "LR Fitness",
+    "start_url": "index.html",
+    "display": "standalone",
+    "background_color": "#111827",
+    "theme_color": "#f97316",
+    "description": "App per allenamento e dieta di Luca Ripà",
+    "icons": [
+      {
+        "src": "https://cdn-icons-png.flaticon.com/512/2936/2936886.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
