@@ -269,48 +269,53 @@
         }
 
         // --- CARICAMENTO AI (GEMINI) ---
-        async function handleFileUpload(input) {
-            const file = input.files[0];
-            if (!file || !GEMINI_API_KEY) { alert("Assicurati di inserire la tua API KEY nel codice!"); return; }
+async function handleFileUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
 
-            const container = document.getElementById('dieta-list');
-            container.innerHTML = `<div class="text-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div><p class="text-emerald-500 font-black animate-pulse">L'AI sta leggendo il PDF...</p></div>`;
+    // Mostriamo un caricamento visivo
+    const container = document.getElementById('dieta-list');
+    container.innerHTML = `
+        <div class="text-center py-20">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+            <p class="text-emerald-500 font-black animate-pulse uppercase tracking-tighter">L'IA sta analizzando la tua dieta...</p>
+            <p class="text-gray-500 text-[10px] mt-2">Questa operazione può richiedere 10-15 secondi</p>
+        </div>`;
 
-            const reader = new FileReader();
-            reader.onload = async () => {
-                const base64Data = reader.result.split(',')[1];
-                
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [
-                                    { text: "Trasforma questa dieta in un array JSON strutturato. Chiavi: giorno, pasto (COLAZIONE, SPUNTINO, PRANZO, MERENDA, CENA), alimento_principale, quantita, unità_misura, alternative (testo), componente_ordine. Restituisci SOLO il JSON." },
-                                    { inline_data: { mime_type: file.type, data: base64Data } }
-                                ]
-                            }]
-                        })
-                    });
-
-                    const result = await response.json();
-                    let aiText = result.candidates[0].content.parts[0].text;
-                    const cleanJson = JSON.parse(aiText.replace(/```json|```/g, ''));
-
-                    // Sostituiamo i dati nel DB
-                    await _supabase.from('alimentazione').delete().neq('id', 0);
-                    await _supabase.from('alimentazione').insert(cleanJson);
-                    
-                    alert("Dieta aggiornata con successo via AI!");
-                    location.reload();
-                } catch (err) {
-                    alert("Errore AI: " + err.message);
-                    loadDieta(document.getElementById('select-giorno').value);
+    const reader = new FileReader();
+    reader.onload = async () => {
+        const base64Data = reader.result.split(',')[1];
+        
+        try {
+            // CHIAMATA ALLA TUA NUOVA EDGE FUNCTION
+            const { data, error } = await _supabase.functions.invoke('process-diet-gemini', {
+                body: { 
+                    file: base64Data, 
+                    mimeType: file.type 
                 }
-            };
-            reader.readAsDataURL(file);
+            });
+
+            if (error) throw error;
+
+            // Se la funzione ha risposto correttamente, aggiorniamo il database
+            // Cancelliamo la vecchia dieta e inseriamo la nuova
+            await _supabase.from('alimentazione').delete().neq('id', 0);
+            
+            const { error: insertError } = await _supabase.from('alimentazione').insert(data);
+            if (insertError) throw insertError;
+            
+            alert("✅ Dieta aggiornata con successo via Cloud AI!");
+            location.reload();
+
+        } catch (err) {
+            console.error("Errore durante l'elaborazione:", err);
+            alert("Errore durante l'analisi del file. Riprova tra un istante.");
+            // Ricarichiamo la dieta attuale per non lasciare lo schermo vuoto
+            loadDieta(document.getElementById('select-giorno').value);
         }
+    };
+    reader.readAsDataURL(file);
+}
 
         // --- PESO LOGIC ---
         async function loadWeightHistory() {
