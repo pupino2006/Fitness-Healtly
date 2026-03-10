@@ -187,9 +187,8 @@
 // --- CARICAMENTO DIETA DINAMICA ---
 async function loadDieta(giorno) {
     const container = document.getElementById('dieta-list');
-    container.innerHTML = "<p class='text-center opacity-50 italic'>Caricamento piano alimentare...</p>";
+    container.innerHTML = "<p class='text-center opacity-50 italic'>Caricamento...</p>";
 
-    // Recuperiamo i dati ordinati per componente_ordine
     const { data, error } = await _supabase
         .from('alimentazione')
         .select('*')
@@ -197,14 +196,21 @@ async function loadDieta(giorno) {
         .order('componente_ordine', { ascending: true });
 
     if (error) {
-        console.error('Errore caricamento dieta:', error);
+        container.innerHTML = "<p class='text-red-500'>Errore DB: " + error.message + "</p>";
         return;
     }
 
-    // Raggruppiamo per pasto (Colazione, Pranzo, etc.) per una visualizzazione migliore
+    if (!data || data.length === 0) {
+        container.innerHTML = `<p class='text-center text-gray-500 py-10'>Nessun dato trovato per ${giorno}.<br><span class="text-xs">Controlla che i nomi dei giorni sul database siano corretti.</span></p>`;
+        return;
+    }
+
+    // Raggruppiamo per pasto
     const pastiRaggruppati = data.reduce((acc, item) => {
-        if (!acc[item.pasto]) acc[item.pasto] = [];
-        acc[item.pasto].push(item);
+        // Usiamo trim() e toUpperCase() per rendere il raggruppamento più sicuro
+        const nomePasto = item.pasto ? item.pasto.trim().toUpperCase() : "ALTRO";
+        if (!acc[nomePasto]) acc[nomePasto] = [];
+        acc[nomePasto].push(item);
         return acc;
     }, {});
 
