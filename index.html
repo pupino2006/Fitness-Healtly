@@ -238,10 +238,43 @@ async function handleFileUpload(input) {
     const file = input.files[0];
     if (!file) return;
 
-    alert("File ricevuto: " + file.name + "\nL'AI sta analizzando i dati... (Funzione in fase di collegamento)");
-    
-    // Qui andrà la chiamata alla funzione AI
-    // Esempio: const { data } = await _supabase.functions.invoke('process-diet', { body: file });
+    // Messaggio di attesa
+    const container = document.getElementById('dieta-list');
+    container.innerHTML = `
+        <div class="text-center py-10">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+            <p class="text-emerald-400 font-bold">Gemini sta analizzando la tua nuova dieta...</p>
+            <p class="text-xs text-gray-500 italic">Estraggo pasti, quantità e alternative...</p>
+        </div>
+    `;
+
+    // 1. Leggiamo il file come Base64 (necessario per l'API)
+    const reader = new FileReader();
+    reader.onload = async () => {
+        const base64Data = reader.result.split(',')[1];
+        
+        // 2. Chiamata a Gemini (Useremo una Edge Function di Supabase come "ponte" sicuro)
+        // Questo evita di esporre la tua API KEY nel codice HTML
+        const { data, error } = await _supabase.functions.invoke('process-diet-gemini', {
+            body: { file: base64Data, mimeType: file.type }
+        });
+
+        if (error) {
+            alert("Errore AI: " + error.message);
+            loadDieta(document.getElementById('select-giorno').value);
+            return;
+        }
+
+        // 3. Se l'AI risponde bene, svuotiamo e aggiorniamo il DB
+        if (data && data.length > 0) {
+            await _supabase.from('alimentazione').delete().neq('id', 0); // Pulisce vecchia dieta
+            await _supabase.from('alimentazione').insert(data); // Inserisce la nuova
+            alert("Dieta aggiornata con successo via AI!");
+            location.reload();
+        }
+    };
+    reader.readAsDataURL(file);
+}
 }
 // Funzione di supporto per renderizzare ogni singola riga di alimento
 function renderComponentePasto(c) {
