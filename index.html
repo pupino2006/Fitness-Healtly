@@ -16,37 +16,38 @@
         #timer-overlay { transition: background-color 0.5s ease; }
         .timer-green { background-color: rgba(22, 163, 74, 0.95); }
         .timer-red { background-color: rgba(220, 38, 38, 0.95); }
+        select { -webkit-appearance: none; }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen">
+<body class="bg-gray-900 text-gray-100 min-h-screen pb-10">
 
     <div id="timer-overlay" class="hidden fixed inset-0 z-[100] flex flex-col items-center justify-center text-white">
-        <h2 class="text-4xl font-bold mb-4 uppercase italic">Recupero</h2>
-        <div id="timer-display" class="text-9xl font-black mb-8">00:00</div>
-        <button onclick="stopTimer()" class="bg-white text-black px-10 py-4 rounded-full font-bold text-xl uppercase shadow-2xl">Salta</button>
+        <h2 class="text-4xl font-bold mb-4 uppercase italic tracking-widest">Recupero</h2>
+        <div id="timer-display" class="text-9xl font-black mb-8 font-mono">00:00</div>
+        <button onclick="stopTimer()" class="bg-white text-black px-12 py-5 rounded-full font-bold text-xl uppercase shadow-2xl active:scale-90 transition-transform">Salta</button>
     </div>
 
     <nav class="p-4 bg-gray-800 border-b border-gray-700 sticky top-0 z-50 flex justify-between items-center shadow-lg">
         <h1 class="text-xl font-black text-orange-500 tracking-tighter cursor-pointer" onclick="showSection('home')">LR TRAINING</h1>
-        <div id="status" class="text-[10px] bg-green-900 text-green-400 px-2 py-1 rounded-full border border-green-700 uppercase italic">Database Online</div>
+        <div id="status" class="text-[10px] bg-green-900 text-green-400 px-2 py-1 rounded-full border border-green-700 uppercase italic font-bold">Database Online</div>
     </nav>
 
     <main class="p-4 max-w-2xl mx-auto">
 
         <div id="home-section" class="space-y-6 mt-6">
-            <div onclick="showSection('workout')" class="bg-gradient-to-r from-orange-600 to-red-700 p-10 rounded-3xl shadow-2xl transform active:scale-95 transition-all cursor-pointer">
-                <h2 class="text-4xl font-black italic">WORKOUT</h2>
+            <div onclick="showSection('workout')" class="bg-gradient-to-br from-orange-600 to-red-700 p-10 rounded-[2.5rem] shadow-2xl transform active:scale-95 transition-all cursor-pointer border-b-4 border-red-900">
+                <h2 class="text-4xl font-black italic tracking-tighter">WORKOUT</h2>
                 <p class="text-orange-100 opacity-80 italic">Scheda Allenamento</p>
             </div>
-            <div onclick="showSection('salute')" class="bg-gradient-to-r from-emerald-600 to-teal-700 p-10 rounded-3xl shadow-2xl transform active:scale-95 transition-all cursor-pointer">
-                <h2 class="text-4xl font-black italic">DIETA & SALUTE</h2>
+            <div onclick="showSection('salute')" class="bg-gradient-to-br from-emerald-600 to-teal-700 p-10 rounded-[2.5rem] shadow-2xl transform active:scale-95 transition-all cursor-pointer border-b-4 border-teal-900">
+                <h2 class="text-4xl font-black italic tracking-tighter">DIETA & SALUTE</h2>
                 <p class="text-emerald-100 opacity-80 italic">Peso, Dieta e Spesa</p>
             </div>
         </div>
 
         <div id="workout-section" class="hidden">
-            <button onclick="showSection('home')" class="mb-6 text-gray-400">← Home</button>
-            <select id="filter-group" onchange="loadWorkout(this.value)" class="w-full bg-gray-800 p-4 rounded-2xl mb-6 border-2 border-gray-700 text-lg">
+            <button onclick="showSection('home')" class="mb-6 text-gray-400 font-bold uppercase text-xs">← Torna alla Home</button>
+            <select id="filter-group" onchange="loadWorkout(this.value)" class="w-full bg-gray-800 p-5 rounded-2xl mb-6 border-2 border-gray-700 text-lg font-bold text-orange-500 shadow-xl">
                 <option value="all">Tutta la scheda</option>
                 <option value="Spinte 1">Spinte 1</option>
                 <option value="Gambe 1">Gambe 1</option>
@@ -59,16 +60,22 @@
         </div>
 
         <div id="salute-section" class="hidden">
-            <button onclick="showSection('home')" class="mb-6 text-gray-400">← Home</button>
-            <div class="flex bg-gray-800 rounded-2xl p-1 mb-6">
-                <button id="tab-dieta" onclick="switchSalute('dieta')" class="flex-1 py-3 active-tab rounded-xl">DIETA</button>
-                <button id="tab-peso" onclick="switchSalute('peso')" class="flex-1 py-3 rounded-xl">PESO</button>
-                <button id="tab-spesa" onclick="switchSalute('spesa')" class="flex-1 py-3 rounded-xl">SPESA</button>
+            <button onclick="showSection('home')" class="mb-6 text-gray-400 font-bold uppercase text-xs">← Torna alla Home</button>
+            
+            <div class="flex bg-gray-800 rounded-2xl p-1 mb-6 shadow-inner">
+                <button id="tab-dieta" onclick="switchSalute('dieta')" class="flex-1 py-3 rounded-xl transition-all">DIETA</button>
+                <button id="tab-peso" onclick="switchSalute('peso')" class="flex-1 py-3 rounded-xl transition-all">PESO</button>
+                <button id="tab-spesa" onclick="switchSalute('spesa')" class="flex-1 py-3 rounded-xl transition-all">SPESA</button>
             </div>
 
             <div id="content-dieta">
-                <label class="text-xs font-bold text-gray-500 uppercase ml-2">Scegli Giorno</label>
-                <select id="select-giorno" onchange="loadDieta(this.value)" class="w-full bg-gray-800 p-4 rounded-2xl mb-6 border-2 border-gray-700 text-lg">
+                <div class="flex justify-between items-end mb-2 px-2">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Giorno Selezionato</label>
+                    <button onclick="document.getElementById('file-dieta').click()" class="text-[10px] bg-emerald-900 text-emerald-400 border border-emerald-700 px-2 py-1 rounded-md font-bold uppercase">Aggiorna con AI</button>
+                    <input type="file" id="file-dieta" class="hidden" accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileUpload(this)">
+                </div>
+                
+                <select id="select-giorno" onchange="loadDieta(this.value)" class="w-full bg-gray-800 p-5 rounded-2xl mb-6 border-2 border-gray-700 text-xl font-black text-emerald-500 shadow-xl">
                     <option value="Lunedì">Lunedì</option>
                     <option value="Martedì">Martedì</option>
                     <option value="Mercoledì">Mercoledì</option>
@@ -77,41 +84,44 @@
                     <option value="Sabato">Sabato</option>
                     <option value="Domenica">Domenica</option>
                 </select>
+                
                 <div id="dieta-list" class="space-y-4"></div>
             </div>
 
-            <div id="content-peso" class="hidden">
-                <div class="bg-gray-800 p-4 rounded-3xl border border-gray-700 mb-6 shadow-2xl">
+            <div id="content-peso" class="hidden space-y-6">
+                <div class="bg-gray-800 p-4 rounded-[2rem] border border-gray-700 shadow-2xl">
                     <canvas id="weightChart" style="width:100%; max-height: 250px;"></canvas>
-                    <div id="stats-peso" class="mt-4 text-center text-sm font-bold text-orange-400"></div>
+                    <div id="stats-peso" class="mt-4 text-center text-sm font-black text-orange-400 uppercase tracking-tighter"></div>
                 </div>
-            
-                <div id="peso-history" class="bg-gray-800 rounded-3xl divide-y divide-gray-700 overflow-hidden mb-6 shadow-xl"></div>
-            
-                <div class="bg-gray-800 p-6 rounded-3xl border-t-4 border-orange-500 shadow-2xl">
-                    <h3 class="text-xl font-bold mb-4 italic text-center uppercase">Registra Peso</h3>
-                    <div class="flex gap-2">
-                        <input type="number" id="input-kg" step="0.1" placeholder="Kg" class="flex-1 bg-gray-900 border-2 border-gray-700 p-4 rounded-2xl text-2xl text-center focus:border-orange-500 outline-none">
-                        <button onclick="saveWeight()" class="bg-orange-600 px-8 rounded-2xl font-bold uppercase hover:bg-orange-500 transition-all shadow-lg">OK</button>
+
+                <div id="peso-history" class="bg-gray-800 rounded-[2rem] divide-y divide-gray-700 overflow-hidden border border-gray-700 shadow-xl"></div>
+
+                <div class="bg-gray-800 p-8 rounded-[2rem] border-t-4 border-orange-600 shadow-2xl">
+                    <h3 class="text-xl font-black mb-4 italic text-center uppercase tracking-widest text-orange-500">Registra Pesata</h3>
+                    <div class="flex gap-3">
+                        <input type="number" id="input-kg" step="0.1" placeholder="75.0" class="flex-1 bg-gray-900 border-2 border-gray-700 p-5 rounded-2xl text-3xl text-center font-bold focus:border-orange-500 outline-none">
+                        <button onclick="saveWeight()" class="bg-orange-600 px-10 rounded-2xl font-black uppercase shadow-lg active:scale-90 transition-transform">OK</button>
                     </div>
                 </div>
             </div>
 
-                <div id="peso-history" class="bg-gray-800 rounded-3xl divide-y divide-gray-700 overflow-hidden"></div>
-            </div>
-
             <div id="content-spesa" class="hidden">
-                <button onclick="generaListaSpesaCompleta()" class="w-full bg-orange-600 py-4 rounded-2xl font-bold mb-6 uppercase shadow-lg">Calcola Spesa Settimanale</button>
-                <div id="lista-spesa" class="bg-gray-800 rounded-3xl p-6 space-y-4"></div>
+                <button onclick="generaListaSpesaCompleta()" class="w-full bg-gradient-to-r from-orange-500 to-orange-700 py-5 rounded-2xl font-black mb-6 uppercase shadow-xl tracking-widest active:scale-95 transition-all">Genera Lista Spesa</button>
+                <div id="lista-spesa" class="bg-gray-800 rounded-[2rem] p-6 space-y-4 border border-gray-700 shadow-2xl"></div>
             </div>
         </div>
     </main>
 
     <script>
+        // CONFIGURAZIONE SUPABASE
         const SB_URL = "https://vnzrewcbnoqbqvzckome.supabase.co";
         const SB_KEY = "sb_publishable_Sq9txbu-PmKdbxETSx2cjw_WqWEFBPO";
         const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
+        // CONFIGURAZIONE AI (GEMINI)
+        const GEMINI_API_KEY = "LA_TUA_API_KEY_DI_GOOGLE_AI_STUDIO"; 
+
+        const ordinePasti = { "COLAZIONE": 1, "SPUNTINO": 2, "PRANZO": 3, "MERENDA": 4, "CENA": 5 };
         let weightChart;
         let countdown;
 
@@ -129,32 +139,33 @@
 
         function switchSalute(tab) {
             document.querySelectorAll('#salute-section [id^="content-"]').forEach(d => d.classList.add('hidden'));
-            document.querySelectorAll('#salute-section button').forEach(b => b.classList.remove('active-tab'));
+            document.querySelectorAll('#salute-section button[id^="tab-"]').forEach(b => b.classList.remove('active-tab'));
             document.getElementById('content-' + tab).classList.remove('hidden');
             document.getElementById('tab-' + tab).classList.add('active-tab');
             if(tab === 'peso') loadWeightHistory();
         }
 
-        // --- WORKOUT LOGIC (Stessa di prima) ---
+        // --- WORKOUT LOGIC ---
         async function loadWorkout(gruppo) {
             const container = document.getElementById('workout-list');
-            container.innerHTML = "Caricamento...";
+            container.innerHTML = "<p class='text-center opacity-50'>Caricamento esercizi...</p>";
             let query = _supabase.from('workout').select('*').order('id', { ascending: true });
             if (gruppo !== 'all') query = query.eq('gruppo_lavoro', gruppo);
             const { data } = await query;
+            
             container.innerHTML = data.map(ex => `
-                <div class="bg-gray-800 p-6 rounded-3xl border border-gray-700 shadow-xl">
-                    <div class="flex justify-between items-start mb-4">
-                        <h4 class="font-bold text-xl w-3/4">${ex.esercizi}</h4>
-                        <input type="checkbox" onchange="startRestTimer('${ex.recupero}', this)" class="w-8 h-8 rounded-full accent-green-500">
+                <div class="bg-gray-800 p-6 rounded-[2rem] border border-gray-700 shadow-xl">
+                    <div class="flex justify-between items-start mb-4 gap-4">
+                        <h4 class="font-black text-xl leading-tight">${ex.esercizi}</h4>
+                        <input type="checkbox" onchange="startRestTimer('${ex.recupero}', this)" class="w-10 h-10 rounded-full accent-green-500 flex-shrink-0">
                     </div>
-                    <div class="grid grid-cols-2 gap-3 mb-4 text-xs">
-                        <div><label class="text-gray-500 font-bold uppercase">Serie/Rep</label><input id="serie-${ex.id}" type="text" value="${ex.serie}" class="w-full bg-gray-900 p-3 rounded-xl border border-gray-700 text-orange-400"></div>
-                        <div><label class="text-gray-500 font-bold uppercase">Recupero</label><input id="rec-${ex.id}" type="text" value="${ex.recupero}" class="w-full bg-gray-900 p-3 rounded-xl border border-gray-700 text-blue-400"></div>
+                    <div class="grid grid-cols-2 gap-4 mb-4 text-[10px]">
+                        <div><label class="text-gray-500 font-black uppercase mb-1 block">Serie/Rep</label><input id="serie-${ex.id}" type="text" value="${ex.serie}" class="w-full bg-gray-900 p-4 rounded-xl border border-gray-700 text-orange-400 font-bold"></div>
+                        <div><label class="text-gray-500 font-black uppercase mb-1 block">Recupero</label><input id="rec-${ex.id}" type="text" value="${ex.recupero}" class="w-full bg-gray-900 p-4 rounded-xl border border-gray-700 text-blue-400 font-bold"></div>
                     </div>
                     <div class="flex gap-2">
-                        <input id="peso-${ex.id}" type="text" value="${ex.avanzamento_pesi || ''}" class="flex-1 bg-gray-900 p-3 rounded-xl border border-gray-700 text-sm" placeholder="Peso...">
-                        <button onclick="updateExercise(${ex.id})" class="bg-orange-600 px-4 rounded-xl font-bold uppercase text-xs">Salva</button>
+                        <input id="peso-${ex.id}" type="text" value="${ex.avanzamento_pesi || ''}" class="flex-1 bg-gray-900 p-4 rounded-xl border border-gray-700 text-sm font-bold" placeholder="Carico attuale...">
+                        <button onclick="updateExercise(${ex.id})" class="bg-orange-600 px-6 rounded-xl font-black uppercase text-xs">Salva</button>
                     </div>
                 </div>
             `).join('');
@@ -176,154 +187,132 @@
             overlay.classList.remove('hidden');
             let [min, sec] = tempo.split(':').map(Number);
             let total = (min * 60) + (sec || 0);
+            if(isNaN(total)) total = 60;
+            
             clearInterval(countdown);
             countdown = setInterval(() => {
                 total--;
                 document.getElementById('timer-display').innerText = `${Math.floor(total/60).toString().padStart(2,'0')}:${(total%60).toString().padStart(2,'0')}`;
                 overlay.className = total <= 5 ? "fixed inset-0 z-[100] flex flex-col items-center justify-center text-white timer-red" : "fixed inset-0 z-[100] flex flex-col items-center justify-center text-white timer-green";
-                if(total <= 0) stopTimer();
+                if(total <= 0) { stopTimer(); new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); }
             }, 1000);
         }
 
         function stopTimer() { clearInterval(countdown); document.getElementById('timer-overlay').classList.add('hidden'); }
 
-// 1. DEFINIAMO L'ORDINE DEI PASTI (da aggiungere in cima allo script)
-const ordinePasti = { "COLAZIONE": 1, "SPUNTINO": 2, "PRANZO": 3, "MERENDA": 4, "CENA": 5 };
+        // --- DIETA LOGIC ---
+        async function loadDieta(giorno) {
+            const container = document.getElementById('dieta-list');
+            container.innerHTML = "<p class='text-center opacity-30 italic py-10'>Consultazione piano...</p>";
 
-// 2. CARICAMENTO DIETA CON ORDINE CORRETTO
-async function loadDieta(giorno) {
-    const container = document.getElementById('dieta-list');
-    container.innerHTML = "<p class='text-center opacity-50 italic'>Caricamento...</p>";
+            const { data, error } = await _supabase
+                .from('alimentazione')
+                .select('*')
+                .eq('giorno', giorno);
 
-    const { data, error } = await _supabase
-        .from('alimentazione')
-        .select('*')
-        .eq('giorno', giorno);
+            if (error || !data || data.length === 0) {
+                container.innerHTML = "<p class='text-center text-gray-600 py-10'>Nessun dato trovato per questo giorno.</p>";
+                return;
+            }
 
-    if (error || !data) return;
+            const pastiRaggruppati = data.reduce((acc, item) => {
+                const nomePasto = item.pasto ? item.pasto.trim().toUpperCase() : "ALTRO";
+                if (!acc[nomePasto]) acc[nomePasto] = [];
+                acc[nomePasto].push(item);
+                return acc;
+            }, {});
 
-    // Raggruppiamo e Ordiniamo i pasti
-    const pastiRaggruppati = data.reduce((acc, item) => {
-        const nomePasto = item.pasto ? item.pasto.trim().toUpperCase() : "ALTRO";
-        if (!acc[nomePasto]) acc[nomePasto] = [];
-        acc[nomePasto].push(item);
-        return acc;
-    }, {});
+            const pastiOrdinati = Object.keys(pastiRaggruppati).sort((a, b) => (ordinePasti[a] || 99) - (ordinePasti[b] || 99));
 
-    // Ordiniamo le chiavi (pasti) in base all'oggetto ordinePasti
-    const pastiOrdinati = Object.keys(pastiRaggruppati).sort((a, b) => {
-        return (ordinePasti[a] || 99) - (ordinePasti[b] || 99);
-    });
-
-    container.innerHTML = `
-        <div class="mb-6 p-4 border-2 border-dashed border-gray-700 rounded-2xl flex flex-col items-center">
-            <p class="text-[10px] text-gray-500 uppercase font-bold mb-2">Aggiorna Piano (PDF/Excel)</p>
-            <input type="file" id="file-dieta" class="hidden" accept=".pdf,.xlsx,.xls" onchange="handleFileUpload(this)">
-            <button onclick="document.getElementById('file-dieta').click()" class="bg-gray-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm transition-all">
-                + Carica Nuovo File
-            </button>
-        </div>
-    ` + pastiOrdinati.map(nomePasto => `
-        <div class="bg-gray-800 p-5 rounded-3xl border-l-8 border-emerald-500 shadow-xl mb-6">
-            <span class="text-[10px] font-black uppercase text-emerald-500 tracking-widest">${nomePasto}</span>
-            <div class="space-y-4 mt-2">
-                ${pastiRaggruppati[nomePasto].sort((a,b) => a.componente_ordine - b.componente_ordine).map(c => renderComponentePasto(c)).join('')}
-            </div>
-        </div>
-    `).join('');
-}
-
-// 3. LOGICA PER L'AI (MOCKUP PER ORA)
-async function handleFileUpload(input) {
-    const file = input.files[0];
-    if (!file) return;
-
-    // Messaggio di attesa
-    const container = document.getElementById('dieta-list');
-    container.innerHTML = `
-        <div class="text-center py-10">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-            <p class="text-emerald-400 font-bold">Gemini sta analizzando la tua nuova dieta...</p>
-            <p class="text-xs text-gray-500 italic">Estraggo pasti, quantità e alternative...</p>
-        </div>
-    `;
-
-    // 1. Leggiamo il file come Base64 (necessario per l'API)
-    const reader = new FileReader();
-    reader.onload = async () => {
-        const base64Data = reader.result.split(',')[1];
-        
-        // 2. Chiamata a Gemini (Useremo una Edge Function di Supabase come "ponte" sicuro)
-        // Questo evita di esporre la tua API KEY nel codice HTML
-        const { data, error } = await _supabase.functions.invoke('process-diet-gemini', {
-            body: { file: base64Data, mimeType: file.type }
-        });
-
-        if (error) {
-            alert("Errore AI: " + error.message);
-            loadDieta(document.getElementById('select-giorno').value);
-            return;
+            container.innerHTML = pastiOrdinati.map(nomePasto => `
+                <div class="bg-gray-800 p-5 rounded-[2rem] border-l-8 border-emerald-500 shadow-xl mb-4">
+                    <span class="text-[10px] font-black uppercase text-emerald-500 tracking-[0.2em]">${nomePasto}</span>
+                    <div class="space-y-4 mt-3">
+                        ${pastiRaggruppati[nomePasto].sort((a,b) => (a.componente_ordine||0) - (b.componente_ordine||0)).map(c => renderComponentePasto(c)).join('')}
+                    </div>
+                </div>
+            `).join('');
         }
 
-        // 3. Se l'AI risponde bene, svuotiamo e aggiorniamo il DB
-        if (data && data.length > 0) {
-            await _supabase.from('alimentazione').delete().neq('id', 0); // Pulisce vecchia dieta
-            await _supabase.from('alimentazione').insert(data); // Inserisce la nuova
-            alert("Dieta aggiornata con successo via AI!");
-            location.reload();
+        function renderComponentePasto(c) {
+            const alternativeArray = c.alternative ? c.alternative.split(',').map(s => s.trim()) : [];
+            const opzioni = [c.alimento_principale, ...alternativeArray].filter(Boolean);
+            
+            if (opzioni.length <= 1) {
+                return `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-white text-lg">${c.alimento_principale}</h4>
+                            <p class="text-emerald-400 text-sm font-bold">${c.quantita} ${c.unità_misura || ''}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="bg-gray-900/50 p-4 rounded-2xl border border-gray-700">
+                    <label class="text-[9px] text-gray-500 uppercase font-black tracking-widest block mb-2">Opzione scelta:</label>
+                    <select onchange="salvaSceltaSettimanale(${c.id}, this.value)" 
+                        class="w-full bg-gray-800 text-white p-3 rounded-xl border border-gray-700 font-bold focus:border-emerald-500 outline-none text-sm">
+                        ${opzioni.map(opt => `<option value="${opt}" ${c.scelta_settimanale === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                    </select>
+                    <div class="mt-2 flex justify-between items-center">
+                        <span class="text-[10px] text-gray-500 italic">Dose base: ${c.quantita} ${c.unità_misura || ''}</span>
+                    </div>
+                </div>
+            `;
         }
-    };
-    reader.readAsDataURL(file);
-}
-}
-// Funzione di supporto per renderizzare ogni singola riga di alimento
-function renderComponentePasto(c) {
-    // Creiamo l'array delle opzioni: Base + Alternative
-    const alternativeArray = c.alternative ? c.alternative.split(',').map(s => s.trim()) : [];
-    const opzioni = [c.alimento_principale, ...alternativeArray].filter(Boolean);
-    
-    // Se non ci sono alternative, mostriamo solo il testo, altrimenti una tendina
-    if (opzioni.length <= 1) {
-        return `
-            <div>
-                <h4 class="text-lg font-bold text-white">${c.alimento_principale}</h4>
-                <p class="text-emerald-200 text-sm">Quantità: <b>${c.quantita} ${c.unità_misura || ''}</b></p>
-            </div>
-        `;
-    }
 
-    return `
-        <div class="border-t border-gray-700 pt-3 mt-3">
-            <label class="text-[10px] text-gray-400 uppercase font-bold">Scegli alternativa:</label>
-            <select onchange="salvaSceltaSettimanale(${c.id}, this.value)" 
-                class="w-full bg-gray-900 text-white p-3 rounded-xl mt-1 border border-gray-700 focus:border-emerald-500 outline-none">
-                ${opzioni.map(opt => `
-                    <option value="${opt}" ${c.scelta_settimanale === opt ? 'selected' : ''}>
-                        ${opt}
-                    </option>
-                `).join('')}
-            </select>
-            <p class="text-emerald-400 text-[11px] mt-1 italic">Quantità base: ${c.quantita} ${c.unità_misura || ''}</p>
-        </div>
-    `;
-}
+        async function salvaSceltaSettimanale(id, valore) {
+            await _supabase.from('alimentazione').update({ scelta_settimanale: valore }).eq('id', id);
+            console.log("Scelta aggiornata:", valore);
+        }
 
-// Funzione per salvare la scelta nel database (fondamentale per la spesa)
-async function salvaSceltaSettimanale(id, valore) {
-    const { error } = await _supabase
-        .from('alimentazione')
-        .update({ scelta_settimanale: valore })
-        .eq('id', id);
+        // --- CARICAMENTO AI (GEMINI) ---
+        async function handleFileUpload(input) {
+            const file = input.files[0];
+            if (!file || !GEMINI_API_KEY) { alert("Assicurati di inserire la tua API KEY nel codice!"); return; }
 
-    if (error) {
-        console.error('Errore salvataggio scelta:', error);
-    } else {
-        console.log('Scelta salvata:', valore);
-        // Opzionale: un piccolo toast o feedback visivo
-    }
-}
+            const container = document.getElementById('dieta-list');
+            container.innerHTML = `<div class="text-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div><p class="text-emerald-500 font-black animate-pulse">L'AI sta leggendo il PDF...</p></div>`;
 
-        // --- PESO & GRAFICO LOGIC ---
+            const reader = new FileReader();
+            reader.onload = async () => {
+                const base64Data = reader.result.split(',')[1];
+                
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: "Trasforma questa dieta in un array JSON strutturato. Chiavi: giorno, pasto (COLAZIONE, SPUNTINO, PRANZO, MERENDA, CENA), alimento_principale, quantita, unità_misura, alternative (testo), componente_ordine. Restituisci SOLO il JSON." },
+                                    { inline_data: { mime_type: file.type, data: base64Data } }
+                                ]
+                            }]
+                        })
+                    });
+
+                    const result = await response.json();
+                    let aiText = result.candidates[0].content.parts[0].text;
+                    const cleanJson = JSON.parse(aiText.replace(/```json|```/g, ''));
+
+                    // Sostituiamo i dati nel DB
+                    await _supabase.from('alimentazione').delete().neq('id', 0);
+                    await _supabase.from('alimentazione').insert(cleanJson);
+                    
+                    alert("Dieta aggiornata con successo via AI!");
+                    location.reload();
+                } catch (err) {
+                    alert("Errore AI: " + err.message);
+                    loadDieta(document.getElementById('select-giorno').value);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- PESO LOGIC ---
         async function loadWeightHistory() {
             const { data, error } = await _supabase.from('registro_peso').select('*').order('created_at', { ascending: true });
             if (error) return;
@@ -331,53 +320,48 @@ async function salvaSceltaSettimanale(id, valore) {
             const container = document.getElementById('peso-history');
             const statsDiv = document.getElementById('stats-peso');
             
-            // Logica percentuali
             if (data.length > 1) {
                 const ultimo = data[data.length - 1].kg;
                 const penultimo = data[data.length - 2].kg;
-                const diff = (((ultimo - penultimo) / penultimo) * 100).toFixed(2);
+                const diff = (ultimo - penultimo).toFixed(1);
                 const color = diff > 0 ? "text-red-400" : "text-emerald-400";
-                const icon = diff > 0 ? "📈" : "📉";
-                statsDiv.innerHTML = `${icon} Variazione: <span class="${color}">${diff}% rispetto all'ultima volta</span>`;
+                statsDiv.innerHTML = `Variazione: <span class="${color}">${diff > 0 ? '+' : ''}${diff} KG ${diff > 0 ? '📈' : '📉'}</span>`;
             }
 
-            // Render Lista
             container.innerHTML = data.slice().reverse().map(p => `
-                <div class="flex justify-between items-center p-4 bg-gray-800/50">
-                    <div class="text-sm text-gray-400">${new Date(p.created_at).toLocaleDateString()}</div>
-                    <div class="text-xl font-bold">${p.kg} <span class="text-xs font-normal">kg</span></div>
+                <div class="flex justify-between items-center p-5 bg-gray-800/50">
+                    <div class="text-xs font-bold text-gray-500 uppercase tracking-widest">${new Date(p.created_at).toLocaleDateString('it-IT', {day:'2-digit', month:'short'})}</div>
+                    <div class="text-2xl font-black">${p.kg.toFixed(1)} <span class="text-[10px] text-gray-500 uppercase">kg</span></div>
                 </div>
             `).join('');
 
-            // Render Grafico
             renderChart(data);
         }
 
         function renderChart(data) {
             const ctx = document.getElementById('weightChart').getContext('2d');
             if (weightChart) weightChart.destroy();
-
             weightChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: data.map(p => new Date(p.created_at).toLocaleDateString()),
                     datasets: [{
-                        label: 'Peso (kg)',
                         data: data.map(p => p.kg),
                         borderColor: '#f97316',
-                        backgroundColor: 'rgba(249, 115, 22, 0.1)',
-                        borderWidth: 3,
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 4,
                         tension: 0.4,
                         fill: true,
-                        pointBackgroundColor: '#fff'
+                        pointRadius: 6,
+                        pointBackgroundColor: '#f97316'
                     }]
                 },
                 options: {
                     responsive: true,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } },
-                        x: { grid: { display: false }, ticks: { color: '#9ca3af' } }
+                        y: { grid: { color: '#1f2937' }, ticks: { color: '#6b7280', font: { weight: 'bold' } } },
+                        x: { display: false }
                     }
                 }
             });
@@ -393,43 +377,33 @@ async function salvaSceltaSettimanale(id, valore) {
             }
         }
 
-        // --- SPESA LOGIC (Stessa di prima) ---
-async function generaListaSpesaCompleta() {
-    const container = document.getElementById('lista-spesa');
-    container.innerHTML = "Calcolo in corso...";
+        // --- SPESA LOGIC ---
+        async function generaListaSpesaCompleta() {
+            const container = document.getElementById('lista-spesa');
+            container.innerHTML = "<p class='animate-pulse text-center'>Calcolando il totale...</p>";
 
-    const { data, error } = await _supabase
-        .from('alimentazione')
-        .select('alimento_principale, scelta_settimanale, quantita, unità_misura');
+            const { data } = await _supabase.from('alimentazione').select('alimento_principale, scelta_settimanale, quantita, unità_misura');
+            const spesa = {};
 
-    if (error) return;
+            data.forEach(item => {
+                let prodotto = item.scelta_settimanale || item.alimento_principale;
+                prodotto = prodotto.split('(')[0].trim().toLowerCase();
+                const qta = parseInt(item.quantita) || 0;
+                const unita = (item.unità_misura || 'g').toLowerCase();
+                const chiave = `${prodotto} (${unita})`;
+                spesa[chiave] = (spesa[chiave] || 0) + qta;
+            });
 
-    const spesa = {};
-
-    data.forEach(item => {
-        // Usa la scelta effettuata, altrimenti l'alimento principale
-        let prodotto = item.scelta_settimanale || item.alimento_principale;
-        
-        // Pulizia nome (rimuove grammature tra parentesi se presenti nel nome)
-        prodotto = prodotto.split('(')[0].trim();
-
-        const qta = parseInt(item.quantita) || 0;
-        const unita = item.unità_misura || 'g';
-
-        const chiave = `${prodotto} (${unita})`;
-        spesa[chiave] = (spesa[chiave] || 0) + qta;
-    });
-
-    container.innerHTML = Object.entries(spesa).map(([prod, qta]) => `
-        <label class="flex justify-between items-center p-4 bg-gray-900 rounded-2xl border border-gray-800 active:bg-gray-700 transition-colors">
-            <div class="flex items-center gap-3">
-                <input type="checkbox" class="w-6 h-6 rounded-full accent-orange-500">
-                <span class="text-gray-200">${prod}</span>
-            </div>
-            <span class="font-bold text-orange-400">${qta > 0 ? qta : 'Q.b.'}</span>
-        </label>
-    `).join('');
-}
+            container.innerHTML = Object.entries(spesa).map(([prod, qta]) => `
+                <label class="flex justify-between items-center p-5 bg-gray-900/50 rounded-2xl border border-gray-800 active:scale-95 transition-all">
+                    <div class="flex items-center gap-4">
+                        <input type="checkbox" class="w-7 h-7 rounded-full accent-orange-500 border-2 border-gray-700 bg-transparent">
+                        <span class="text-gray-200 font-bold capitalize text-sm">${prod}</span>
+                    </div>
+                    <span class="font-black text-orange-500">${qta > 0 ? qta : 'qb'}</span>
+                </label>
+            `).join('');
+        }
     </script>
 </body>
 </html>
