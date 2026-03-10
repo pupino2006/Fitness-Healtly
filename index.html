@@ -184,18 +184,86 @@
 
         function stopTimer() { clearInterval(countdown); document.getElementById('timer-overlay').classList.add('hidden'); }
 
-        // --- DIETA LOGIC (Con selettore giorno) ---
-        async function loadDieta(giorno) {
-            const { data } = await _supabase.from('alimentazione').select('*').eq('giorno', giorno);
-            document.getElementById('dieta-list').innerHTML = data.map(p => `
-                <div class="bg-gray-800 p-5 rounded-3xl border-l-8 border-emerald-500 shadow-xl">
-                    <span class="text-[10px] font-black uppercase text-emerald-500 tracking-widest">${p.pasto}</span>
-                    <h4 class="text-xl font-bold mt-1">${p.alimento_base}</h4>
-                    <p class="text-emerald-200">Quantità: <b>${p.quantita_base}</b></p>
-                    ${p.alternative ? `<div class="mt-3 text-[11px] text-gray-400 bg-black/20 p-3 rounded-xl italic"><b>Alternative:</b> ${p.alternative}</div>` : ''}
-                </div>
-            `).join('');
-        }
+// --- CARICAMENTO DIETA DINAMICA ---
+async function loadDieta(giorno) {
+    const container = document.getElementById('dieta-list');
+    container.innerHTML = "<p class='text-center opacity-50 italic'>Caricamento piano alimentare...</p>";
+
+    // Recuperiamo i dati ordinati per componente_ordine
+    const { data, error } = await _supabase
+        .from('alimentazione')
+        .select('*')
+        .eq('giorno', giorno)
+        .order('componente_ordine', { ascending: true });
+
+    if (error) {
+        console.error('Errore caricamento dieta:', error);
+        return;
+    }
+
+    // Raggruppiamo per pasto (Colazione, Pranzo, etc.) per una visualizzazione migliore
+    const pastiRaggruppati = data.reduce((acc, item) => {
+        if (!acc[item.pasto]) acc[item.pasto] = [];
+        acc[item.pasto].push(item);
+        return acc;
+    }, {});
+
+    container.innerHTML = Object.entries(pastiRaggruppati).map(([nomePasto, componenti]) => `
+        <div class="bg-gray-800 p-5 rounded-3xl border-l-8 border-emerald-500 shadow-xl mb-6">
+            <span class="text-[10px] font-black uppercase text-emerald-500 tracking-widest">${nomePasto}</span>
+            <div class="space-y-4 mt-2">
+                ${componenti.map(c => renderComponentePasto(c)).join('')}
+            </div>
+        </div>
+    `).join('');
+}
+
+// Funzione di supporto per renderizzare ogni singola riga di alimento
+function renderComponentePasto(c) {
+    // Creiamo l'array delle opzioni: Base + Alternative
+    const alternativeArray = c.alternative ? c.alternative.split(',').map(s => s.trim()) : [];
+    const opzioni = [c.alimento_principale, ...alternativeArray].filter(Boolean);
+    
+    // Se non ci sono alternative, mostriamo solo il testo, altrimenti una tendina
+    if (opzioni.length <= 1) {
+        return `
+            <div>
+                <h4 class="text-lg font-bold text-white">${c.alimento_principale}</h4>
+                <p class="text-emerald-200 text-sm">Quantità: <b>${c.quantita} ${c.unità_misura || ''}</b></p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="border-t border-gray-700 pt-3 mt-3">
+            <label class="text-[10px] text-gray-400 uppercase font-bold">Scegli alternativa:</label>
+            <select onchange="salvaSceltaSettimanale(${c.id}, this.value)" 
+                class="w-full bg-gray-900 text-white p-3 rounded-xl mt-1 border border-gray-700 focus:border-emerald-500 outline-none">
+                ${opzioni.map(opt => `
+                    <option value="${opt}" ${c.scelta_settimanale === opt ? 'selected' : ''}>
+                        ${opt}
+                    </option>
+                `).join('')}
+            </select>
+            <p class="text-emerald-400 text-[11px] mt-1 italic">Quantità base: ${c.quantita} ${c.unità_misura || ''}</p>
+        </div>
+    `;
+}
+
+// Funzione per salvare la scelta nel database (fondamentale per la spesa)
+async function salvaSceltaSettimanale(id, valore) {
+    const { error } = await _supabase
+        .from('alimentazione')
+        .update({ scelta_settimanale: valore })
+        .eq('id', id);
+
+    if (error) {
+        console.error('Errore salvataggio scelta:', error);
+    } else {
+        console.log('Scelta salvata:', valore);
+        // Opzionale: un piccolo toast o feedback visivo
+    }
+}
 
         // --- PESO & GRAFICO LOGIC ---
         async function loadWeightHistory() {
@@ -268,22 +336,42 @@
         }
 
         // --- SPESA LOGIC (Stessa di prima) ---
-        async function generaListaSpesaCompleta() {
-            const { data } = await _supabase.from('alimentazione').select('alimento_base, quantita_base');
-            const spesa = {};
-            data.forEach(item => {
-                const nome = item.alimento_base.split('+')[0].trim();
-                const qtaMatch = item.quantita_base.match(/(\d+)/);
-                const qta = qtaMatch ? parseInt(qtaMatch[0]) : 0;
-                spesa[nome] = (spesa[nome] || 0) + qta;
-            });
-            document.getElementById('lista-spesa').innerHTML = Object.keys(spesa).map(prod => `
-                <label class="flex justify-between items-center p-4 bg-gray-900 rounded-2xl">
-                    <div class="flex items-center gap-3"><input type="checkbox" class="w-6 h-6 accent-orange-500"><span>${prod}</span></div>
-                    <span class="font-bold text-orange-400">${spesa[prod] > 0 ? spesa[prod] + 'g' : 'Q.b.'}</span>
-                </label>
-            `).join('');
-        }
+async function generaListaSpesaCompleta() {
+    const container = document.getElementById('lista-spesa');
+    container.innerHTML = "Calcolo in corso...";
+
+    const { data, error } = await _supabase
+        .from('alimentazione')
+        .select('alimento_principale, scelta_settimanale, quantita, unità_misura');
+
+    if (error) return;
+
+    const spesa = {};
+
+    data.forEach(item => {
+        // Usa la scelta effettuata, altrimenti l'alimento principale
+        let prodotto = item.scelta_settimanale || item.alimento_principale;
+        
+        // Pulizia nome (rimuove grammature tra parentesi se presenti nel nome)
+        prodotto = prodotto.split('(')[0].trim();
+
+        const qta = parseInt(item.quantita) || 0;
+        const unita = item.unità_misura || 'g';
+
+        const chiave = `${prodotto} (${unita})`;
+        spesa[chiave] = (spesa[chiave] || 0) + qta;
+    });
+
+    container.innerHTML = Object.entries(spesa).map(([prod, qta]) => `
+        <label class="flex justify-between items-center p-4 bg-gray-900 rounded-2xl border border-gray-800 active:bg-gray-700 transition-colors">
+            <div class="flex items-center gap-3">
+                <input type="checkbox" class="w-6 h-6 rounded-full accent-orange-500">
+                <span class="text-gray-200">${prod}</span>
+            </div>
+            <span class="font-bold text-orange-400">${qta > 0 ? qta : 'Q.b.'}</span>
+        </label>
+    `).join('');
+}
     </script>
 </body>
 </html>
