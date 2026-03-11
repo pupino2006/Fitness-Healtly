@@ -12,37 +12,34 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 0; overflow-x: hidden; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .neo-gradient-orange { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
         .active-tab { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-        
-        .weight-row { display: flex; width: 100%; gap: 12px; align-items: center; justify-content: center; }
-        .weight-input { flex: 1; min-width: 0; height: 64px; }
-        .weight-btn { width: 80px; height: 64px; flex-shrink: 0; }
-
-        #timer-overlay { transition: background-color 0.5s ease; }
-        .timer-green { background-color: rgba(16, 185, 129, 0.95); }
-        .timer-red { background-color: rgba(239, 68, 68, 0.95); }
-        input[type="checkbox"] { width: 1.5rem; height: 1.5rem; border-radius: 9999px; cursor: pointer; }
+        input[type="checkbox"] { width: 1.5rem; height: 1.5rem; border-radius: 9999px; cursor: pointer; border: 2px solid #475569; appearance: none; position: relative; }
+        input[type="checkbox"]:checked { background-color: #10b981; border-color: #10b981; }
+        input[type="checkbox"]:checked::after { content: '\f00c'; font-family: 'Font Awesome 5 Free'; font-weight: 900; color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.8rem; }
+        #timer-overlay { user-select: none; -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
 <body class="pb-24">
 
-    <!-- Timer Overlay -->
-    <div id="timer-overlay" class="hidden fixed inset-0 z-[100] flex flex-col items-center justify-center text-white">
-        <h2 class="text-3xl font-black mb-4 uppercase italic tracking-widest">Recupero</h2>
-        <div id="timer-display" class="text-8xl font-black mb-8 font-mono">00:00</div>
-        <button onclick="stopTimer()" class="bg-white text-slate-900 px-10 py-4 rounded-full font-black text-lg uppercase shadow-2xl active:scale-90 transition-transform">Salta</button>
+    <!-- Timer Overlay per il Recupero -->
+    <div id="timer-overlay" class="hidden fixed inset-0 z-[1000] flex flex-col items-center justify-center text-white bg-emerald-600">
+        <div class="flex flex-col items-center mb-8">
+            <i class="fas fa-stopwatch text-5xl mb-4 animate-bounce"></i>
+            <h2 class="text-2xl font-black uppercase italic tracking-widest">Recupero</h2>
+        </div>
+        <div id="timer-display" class="text-[100px] md:text-[150px] font-black mb-10 font-mono leading-none tracking-tighter">00:00</div>
+        <button onclick="stopTimer()" class="bg-white text-emerald-700 px-16 py-5 rounded-full font-black text-xl uppercase shadow-2xl active:scale-90 transition-transform">Salta</button>
     </div>
 
     <header class="p-6 flex justify-between items-center">
         <h1 class="text-3xl font-black tracking-tighter italic cursor-pointer" onclick="showSection('home')">LR <span class="text-orange-500">TRAINING</span></h1>
-        <div id="status-dot" class="text-[9px] bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-full border border-emerald-500/20 font-bold uppercase italic">Connesso</div>
+        <div id="wake-lock-status" class="text-[9px] bg-orange-500/10 text-orange-500 px-3 py-1 rounded-full border border-orange-500/20 font-bold uppercase italic hidden">Schermo Attivo</div>
     </header>
 
     <main class="max-w-md mx-auto px-4">
-        
+        <!-- SEZIONE HOME -->
         <div id="home-section" class="space-y-6 pt-4">
-            <div onclick="showSection('workout')" class="p-8 rounded-[2.5rem] glass-card border-l-8 border-orange-500 transform active:scale-95 transition-all cursor-pointer">
+            <div onclick="showSection('workout')" class="p-8 rounded-[2.5rem] glass-card border-l-8 border-orange-500 transform active:scale-95 transition-all cursor-pointer shadow-2xl">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-black italic tracking-tighter uppercase">Workout</h2>
@@ -52,33 +49,34 @@
                 </div>
             </div>
             
-            <div onclick="showSection('salute')" class="p-8 rounded-[2.5rem] glass-card border-l-8 border-emerald-500 transform active:scale-95 transition-all cursor-pointer">
+            <div onclick="showSection('salute')" class="p-8 rounded-[2.5rem] glass-card border-l-8 border-emerald-500 transform active:scale-95 transition-all cursor-pointer shadow-2xl">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-3xl font-black italic tracking-tighter uppercase">Salute</h2>
-                        <p class="text-gray-400 text-sm">Peso & Alimentazione</p>
+                        <p class="text-gray-400 text-sm">Dieta, Peso & Spesa</p>
                     </div>
                     <i class="fas fa-heartbeat text-4xl text-emerald-500 opacity-50"></i>
                 </div>
             </div>
         </div>
 
-        <!-- Sezione Salute -->
+        <!-- SEZIONE SALUTE -->
         <div id="salute-section" class="hidden space-y-6">
             <div class="flex items-center gap-4 mb-2">
                 <button onclick="showSection('home')" class="w-10 h-10 flex items-center justify-center glass-card rounded-full"><i class="fas fa-arrow-left text-xs"></i></button>
-                <h2 class="text-xl font-black uppercase">Dieta & Peso</h2>
+                <h2 class="text-xl font-black uppercase tracking-tight">Salute</h2>
+            </div>
+            
+            <div class="flex bg-slate-800/50 p-1 rounded-2xl border border-slate-700 overflow-x-auto gap-1">
+                <button id="tab-dieta" onclick="switchSalute('dieta')" class="flex-1 py-2 rounded-xl text-[10px] font-black transition-all active-tab whitespace-nowrap">DIETA</button>
+                <button id="tab-peso" onclick="switchSalute('peso')" class="flex-1 py-2 rounded-xl text-[10px] font-black transition-all text-gray-400 whitespace-nowrap">PESO</button>
+                <button id="tab-spesa" onclick="switchSalute('spesa')" class="flex-1 py-2 rounded-xl text-[10px] font-black transition-all text-gray-400 whitespace-nowrap uppercase">Spesa</button>
             </div>
 
-            <div class="flex bg-slate-800/50 p-1.5 rounded-2xl border border-slate-700">
-                <button id="tab-dieta" onclick="switchSalute('dieta')" class="flex-1 py-2.5 rounded-xl text-xs font-black transition-all active-tab">DIETA</button>
-                <button id="tab-peso" onclick="switchSalute('peso')" class="flex-1 py-2.5 rounded-xl text-xs font-black transition-all">PESO</button>
-                <button id="tab-spesa" onclick="switchSalute('spesa')" class="flex-1 py-2.5 rounded-xl text-xs font-black transition-all">SPESA</button>
-            </div>
-
+            <!-- Content Dieta -->
             <div id="content-dieta" class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <select id="select-giorno" onchange="loadDieta(this.value)" class="bg-slate-800 p-3 rounded-xl border border-slate-700 text-xs font-black text-emerald-500">
+                <div class="flex justify-between items-center gap-2">
+                    <select id="select-giorno" onchange="loadDieta(this.value)" class="flex-1 bg-slate-800 p-3 rounded-xl border border-slate-700 text-xs font-black text-emerald-500 outline-none">
                         <option value="Lunedì">Lunedì</option>
                         <option value="Martedì">Martedì</option>
                         <option value="Mercoledì">Mercoledì</option>
@@ -87,35 +85,42 @@
                         <option value="Sabato">Sabato</option>
                         <option value="Domenica">Domenica</option>
                     </select>
-                    <button onclick="document.getElementById('file-dieta').click()" class="text-[10px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-lg font-black uppercase">Carica Dieta</button>
+                    <button onclick="document.getElementById('file-dieta').click()" class="text-[10px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-4 py-3 rounded-xl font-black uppercase">Upload</button>
                     <input type="file" id="file-dieta" class="hidden" accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileUpload(this)">
                 </div>
                 <div id="dieta-list" class="space-y-4 pb-10"></div>
             </div>
 
+            <!-- Content Peso -->
             <div id="content-peso" class="hidden space-y-6">
-                 <div class="glass-card p-4 rounded-3xl border border-slate-700">
+                <div class="glass-card p-4 rounded-3xl border border-slate-700">
                     <canvas id="weightChart" style="width:100%; max-height: 200px;"></canvas>
                 </div>
-                <div class="glass-card p-6 rounded-3xl border-t-4 border-orange-500">
-                    <div class="weight-row">
-                        <input type="number" id="input-kg" step="0.1" placeholder="75.0" class="weight-input bg-slate-900 border border-slate-700 p-4 rounded-2xl text-2xl text-center font-black focus:border-orange-500 outline-none">
-                        <button onclick="saveWeight()" class="weight-btn bg-orange-600 rounded-2xl font-black uppercase active:scale-95 transition-all">OK</button>
+                <div class="glass-card p-6 rounded-3xl border-t-4 border-orange-500 shadow-xl">
+                    <div class="flex gap-2">
+                        <input type="number" id="input-kg" step="0.1" placeholder="00.0" class="flex-1 bg-slate-900 border border-slate-700 p-4 rounded-2xl text-2xl text-center font-black outline-none focus:border-orange-500">
+                        <button onclick="saveWeight()" class="px-8 bg-orange-600 rounded-2xl font-black uppercase active:scale-95 transition-all shadow-lg shadow-orange-900/20">OK</button>
                     </div>
                 </div>
-                <div id="peso-history" class="glass-card rounded-3xl divide-y divide-slate-800 overflow-hidden"></div>
+                <div id="peso-history" class="glass-card rounded-3xl divide-y divide-slate-800 overflow-hidden shadow-lg"></div>
             </div>
 
-            <div id="content-spesa" class="hidden space-y-6">
-                <button onclick="alert('Funzione in arrivo')" class="w-full neo-gradient-orange py-4 rounded-2xl font-black uppercase text-sm">Genera Lista Spesa</button>
+            <!-- Content Spesa -->
+            <div id="content-spesa" class="hidden space-y-4">
+                <div class="p-6 glass-card rounded-3xl border border-slate-700">
+                    <h3 class="text-sm font-black uppercase mb-4 text-emerald-500">Lista della Spesa</h3>
+                    <div id="spesa-list" class="space-y-3">
+                        <p class="text-[10px] text-gray-500 italic">Carica una dieta per generare la lista...</p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Sezione Workout -->
+        <!-- SEZIONE WORKOUT -->
         <div id="workout-section" class="hidden space-y-6">
-             <div class="flex items-center gap-4 mb-2">
+            <div class="flex items-center gap-4 mb-2">
                 <button onclick="showSection('home')" class="w-10 h-10 flex items-center justify-center glass-card rounded-full"><i class="fas fa-arrow-left text-xs"></i></button>
-                <h2 class="text-xl font-black uppercase">Esercizi</h2>
+                <h2 class="text-xl font-black uppercase tracking-tight">Workout</h2>
             </div>
             <select id="filter-group" onchange="loadWorkout(this.value)" class="w-full bg-slate-800 p-4 rounded-2xl border border-slate-700 text-sm font-bold text-orange-500 outline-none">
                 <option value="all">Tutta la scheda</option>
@@ -126,133 +131,87 @@
                 <option value="Gambe 2">Gambe 2</option>
                 <option value="Schiena 2">Schiena 2</option>
             </select>
-            <div id="workout-list" class="space-y-4"></div>
+            <div id="workout-list" class="space-y-4 pb-10"></div>
         </div>
-
     </main>
 
-    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md glass-card rounded-3xl p-2 flex justify-around items-center z-50">
-        <button onclick="showSection('home')" class="p-4 text-gray-500" id="nav-home"><i class="fas fa-home text-xl"></i></button>
-        <button onclick="showSection('workout')" class="p-4 text-gray-500" id="nav-workout"><i class="fas fa-dumbbell text-xl"></i></button>
-        <button onclick="showSection('salute')" class="p-4 text-gray-500" id="nav-salute"><i class="fas fa-utensils text-xl"></i></button>
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md glass-card rounded-3xl p-2 flex justify-around items-center z-50 shadow-2xl border border-white/5">
+        <button onclick="showSection('home')" class="p-4 transition-all" id="nav-home text-orange-500"><i class="fas fa-home text-xl"></i></button>
+        <button onclick="showSection('workout')" class="p-4 transition-all text-gray-500" id="nav-workout"><i class="fas fa-dumbbell text-xl"></i></button>
+        <button onclick="showSection('salute')" class="p-4 transition-all text-gray-500" id="nav-salute"><i class="fas fa-heartbeat text-xl"></i></button>
     </nav>
 
     <script>
         const SB_URL = "https://vnzrewcbnoqbqvzckome.supabase.co";
         const SB_KEY = "sb_publishable_Sq9txbu-PmKdbxETSx2cjw_WqWEFBPO";
         let _supabase;
+        let weightChart;
+        let timerInterval = null;
+        let wakeLock = null;
 
-        function initSupabase() {
-            if (typeof supabase !== 'undefined') {
-                _supabase = supabase.createClient(SB_URL, SB_KEY);
-                console.log("Supabase pronto all'uso.");
-            } else {
-                setTimeout(initSupabase, 500);
-            }
+        async function requestWakeLock() {
+            if (!('wakeLock' in navigator)) return;
+            try {
+                if (wakeLock !== null) return;
+                wakeLock = await navigator.wakeLock.request('screen');
+                document.getElementById('wake-lock-status').classList.remove('hidden');
+            } catch (err) { console.warn("WakeLock disabilitato:", err.message); }
         }
 
-        const ordinePasti = { "COLAZIONE": 1, "SPUNTINO": 2, "PRANZO": 3, "MERENDA": 4, "CENA": 5 };
-        let weightChart;
-        let timerInterval;
+        async function releaseWakeLock() {
+            if (wakeLock !== null) { try { await wakeLock.release(); wakeLock = null; } catch (e) {} }
+        }
 
         function showSection(id) {
             document.querySelectorAll('main > div').forEach(d => d.classList.add('hidden'));
             const target = document.getElementById(id + '-section');
             if (target) target.classList.remove('hidden');
             
-            document.querySelectorAll('nav button').forEach(b => b.classList.replace('text-orange-500', 'text-gray-500'));
-            const activeNav = document.getElementById('nav-' + id);
-            if(activeNav) activeNav.classList.replace('text-gray-500', 'text-orange-500');
+            if (id === 'workout') { requestWakeLock(); } else { releaseWakeLock(); }
 
-            if(id === 'salute') {
-                switchSalute('dieta');
-                loadDieta(document.getElementById('select-giorno').value);
+            document.querySelectorAll('nav button').forEach(b => {
+                b.classList.remove('text-orange-500');
+                b.classList.add('text-gray-500');
+            });
+            const activeNav = document.getElementById('nav-' + id);
+            if(activeNav) {
+                activeNav.classList.remove('text-gray-500');
+                activeNav.classList.add('text-orange-500');
             }
+
+            if(id === 'salute') switchSalute('dieta');
             if(id === 'workout') loadWorkout('all');
         }
 
         function switchSalute(tab) {
-            document.querySelectorAll('#salute-section [id^="content-"]').forEach(d => d.classList.add('hidden'));
-            document.querySelectorAll('#salute-section button[id^="tab-"]').forEach(b => b.classList.remove('active-tab'));
-            document.getElementById('content-' + tab).classList.remove('hidden');
-            document.getElementById('tab-' + tab).classList.add('active-tab');
+            document.getElementById('content-dieta').classList.toggle('hidden', tab !== 'dieta');
+            document.getElementById('content-peso').classList.toggle('hidden', tab !== 'peso');
+            document.getElementById('content-spesa').classList.toggle('hidden', tab !== 'spesa');
+            
+            document.getElementById('tab-dieta').classList.toggle('active-tab', tab === 'dieta');
+            document.getElementById('tab-peso').classList.toggle('active-tab', tab === 'peso');
+            document.getElementById('tab-spesa').classList.toggle('active-tab', tab === 'spesa');
+
             if(tab === 'peso') loadWeightHistory();
+            if(tab === 'dieta') loadDieta(document.getElementById('select-giorno').value);
+            if(tab === 'spesa') loadSpesa();
         }
 
-        async function handleFileUpload(input) {
-            if (!_supabase) return alert("Supabase non è inizializzato.");
-            const file = input.files[0];
-            if (!file) return;
-
-            const container = document.getElementById('dieta-list');
-            const originalHTML = container.innerHTML;
-            container.innerHTML = `
-                <div class="text-center py-20 glass-card rounded-3xl border-2 border-emerald-500">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-                    <p class="text-emerald-500 font-black uppercase text-xs animate-pulse">L'IA sta analizzando la dieta...<br>Attendere prego.</p>
-                </div>`;
-
-            const reader = new FileReader();
-            reader.onload = async () => {
-                const base64 = reader.result.split(',')[1];
-                
-                try {
-                    // Chiamata Fetch con headers CORS completi
-                    const response = await fetch(`${SB_URL}/functions/v1/analizza-dieta`, {
-                        method: 'POST',
-                        mode: 'cors', // Forza CORS
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'apikey': SB_KEY, // Header richiesto da Supabase
-                            'Authorization': `Bearer ${SB_KEY}`
-                        },
-                        body: JSON.stringify({ file: base64, mimeType: file.type })
-                    });
-
-                    if (!response.ok) {
-                        const errBody = await response.text();
-                        throw new Error(`Errore Server (${response.status}): ${errBody}`);
-                    }
-
-                    const resJson = await response.json();
-                    let dietData = resJson;
-
-                    // Se l'AI risponde con una stringa formattata male, puliamola
-                    if (typeof dietData === 'string') {
-                        const clean = dietData.replace(/```json|```/g, '').trim();
-                        dietData = JSON.parse(clean);
-                    }
-
-                    // Svuota e inserisce
-                    await _supabase.from('alimentazione').delete().neq('id', -1);
-                    const { error: insError } = await _supabase.from('alimentazione').insert(dietData);
-                    
-                    if (insError) throw insError;
-
-                    alert("✅ Dieta aggiornata con successo!");
-                    loadDieta(document.getElementById('select-giorno').value);
-
-                } catch (err) {
-                    console.error("ERRORE UPLOAD:", err);
-                    alert("⚠️ Errore durante l'analisi. Controlla che la Edge Function sia attiva e i CORS configurati.");
-                    container.innerHTML = originalHTML;
-                }
-            };
-            reader.readAsDataURL(file);
+        function initSupabase() {
+            if (typeof supabase !== 'undefined') {
+                _supabase = supabase.createClient(SB_URL, SB_KEY);
+            } else { setTimeout(initSupabase, 500); }
         }
 
         async function loadDieta(giorno) {
             if (!_supabase) return;
             const container = document.getElementById('dieta-list');
-            container.innerHTML = "<div class='text-center py-10 opacity-30 animate-pulse font-black text-xs'>Caricamento...</div>";
-            
-            const { data, error } = await _supabase.from('alimentazione').select('*').eq('giorno', giorno);
-            
-            if (error || !data || data.length === 0) {
-                container.innerHTML = "<div class='text-center py-20 opacity-40 italic text-xs'>Nessun dato. Carica una dieta premendo il tasto in alto.</div>";
+            const { data } = await _supabase.from('alimentazione').select('*').eq('giorno', giorno);
+            if (!data || data.length === 0) {
+                container.innerHTML = "<div class='text-center py-10 opacity-30 italic text-xs'>Nessun dato per " + giorno + "</div>";
                 return;
             }
-
+            const ordinePasti = { "COLAZIONE": 1, "SPUNTINO": 2, "PRANZO": 3, "MERENDA": 4, "CENA": 5 };
             const pasti = data.reduce((acc, item) => {
                 const p = item.pasto.toUpperCase();
                 if (!acc[p]) acc[p] = [];
@@ -263,14 +222,14 @@
             container.innerHTML = Object.keys(pasti)
                 .sort((a,b) => (ordinePasti[a]||99)-(ordinePasti[b]||99))
                 .map(p => `
-                    <div class="glass-card p-5 rounded-3xl border-l-4 border-emerald-500 shadow-lg mb-4">
+                    <div class="glass-card p-5 rounded-3xl border-l-4 border-emerald-500">
                         <span class="text-[10px] font-black uppercase text-emerald-500 tracking-widest">${p}</span>
                         <div class="space-y-3 mt-3">
                             ${pasti[p].map(c => `
                                 <div class="flex justify-between items-start text-sm">
                                     <div>
                                         <h4 class="font-bold uppercase text-slate-200">${c.alimento_principale}</h4>
-                                        <p class="text-[10px] text-gray-400 font-medium">${c.quantita} ${c.unità_misura}</p>
+                                        <p class="text-[10px] text-gray-400">${c.quantita} ${c.unità_misura}</p>
                                     </div>
                                     ${c.alternative ? `<span class="text-[9px] text-emerald-400/50 italic text-right ml-4">${c.alternative}</span>` : ''}
                                 </div>
@@ -280,93 +239,142 @@
                 `).join('');
         }
 
-        // Funzioni Timer, Workout e Peso (Invariate)
-        function startRestTimer(timeStr, checkbox) {
-            if (!checkbox.checked) return;
-            const seconds = timeStr.includes("'") ? parseInt(timeStr.split("'")[0]) * 60 + (parseInt(timeStr.split("'")[1]) || 0) : parseInt(timeStr) || 60;
-            let timeLeft = seconds;
-            const overlay = document.getElementById('timer-overlay');
-            overlay.classList.remove('hidden');
-            overlay.className = "fixed inset-0 z-[100] flex flex-col items-center justify-center text-white timer-green";
-            clearInterval(timerInterval);
-            updateTimerDisplay(timeLeft);
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                updateTimerDisplay(timeLeft);
-                if (timeLeft <= 10) overlay.className = "fixed inset-0 z-[100] flex flex-col items-center justify-center text-white timer-red animate-pulse";
-                if (timeLeft <= 0) {
-                    stopTimer();
-                    new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play();
-                }
-            }, 1000);
-        }
+        async function loadSpesa() {
+            if (!_supabase) return;
+            const container = document.getElementById('spesa-list');
+            const { data } = await _supabase.from('alimentazione').select('alimento_principale, quantita, unità_misura');
+            if(!data || data.length === 0) return;
 
-        function updateTimerDisplay(s) {
-            const mins = Math.floor(s / 60);
-            const secs = s % 60;
-            document.getElementById('timer-display').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
+            const spesa = data.reduce((acc, item) => {
+                const key = item.alimento_principale.toUpperCase();
+                if (!acc[key]) acc[key] = { q: 0, unit: item.unità_misura };
+                const qNum = parseFloat(item.quantita.toString().replace(',', '.'));
+                if(!isNaN(qNum)) acc[key].q += qNum;
+                return acc;
+            }, {});
 
-        function stopTimer() {
-            clearInterval(timerInterval);
-            document.getElementById('timer-overlay').classList.add('hidden');
+            container.innerHTML = Object.keys(spesa).map(key => `
+                <div class="flex items-center gap-3 bg-slate-900/40 p-3 rounded-2xl border border-slate-800">
+                    <input type="checkbox" class="w-4 h-4 rounded border-slate-700">
+                    <div class="flex-1">
+                        <p class="text-xs font-bold uppercase text-slate-200">${key}</p>
+                        <p class="text-[9px] text-gray-500">${spesa[key].q > 0 ? spesa[key].q : ''} ${spesa[key].unit || ''}</p>
+                    </div>
+                </div>
+            `).join('');
         }
 
         async function loadWorkout(gruppo) {
             if (!_supabase) return;
             const container = document.getElementById('workout-list');
-            container.innerHTML = "<p class='text-center py-10 opacity-30'>Caricamento...</p>";
             let query = _supabase.from('workout').select('*').order('id', { ascending: true });
             if (gruppo !== 'all') query = query.eq('gruppo_lavoro', gruppo);
             const { data } = await query;
             if(!data) return;
             container.innerHTML = data.map(ex => `
-                <div class="glass-card p-6 rounded-3xl border border-slate-700 shadow-xl mb-4">
+                <div class="glass-card p-6 rounded-3xl border border-slate-700 shadow-xl">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h4 class="font-black text-lg leading-tight uppercase italic text-orange-400">${ex.esercizi}</h4>
+                            <h4 class="font-black text-lg uppercase italic text-orange-400 tracking-tighter">${ex.esercizi}</h4>
                             <p class="text-[10px] text-gray-500 font-bold uppercase">${ex.gruppo_lavoro}</p>
                         </div>
-                        <input type="checkbox" onchange="startRestTimer('${ex.recupero}', this)" class="accent-emerald-500">
+                        <input type="checkbox" onchange="startRestTimer(this, '${ex.id}')" class="accent-emerald-500">
                     </div>
                     <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-800">
-                            <label class="text-[9px] text-gray-500 font-black uppercase block mb-1">Serie</label>
-                            <input id="serie-${ex.id}" type="text" value="${ex.serie}" class="w-full bg-transparent text-white font-black text-sm outline-none">
+                        <div class="bg-slate-900/50 p-3 rounded-2xl">
+                            <label class="text-[9px] text-gray-500 font-black block uppercase mb-1">Serie</label>
+                            <input id="serie-${ex.id}" type="text" value="${ex.serie}" class="w-full bg-transparent text-white font-black outline-none text-sm">
                         </div>
-                        <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-800">
-                            <label class="text-[9px] text-gray-500 font-black uppercase block mb-1">Recupero</label>
-                            <input id="rec-${ex.id}" type="text" value="${ex.recupero}" class="w-full bg-transparent text-blue-400 font-black text-sm outline-none">
+                        <div class="bg-slate-900/50 p-3 rounded-2xl">
+                            <label class="text-[9px] text-gray-500 font-black block uppercase mb-1">Recupero</label>
+                            <input id="rec-${ex.id}" type="text" value="${ex.recupero}" class="w-full bg-transparent text-blue-400 font-black outline-none text-sm">
                         </div>
                     </div>
                     <div class="flex gap-2">
                         <input id="peso-${ex.id}" type="text" value="${ex.avanzamento_pesi || ''}" class="flex-1 bg-slate-800 p-3 rounded-xl border border-slate-700 text-xs font-bold" placeholder="Peso...">
-                        <button onclick="updateExercise(${ex.id}, event)" class="bg-slate-700 px-4 rounded-xl text-[10px] font-black uppercase">Salva</button>
+                        <button onclick="updateExercise(${ex.id}, event)" class="bg-orange-600/20 text-orange-500 border border-orange-500/20 px-5 rounded-xl text-[10px] font-black uppercase">Ok</button>
                     </div>
                 </div>
             `).join('');
         }
 
         async function updateExercise(id, event) {
-            if (!_supabase) return;
             const updates = {
                 serie: document.getElementById('serie-' + id).value,
                 recupero: document.getElementById('rec-' + id).value,
                 avanzamento_pesi: document.getElementById('peso-' + id).value
             };
             await _supabase.from('workout').update(updates).eq('id', id);
-            event.target.innerText = "OK!";
-            setTimeout(() => event.target.innerText = "SALVA", 2000);
+            event.target.innerText = "SALVATO";
+            setTimeout(() => event.target.innerText = "OK", 1500);
+        }
+
+        // --- TIMER AGGIORNATO CON SUPPORT FORMATI . : ' ---
+        function startRestTimer(checkbox, exerciseId) {
+            if (!checkbox.checked) { stopTimer(); return; }
+            
+            const timeStr = document.getElementById('rec-' + exerciseId).value.toString().trim();
+            if (timerInterval) clearInterval(timerInterval);
+
+            let totalSeconds = 0;
+
+            try {
+                // Sostituisce i separatori comuni (. e :) con l'apice ' per unificare il parsing
+                let normalized = timeStr.replace(/[:.]/g, "'");
+                
+                if (normalized.includes("'")) {
+                    const parts = normalized.split("'");
+                    const min = parseInt(parts[0]) || 0;
+                    // Rimuove eventuali virgolette residue dai secondi
+                    const sec = parseInt(parts[1].replace('"', '')) || 0;
+                    totalSeconds = (min * 60) + sec;
+                } else {
+                    // Solo secondi o numero pulito
+                    totalSeconds = parseInt(timeStr.replace('"', '')) || 60;
+                }
+            } catch(e) {
+                totalSeconds = 60;
+            }
+
+            if (totalSeconds <= 0) totalSeconds = 60;
+
+            const overlay = document.getElementById('timer-overlay');
+            const display = document.getElementById('timer-display');
+            
+            overlay.classList.remove('hidden');
+            
+            const updateUI = (s) => {
+                const m = Math.floor(s / 60);
+                const sc = s % 60;
+                display.innerText = `${m.toString().padStart(2, '0')}:${sc.toString().padStart(2, '0')}`;
+            };
+
+            updateUI(totalSeconds);
+
+            timerInterval = setInterval(() => {
+                totalSeconds--;
+                if (totalSeconds < 0) {
+                    stopTimer();
+                    if ("vibrate" in navigator) navigator.vibrate([400, 200, 400]);
+                } else {
+                    updateUI(totalSeconds);
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = null;
+            document.getElementById('timer-overlay').classList.add('hidden');
         }
 
         async function loadWeightHistory() {
-            if (!_supabase) return;
             const { data } = await _supabase.from('registro_peso').select('*').order('created_at', { ascending: true });
             if (!data) return;
             document.getElementById('peso-history').innerHTML = data.slice().reverse().map(p => `
-                <div class="flex justify-between items-center p-4 bg-slate-800/20">
+                <div class="flex justify-between items-center p-4">
                     <span class="text-[10px] font-bold text-gray-500">${new Date(p.created_at).toLocaleDateString()}</span>
-                    <span class="text-xl font-black">${p.kg.toFixed(1)} kg</span>
+                    <span class="text-xl font-black italic">${p.kg.toFixed(1)} <small class="text-[10px]">KG</small></span>
                 </div>
             `).join('');
             renderChart(data);
@@ -379,14 +387,13 @@
                 type: 'line',
                 data: {
                     labels: data.map(p => new Date(p.created_at).toLocaleDateString()),
-                    datasets: [{ data: data.map(p => p.kg), borderColor: '#f97316', tension: 0.4 }]
+                    datasets: [{ data: data.map(p => p.kg), borderColor: '#f97316', backgroundColor: 'rgba(249, 115, 22, 0.1)', tension: 0.4, fill: true }]
                 },
-                options: { plugins: { legend: { display: false } } }
+                options: { plugins: { legend: { display: false } }, scales: { y: { display: true }, x: { display: false } } }
             });
         }
 
         async function saveWeight() {
-            if (!_supabase) return;
             const kg = document.getElementById('input-kg').value;
             if(!kg) return;
             await _supabase.from('registro_peso').insert([{ kg: parseFloat(kg) }]);
@@ -394,10 +401,7 @@
             loadWeightHistory();
         }
 
-        window.onload = () => {
-            initSupabase();
-            showSection('home');
-        };
+        window.onload = () => { initSupabase(); showSection('home'); };
     </script>
 </body>
 </html>
