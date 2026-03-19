@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LR Training Pro - V5.0</title>
+    <title>LR Training Pro - V5.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
@@ -52,15 +53,15 @@
     </div>
 
     <!-- Timer Overlay -->
-    <div id="timer-overlay" class="hidden fixed inset-0 z-[1000] flex flex-col items-center justify-center text-white bg-slate-950/98 backdrop-blur-2xl">
+    <div id="timer-overlay" class="hidden fixed inset-0 z-[1000] flex flex-col items-center justify-center text-white bg-[#10b981] backdrop-blur-2xl transition-colors duration-500">
         <div id="timer-ring" class="relative flex items-center justify-center w-64 h-64 mb-8">
             <svg class="absolute w-full h-full -rotate-90">
-                <circle cx="128" cy="128" r="115" stroke="currentColor" stroke-width="8" fill="transparent" class="text-slate-900" />
-                <circle id="timer-progress" cx="128" cy="128" r="115" stroke="currentColor" stroke-width="8" fill="transparent" class="text-emerald-500" stroke-dasharray="722" stroke-dashoffset="0" />
+                <circle cx="128" cy="128" r="115" stroke="currentColor" stroke-width="8" fill="transparent" class="text-white/20" />
+                <circle id="timer-progress" cx="128" cy="128" r="115" stroke="currentColor" stroke-width="8" fill="transparent" class="text-white" stroke-dasharray="722" stroke-dashoffset="0" />
             </svg>
-            <div id="timer-display" class="text-7xl font-black font-mono tracking-tighter">00:00</div>
+            <div id="timer-display" class="text-7xl font-black font-mono tracking-tighter text-white">00:00</div>
         </div>
-        <button onclick="stopTimer()" class="bg-white/10 border border-white/10 px-12 py-4 rounded-2xl font-black uppercase transition-all">Salta</button>
+        <button onclick="stopTimer()" class="bg-white/20 border border-white/30 px-12 py-4 rounded-2xl font-black uppercase transition-all">Salta</button>
     </div>
 
     <header class="p-5 sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-white/5 flex justify-between items-center">
@@ -70,20 +71,34 @@
 
     <main class="max-w-md mx-auto px-3 mt-4">
         <!-- SEZIONE HOME -->
-        <div id="home-section" class="grid grid-cols-1 gap-4">
-            <div onclick="showSection('workout')" class="p-8 rounded-[2rem] glass-card border-l-[10px] border-orange-500 shadow-xl flex justify-between items-center active:scale-95 transition-all cursor-pointer">
+        <div id="home-section" class="space-y-3">
+            <div onclick="showSection('workout')" class="p-5 rounded-[2rem] glass-card border-l-[6px] border-orange-500 shadow-xl flex items-center gap-4 active:scale-95 transition-all cursor-pointer">
+                <i class="fas fa-dumbbell text-2xl text-orange-500"></i>
                 <div>
-                    <h2 class="text-3xl font-black italic uppercase tracking-tighter">Workout</h2>
-                    <p class="text-slate-400 text-[10px] font-bold uppercase opacity-60">Scheda & Carichi</p>
+                    <h2 class="text-lg font-black italic uppercase tracking-tighter">Workout</h2>
+                    <p class="text-[8px] text-slate-400 font-bold uppercase">Scheda & Carichi</p>
                 </div>
-                <i class="fas fa-dumbbell text-4xl text-orange-500/20"></i>
             </div>
-            <div onclick="showSection('salute')" class="p-8 rounded-[2rem] glass-card border-l-[10px] border-emerald-500 shadow-xl flex justify-between items-center active:scale-95 transition-all cursor-pointer">
+            <div onclick="showSection('salute')" class="p-5 rounded-[2rem] glass-card border-l-[6px] border-emerald-500 shadow-xl flex items-center gap-4 active:scale-95 transition-all cursor-pointer">
+                <i class="fas fa-utensils text-2xl text-emerald-500"></i>
                 <div>
-                    <h2 class="text-3xl font-black italic uppercase tracking-tighter">Salute</h2>
-                    <p class="text-slate-400 text-[10px] font-bold uppercase opacity-60">Dieta & Peso</p>
+                    <h2 class="text-lg font-black italic uppercase tracking-tighter">Dieta</h2>
+                    <p class="text-[8px] text-slate-400 font-bold uppercase">Piano Alimentare</p>
                 </div>
-                <i class="fas fa-heartbeat text-4xl text-emerald-500/20"></i>
+            </div>
+            <div onclick="showSection('stats')" class="p-5 rounded-[2rem] glass-card border-l-[6px] border-blue-500 shadow-xl flex items-center gap-4 active:scale-95 transition-all cursor-pointer">
+                <i class="fas fa-chart-line text-2xl text-blue-500"></i>
+                <div>
+                    <h2 class="text-lg font-black italic uppercase tracking-tighter">Statistiche</h2>
+                    <p class="text-[8px] text-slate-400 font-bold uppercase">Progressi & Peso</p>
+                </div>
+            </div>
+            <div onclick="showSection('settings')" class="p-5 rounded-[2rem] glass-card border-l-[6px] border-purple-500 shadow-xl flex items-center gap-4 active:scale-95 transition-all cursor-pointer">
+                <i class="fas fa-cog text-2xl text-purple-500"></i>
+                <div>
+                    <h2 class="text-lg font-black italic uppercase tracking-tighter">Impostazioni</h2>
+                    <p class="text-[8px] text-slate-400 font-bold uppercase">Upload Diet & Workout</p>
+                </div>
             </div>
         </div>
 
@@ -137,12 +152,132 @@
             </div>
             <div id="workout-list" class="space-y-4 pb-32"></div>
         </div>
+
+        <!-- SEZIONE STATISTICHE -->
+        <div id="stats-section" class="hidden space-y-4">
+            <div class="glass-card p-4 rounded-2xl border border-blue-500/30">
+                <h3 class="text-sm font-black uppercase text-blue-500 mb-3">📊 I tuoi progressi</h3>
+            </div>
+            
+            <!-- Tab Statistiche -->
+            <div class="flex bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+                <button id="tab-stat-workout" onclick="switchStats('workout')" class="flex-1 py-2.5 rounded-lg text-[10px] font-black transition-all active-tab uppercase">Workout</button>
+                <button id="tab-stat-peso" onclick="switchStats('peso')" class="flex-1 py-2.5 rounded-lg text-[10px] font-black transition-all text-slate-500 uppercase">Peso</button>
+            </div>
+            
+            <!-- Contenuto Statistiche Workout -->
+            <div id="stat-workout-content">
+                <p class="text-[10px] text-slate-400 mb-2">Seleziona un esercizio per vedere l'andamento</p>
+                <select id="stats-exercise" onchange="loadStatsChart(this.value)" class="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 text-sm font-black text-orange-500 outline-none mb-3">
+                    <option value="">Scegli esercizio...</option>
+                </select>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Peso Max</p>
+                        <p id="stat-max-peso" class="text-lg font-black text-orange-500">-</p>
+                    </div>
+                    <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Reps Max</p>
+                        <p id="stat-max-reps" class="text-lg font-black text-emerald-500">-</p>
+                    </div>
+                    <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Sessioni</p>
+                        <p id="stat-sessions" class="text-lg font-black text-blue-500">-</p>
+                    </div>
+                </div>
+                <div class="glass-card p-4 rounded-2xl border border-slate-800 mt-3">
+                    <canvas id="statsChart" style="width:100%; max-height: 250px;"></canvas>
+                </div>
+            </div>
+            
+            <!-- Contenuto Statistiche Peso -->
+            <div id="stat-peso-content" class="hidden">
+                <div class="glass-card p-4 rounded-2xl border border-emerald-500/30 mb-3">
+                    <canvas id="weightStatsChart" style="width:100%; max-height: 200px;"></canvas>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Peso Attuale</p>
+                        <p id="stat-current-peso" class="text-lg font-black text-emerald-500">-</p>
+                    </div>
+                    <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Peso Min</p>
+                        <p id="stat-min-peso" class="text-lg font-black text-blue-500">-</p>
+                    </div>
+                    <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Peso Max</p>
+                        <p id="stat-max-peso-total" class="text-lg font-black text-orange-500">-</p>
+                    </div>
+                </div>
+                <div class="glass-card p-4 rounded-2xl border border-slate-800 mt-3">
+                    <h4 class="text-[10px] font-black uppercase text-slate-500 mb-2">Ultime Registrazioni</h4>
+                    <div id="weight-history-list" class="space-y-2 max-h-40 overflow-y-auto"></div>
+                </div>
+            </div>
+            
+            <div class="pb-20"></div>
+        </div>
+
+        <!-- SEZIONE IMPOSTAZIONI -->
+        <div id="settings-section" class="hidden space-y-4">
+            <div class="glass-card p-5 rounded-2xl border border-purple-500/30">
+                <h3 class="text-sm font-black uppercase text-purple-500 mb-2">⚙️ Impostazioni</h3>
+                <p class="text-[10px] text-slate-400">Carica i tuoi file per aggiornare l'app</p>
+            </div>
+            
+            <!-- Upload Dieta PDF -->
+            <div class="glass-card p-4 rounded-2xl border border-slate-800 space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                        <i class="fas fa-file-pdf text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-sm font-black uppercase text-slate-200">Carica Dieta (PDF)</h4>
+                        <p class="text-[9px] text-slate-500">Aggiorna il piano alimentare</p>
+                    </div>
+                </div>
+                <input type="file" id="upload-diet" accept=".pdf" class="hidden" onchange="handleDietUpload(this)">
+                <label for="upload-diet" class="block w-full py-3 bg-emerald-600 text-white text-center text-xs font-black uppercase rounded-xl cursor-pointer active:scale-95 transition-all">
+                    Seleziona File PDF
+                </label>
+                <div id="diet-upload-status" class="text-[10px] text-slate-400 italic"></div>
+            </div>
+
+            <!-- Upload Workout Excel -->
+            <div class="glass-card p-4 rounded-2xl border border-slate-800 space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                        <i class="fas fa-file-excel text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-sm font-black uppercase text-slate-200">Carica Workout (Excel)</h4>
+                        <p class="text-[9px] text-slate-500">Aggiorna la scheda allenamento</p>
+                    </div>
+                </div>
+                <input type="file" id="upload-workout" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleWorkoutUpload(this)">
+                <label for="upload-workout" class="block w-full py-3 bg-orange-600 text-white text-center text-xs font-black uppercase rounded-xl cursor-pointer active:scale-95 transition-all">
+                    Seleziona File Excel
+                </label>
+                <div id="workout-upload-status" class="text-[10px] text-slate-400 italic"></div>
+            </div>
+
+            <!-- Info -->
+            <div class="glass-card p-4 rounded-2xl border border-slate-800">
+                <h4 class="text-[10px] font-black uppercase text-slate-500 mb-2">ℹ️ Informazioni</h4>
+                <p class="text-[9px] text-slate-400">I file caricati aggiorneranno automaticamente il database Supabase. Assicurati che il formato sia corretto.</p>
+                <p class="text-[8px] text-slate-500 mt-2">Versione App: 5.1</p>
+            </div>
+            
+            <div class="pb-20"></div>
+        </div>
     </main>
 
     <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md glass-card rounded-[2rem] p-2 flex justify-around items-center z-50 shadow-2xl border border-white/10">
         <button onclick="showSection('home')" id="nav-home" class="p-3 text-orange-500 transition-all"><i class="fas fa-home text-xl"></i></button>
         <button onclick="showSection('workout')" id="nav-workout" class="p-3 text-slate-500 transition-all"><i class="fas fa-dumbbell text-xl"></i></button>
+        <button onclick="showSection('stats')" id="nav-stats" class="p-3 text-slate-500 transition-all"><i class="fas fa-chart-line text-xl"></i></button>
         <button onclick="showSection('salute')" id="nav-salute" class="p-3 text-slate-500 transition-all"><i class="fas fa-heartbeat text-xl"></i></button>
+        <button onclick="showSection('settings')" id="nav-settings" class="p-3 text-slate-500 transition-all"><i class="fas fa-cog text-xl"></i></button>
     </nav>
 
     <script>
@@ -160,6 +295,22 @@
         // Salvataggio scelte alimentari (id_pasto -> stringa_scelta)
         const getDietChoices = () => JSON.parse(localStorage.getItem('scelte_dieta_v5') || '{}');
         const saveDietChoices = (state) => localStorage.setItem('scelte_dieta_v5', JSON.stringify(state));
+        
+        // ===== PERSISTENZA DATI ESERCIZI (serie, reps, peso, note, recupero) =====
+        const getExData = () => JSON.parse(localStorage.getItem('ex_data_v1') || '{}');
+        const saveExData = (data) => localStorage.setItem('ex_data_v1', JSON.stringify(data));
+        
+        function autoSaveExData(exId) {
+            const data = getExData();
+            data[exId] = {
+                serie: document.getElementById('serie-' + exId).value,
+                reps: document.getElementById('reps-' + exId).value,
+                rec: document.getElementById('rec-' + exId).value,
+                peso: document.getElementById('peso-' + exId).value,
+                note: document.getElementById('note-' + exId).value
+            };
+            saveExData(data);
+        }
 
         function initSupabase() {
             if (window.supabase) {
@@ -171,7 +322,8 @@
             document.querySelectorAll('main > div').forEach(d => d.classList.add('hidden'));
             document.getElementById(id + '-section').classList.remove('hidden');
             document.querySelectorAll('nav button').forEach(b => b.className = 'p-3 text-slate-500 transition-all');
-            document.getElementById('nav-' + id).className = 'p-3 text-orange-500 transition-all scale-110';
+            const navBtn = document.getElementById('nav-' + id);
+            if(navBtn) navBtn.className = 'p-3 text-orange-500 transition-all scale-110';
             
             if(id === 'workout') { 
                 requestWakeLock();
@@ -179,8 +331,198 @@
             } else if(id === 'salute') {
                 releaseWakeLock();
                 switchSalute('dieta');
+            } else if(id === 'stats') {
+                releaseWakeLock();
+                loadStatsExercises();
+            } else if(id === 'settings') {
+                releaseWakeLock();
             } else { releaseWakeLock(); }
             window.scrollTo(0, 0);
+        }
+        
+        // ===== GESTIONE UPLOAD FILE =====
+        async function handleDietUpload(input) {
+            const file = input.files[0];
+            if(!file) return;
+            
+            const status = document.getElementById('diet-upload-status');
+            status.innerHTML = '📤 Caricamento PDF...';
+            
+            try {
+                // Inizializza PDF.js
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                
+                let fullText = '';
+                for(let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + '\n';
+                }
+                
+                status.innerHTML = `📄 PDF letto! (${pdf.numPages} pagine)<br>⏳ Elaborazione in corso...`;
+                
+                // Parsing del testo della dieta
+                const records = parseDietText(fullText);
+                
+                if(records.length > 0) {
+                    status.innerHTML = `📄 Trovati ${records.length} alimenti!<br>⏳ Aggiornamento database...`;
+                    
+                    // In Supabase, prima eliminiamo i vecchi dati poi inseriamo i nuovi
+                    await _supabase.from('alimentazione').delete().neq('id', 0);
+                    
+                    const { error } = await _supabase.from('alimentazione').insert(records);
+                    
+                    if(error) {
+                        status.innerHTML = `❌ Errore: ${error.message}`;
+                    } else {
+                        status.innerHTML = `✅ Dieta aggiornata!<br>${records.length} alimenti caricati.`;
+                    }
+                } else {
+                    status.innerHTML = '⚠️ Nessun alimento trovato nel PDF. Formato non riconosciuto.';
+                }
+            } catch(err) {
+                status.innerHTML = `❌ Errore: ${err.message}`;
+            }
+            
+            input.value = ''; // Reset
+        }
+        
+        function parseDietText(text) {
+            // Parsing semplificato del PDF della dieta
+            // Cerca i pattern tipo "Giorno;Pasto;Alimento;Quantità"
+            const records = [];
+            const days = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+            const meals = ['COLAZIONE', 'SPUNTINO', 'PRANZO', 'MERENDA', 'CENA'];
+            
+            // Estrai le linee del PDF
+            const lines = text.split(/\n|\r/).filter(l => l.trim().length > 5);
+            
+            let currentDay = '';
+            let currentMeal = '';
+            let order = 1;
+            
+            for(let line of lines) {
+                line = line.trim();
+                
+                // Rileva il giorno
+                for(let day of days) {
+                    if(line.toUpperCase().includes(day.toUpperCase())) {
+                        currentDay = day;
+                        currentMeal = '';
+                        order = 1;
+                        break;
+                    }
+                }
+                
+                // Rileva il pasto
+                for(let meal of meals) {
+                    if(line.toUpperCase().includes(meal)) {
+                        currentMeal = meal;
+                        order = 1;
+                        break;
+                    }
+                }
+                
+                // Se abbiamo giorno e pasto, cerchiamo gli alimenti
+                if(currentDay && currentMeal && !line.toUpperCase().includes('ALTERNATIVE')) {
+                    // Pattern: "Alimento - quantità" o simile
+                    const match = line.match(/^([A-Za-zÀ-ÿ\s]+?)\s+(\d+)\s*g?/);
+                    if(match && line.length > 5 && line.length < 100) {
+                        records.push({
+                            giorno: currentDay,
+                            pasto: currentMeal,
+                            alimento_principale: match[1].trim(),
+                            quantita: match[2],
+                            unità_misura: 'g',
+                            componente_ordine: order++
+                        });
+                    }
+                }
+            }
+            
+            return records;
+        }
+        
+        async function handleWorkoutUpload(input) {
+            const file = input.files[0];
+            if(!file) return;
+            
+            const status = document.getElementById('workout-upload-status');
+            status.innerHTML = '📤 Caricamento CSV...';
+            
+            try {
+                const text = await file.text();
+                status.innerHTML = `📊 File letto! (${(file.size/1024).toFixed(1)} KB)<br>⏳ Elaborazione...`;
+                
+                // Parsing CSV
+                const records = parseWorkoutCSV(text);
+                
+                if(records.length > 0) {
+                    status.innerHTML = `📊 Trovati ${records.length} esercizi!<br>⏳ Aggiornamento database...`;
+                    
+                    // Prima eliminiamo i vecchi dati poi inseriamo i nuovi
+                    await _supabase.from('workout').delete().neq('id', 0);
+                    
+                    const { error } = await _supabase.from('workout').insert(records);
+                    
+                    if(error) {
+                        status.innerHTML = `❌ Errore: ${error.message}`;
+                    } else {
+                        status.innerHTML = `✅ Workout aggiornato!<br>${records.length} esercizi caricati.`;
+                    }
+                } else {
+                    status.innerHTML = '⚠️ Nessun esercizio trovato. Formato non riconosciuto.';
+                }
+            } catch(err) {
+                status.innerHTML = `❌ Errore: ${err.message}`;
+            }
+            
+            input.value = ''; // Reset
+        }
+        
+        function parseWorkoutCSV(text) {
+            // Formato: gruppo_lavoro;esercizi;parte_corpo;serie;recupero;note;reps;avanzamento_pesi
+            const records = [];
+            const lines = text.split('\n').filter(l => l.trim().length > 10);
+            
+            for(let line of lines) {
+                // Salta linee vuote o intestazioni
+                if(line.toLowerCase().includes('gruppo') || line.toLowerCase().includes('esercizi')) continue;
+                
+                const parts = line.split(';');
+                if(parts.length >= 5) {
+                    const gruppo = parts[0].trim();
+                    const esercizio = parts[1].trim();
+                    const parte_corpo = parts[2].trim();
+                    const serie = parts[3].trim();
+                    const recupero = parts[4].trim();
+                    const note = parts[5]?.trim() || '';
+                    const reps = parts[6]?.trim() || '';
+                    const avanzamento = parts[7]?.trim() || '';
+                    
+                    // Numero serie sempre impostato a 3 (l'utente modificherà manualmente)
+                    let numSerie = 3;
+                    
+                    if(gruppo && esercizio) {
+                        records.push({
+                            gruppo_lavoro: gruppo,
+                            esercizi: esercizio,
+                            parte_corpo: parte_corpo,
+                            serie: numSerie,
+                            reps: reps || '8-10',
+                            recupero: recupero || '02:00',
+                            note: note,
+                            avanzamento_pesi: avanzamento
+                        });
+                    }
+                }
+            }
+            
+            return records;
         }
 
         function openConfirmModal(id) {
@@ -229,37 +571,83 @@
 
             const scelteSalvate = getDietChoices();
 
+            // Note fisse per ogni pasto (dal PDF)
+            const notePasti = {
+                "COLAZIONE": { icon: "🍳", text: "Inizia la giornata con energia!" },
+                "SPUNTINO": { icon: "🍎", text: "Scegli un frutto di grandi dimensioni" },
+                "PRANZO": { icon: "🍝", text: "Pranzo completo - carboidrati + proteine + verdure" },
+                "MERENDA": { icon: "🥜", text: "Spuntino proteico - frutta secca" },
+                "CENA": { icon: "🥗", text: "Cena leggera - proteine + verdure + carbo leggeri" }
+            };
+
             container.innerHTML = Object.keys(pasti)
                 .sort((a,b) => (ordinePasti[a]||99)-(ordinePasti[b]||99))
-                .map(p => `
+                .map(p => {
+                    const noteInfo = notePasti[p] || { icon: "🍽️", text: "" };
+                    return `
                     <div class="glass-card p-5 rounded-3xl border-l-4 border-emerald-500">
-                        <span class="text-[10px] font-black uppercase text-emerald-500 tracking-widest block mb-4">${p}</span>
-                        <div class="space-y-6">
-                            ${pasti[p].map(c => {
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="text-lg">${noteInfo.icon}</span>
+                            <span class="text-[10px] font-black uppercase text-emerald-500 tracking-widest">${p}</span>
+                        </div>
+                        ${noteInfo.text ? `<p class="text-[9px] text-slate-400 mb-4 italic">${noteInfo.text}</p>` : ''}
+                        <div class="space-y-5">
+                            ${pasti[p].map((c, idx) => {
                                 // Creiamo le opzioni: Alimento Principale + Alternative
                                 const options = [];
+                                const defaultQ = c.quantita || '0';
+                                const defaultU = c.unità_misura || 'g';
+                                
                                 // Opzione principale
                                 options.push({ 
-                                    label: `${c.alimento_principale} (${c.quantita}${c.unità_misura})`,
-                                    value: `${c.alimento_principale}|${c.quantita}|${c.unità_misura}`
+                                    label: `${c.alimento_principale} (${c.quantita || '0'}${c.unità_misura || 'g'}) ⭐`,
+                                    value: `${c.alimento_principale}|${c.quantita || '0'}|${c.unità_misura || 'g'}`
                                 });
                                 
                                 // Parsing delle alternative (separate da virgola o newline nel DB)
+                                // Formato atteso: "Nome - Marca quantità g" oppure "Nome quantità g"
                                 if(c.alternative) {
                                     const altArray = c.alternative.split(/[,|\n]/);
                                     altArray.forEach(alt => {
                                         const cleanAlt = alt.trim();
                                         if(cleanAlt) {
-                                            options.push({ label: cleanAlt, value: cleanAlt });
+                                            // Prova a estrarre quantità dall'alternativa
+                                            // Pattern: "Nome 40 g" o "Nome - Marca 40 g"
+                                            const match = cleanAlt.match(/^(.+?)\s+(\d+(?:[.,]\d+)?)\s*(g|ml|pz|fette|uova)?$/i);
+                                            if(match) {
+                                                const nome = match[1].trim();
+                                                const qta = match[2];
+                                                const unit = match[3] || defaultU;
+                                                options.push({ 
+                                                    label: `${nome} (${qta}${unit})`,
+                                                    value: `${nome}|${qta}|${unit}`
+                                                });
+                                            } else {
+                                                // Se non c'è quantità, usa quella default
+                                                options.push({ 
+                                                    label: `${cleanAlt} (${defaultQ}${defaultU})`,
+                                                    value: `${cleanAlt}|${defaultQ}|${defaultU}`
+                                                });
+                                            }
                                         }
                                     });
                                 }
 
                                 const savedValue = scelteSalvate[c.id] || options[0].value;
+                                
+                                // Etichetta per il componente del pasto
+                                const componentiLabel = [
+                                    "Carboidrato", "Frutta/Proteina", "Verdura", "Legumi", 
+                                    "Condimento", "Sugo", "Proteina", "Formaggio", "Frutta secca"
+                                ];
+                                const label = componentiLabel[idx] || `Alimento ${idx + 1}`;
 
                                 return `
                                 <div class="space-y-2">
-                                    <label class="text-[9px] font-black text-slate-500 uppercase ml-1">Scegli Alimento:</label>
+                                    <div class="flex justify-between items-center">
+                                        <label class="text-[8px] font-black text-slate-400 uppercase ml-1">${label}</label>
+                                        ${c.note ? `<span class="text-[7px] text-orange-400 italic">${c.note}</span>` : ''}
+                                    </div>
                                     <select class="diet-select" onchange="updateDietChoice(${c.id}, this.value)">
                                         ${options.map(opt => `<option value="${opt.value}" ${savedValue === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
                                     </select>
@@ -267,7 +655,7 @@
                             `}).join('')}
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
         }
 
         function updateDietChoice(id, value) {
@@ -288,6 +676,27 @@
 
             const scelteSalvate = getDietChoices();
             const spesaRaggruppata = {};
+
+            // Categorie per raggruppare gli alimenti
+            const categorie = {
+                'LATTE': '🥛', 'CEREALI': '🥣', 'FETTE BISCOTTATE': '🍞', 'MARMEELLATA': '🫙', 'NUTELLA': '🍫',
+                'FRUTTA': '🍎', 'FRUYO': '🫙', 'FRUTTA SECCA': '🥜', 'ANACARDI': '🥜', 'MANDORLE': '🥜', 
+                'NOCIOLE': '🥜', 'NOCI': '🥜', 'PINOLI': '🌲', 'PISTACCHI': '🥜',
+                'PASTA': '🍝', 'RISO': '🍚', 'POLENTA': '🌽', 'GNOCCHI': '🥟', 'FARRO': '🌾', 
+                'QUINOA': '🌾', 'AMARANTO': '🌾', 'BULGUR': '🌾', 'KAMUT': '🌾', 'AVENA': '🌾', 
+                'ORZO': '🌾', 'PANE': '🍞', 'TAGLIATELLE': '🍝', 'PASTA ALL\'UOVO': '🍝',
+                'VERDURE': '🥬', 'PISELLI': '🟢', 'LENTICCHIE': '🫘', 'FAGIOLI': '🫘', ' CECI': '🫘',
+                'OLIO': '🫒', 'SUGO': '🍅', 'PARMIGIANO': '🧀', 'RICOTTA': '🧀', 'MOZZARELLA': '🧀',
+                'POLLO': '🍗', 'TACCHINO': '🦃', 'MAIALE': '🥓', 'VITELLONE': '🥩', 'TONNO': '🐟', 
+                'VONGOLE': '🦪', 'MOZZE': '🦪', 'UOVA': '🥚'
+            };
+            
+            const getCategoria = (nome) => {
+                for(let cat in categorie) {
+                    if(nome.toUpperCase().includes(cat)) return categorie[cat];
+                }
+                return '🛒';
+            };
 
             data.forEach(item => {
                 // Prendiamo il valore scelto dall'utente, o il default (primo elemento)
@@ -318,7 +727,12 @@
                 }
 
                 const key = nome.toUpperCase().trim();
-                if(!spesaRaggruppata[key]) spesaRaggruppata[key] = { q: 0, unit: unit };
+                if(!spesaRaggruppata[key]) spesaRaggruppata[key] = { 
+                    q: 0, 
+                    unit: unit,
+                    nome: nome,
+                    categoria: getCategoria(nome)
+                };
                 
                 const qNum = parseFloat(qText.toString().replace(',', '.'));
                 if(!isNaN(qNum)) spesaRaggruppata[key].q += qNum;
@@ -331,10 +745,16 @@
                 return;
             }
 
-            container.innerHTML = keys.map(key => `
-                <div class="flex items-center gap-3 glass-card p-4 rounded-2xl border border-slate-800" onclick="this.style.opacity = this.style.opacity === '0.3' ? '1' : '0.3'">
-                    <div class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                        <i class="fas fa-shopping-cart text-xs"></i>
+            container.innerHTML = `
+                <div class="mb-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                    <p class="text-[10px] font-black text-emerald-500 uppercase italic">💡 Tocca per segnare come acquistato</p>
+                </div>
+            ` + keys.map(key => {
+                const item = spesaRaggruppata[key];
+                return `
+                <div class="flex items-center gap-3 glass-card p-4 rounded-2xl border border-slate-800 cursor-pointer hover:bg-slate-800/50 transition-all" onclick="this.classList.toggle('opacity-40'); this.querySelector('.check-icon').classList.toggle('hidden')">
+                    <div class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-lg">
+                        ${item.categoria}
                     </div>
                     <div class="flex-1">
                         <p class="text-xs font-black uppercase text-slate-100">${key}</p>
@@ -343,9 +763,10 @@
                             <span class="text-[10px] font-bold text-slate-500 uppercase">${spesaRaggruppata[key].unit || ''}</span>
                         </p>
                     </div>
-                    <i class="fas fa-check text-slate-700"></i>
+                    <i class="fas fa-check text-slate-700 check-icon"></i>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         async function loadWeightHistory() {
@@ -394,9 +815,17 @@
             if(gruppo !== 'all') q = q.eq('gruppo_lavoro', gruppo);
             const { data } = await q;
             const state = getSessionState();
+            const savedExData = getExData(); // Carica i dati salvati localmente
 
             container.innerHTML = data.map(ex => {
-                const serieVal = ex.serie || 3;
+                // Usa i dati salvati localmente, altrimenti usa i default del DB
+                const savedData = savedExData[ex.id] || {};
+                const serieVal = savedData.serie || ex.serie || 3;
+                const repsVal = savedData.reps || ex.reps || '10';
+                const recVal = savedData.rec || ex.recupero || '60';
+                const pesoVal = savedData.peso || ex.avanzamento_pesi || '';
+                const noteVal = savedData.note || ex.note || '';
+                
                 const doneSets = state[ex.id] || [];
                 let bubbles = "";
                 for(let i=1; i<=serieVal; i++) {
@@ -416,20 +845,20 @@
                     <div class="grid grid-cols-3 gap-2">
                         <div class="bg-slate-900/50 p-2 rounded-lg border border-white/5">
                             <label class="text-[8px] text-slate-500 font-black block uppercase">Serie</label>
-                            <input type="number" id="serie-${ex.id}" value="${serieVal}" oninput="updateBubblesUI('${ex.id}', this.value)" class="w-full bg-transparent font-black text-sm outline-none">
+                            <input type="number" id="serie-${ex.id}" value="${serieVal}" oninput="updateBubblesUI('${ex.id}', this.value); autoSaveExData('${ex.id}')" class="w-full bg-transparent font-black text-sm outline-none">
                         </div>
                         <div class="bg-slate-900/50 p-2 rounded-lg border border-white/5">
                             <label class="text-[8px] text-slate-500 font-black block uppercase">Reps</label>
-                            <input type="text" id="reps-${ex.id}" value="${ex.reps || '10'}" class="w-full bg-transparent font-black text-sm outline-none">
+                            <input type="text" id="reps-${ex.id}" value="${repsVal}" oninput="autoSaveExData('${ex.id}')" class="w-full bg-transparent font-black text-sm outline-none">
                         </div>
                         <div class="bg-slate-900/50 p-2 rounded-lg border border-white/5">
                             <label class="text-[8px] text-emerald-500 font-black block uppercase">Rec</label>
-                            <input type="text" id="rec-${ex.id}" value="${ex.recupero || '60'}" class="w-full bg-transparent font-black text-sm text-emerald-500 outline-none">
+                            <input type="text" id="rec-${ex.id}" value="${recVal}" oninput="autoSaveExData('${ex.id}')" class="w-full bg-transparent font-black text-sm text-emerald-500 outline-none">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
-                        <input type="text" id="peso-${ex.id}" value="${ex.avanzamento_pesi || ''}" class="bg-slate-950 p-3 rounded-xl border border-white/5 font-black text-orange-500 outline-none" placeholder="Peso (kg)">
-                        <input type="text" id="note-${ex.id}" value="${ex.note || ''}" class="bg-slate-950 p-3 rounded-xl border border-white/5 text-[10px] text-slate-400 outline-none" placeholder="Note...">
+                        <input type="text" id="peso-${ex.id}" value="${pesoVal}" oninput="autoSaveExData('${ex.id}')" class="bg-slate-950 p-3 rounded-xl border border-white/5 font-black text-orange-500 outline-none" placeholder="Peso (kg)">
+                        <input type="text" id="note-${ex.id}" value="${noteVal}" oninput="autoSaveExData('${ex.id}')" class="bg-slate-950 p-3 rounded-xl border border-white/5 text-[10px] text-slate-400 outline-none" placeholder="Note...">
                     </div>
                     <div class="flex flex-wrap gap-2 pt-1" id="bubbles-container-${ex.id}">${bubbles}</div>
                 </div>`;
@@ -443,6 +872,20 @@
             const peso = document.getElementById('peso-' + id).value;
             const note = document.getElementById('note-' + id).value;
             await _supabase.from('workout').update({ serie: parseInt(serie)||3, reps, recupero: rec, avanzamento_pesi: peso, note }).eq('id', id);
+            
+            // Salva anche nella cronologia
+            saveWorkoutHistory(id);
+            
+            // Feedback visivo
+            const btn = document.querySelector(`button[onclick="saveExUpdate('${id}')"]`);
+            if(btn) {
+                btn.innerHTML = '<i class="fas fa-check text-xs"></i>';
+                btn.classList.add('bg-emerald-500', 'text-white');
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-save text-xs"></i>';
+                    btn.classList.remove('bg-emerald-500', 'text-white');
+                }, 1000);
+            }
         }
 
         function handleSetClick(el, exId, setNum) {
@@ -455,8 +898,190 @@
                 el.classList.add('set-done');
                 state[exId].push(setNum);
                 startTimer(document.getElementById('rec-' + exId).value);
+                // Salva cronologia workout
+                saveWorkoutHistory(exId);
             }
             saveSessionState(state);
+        }
+        
+        // ===== CRONOLOGIA WORKOUT =====
+        const getWorkoutHistory = () => JSON.parse(localStorage.getItem('workout_history_v1') || '{}');
+        const saveWorkoutHistoryData = (data) => localStorage.setItem('workout_history_v1', JSON.stringify(data));
+        
+        function saveWorkoutHistory(exId) {
+            const history = getWorkoutHistory();
+            const peso = document.getElementById('peso-' + exId)?.value || '0';
+            const reps = document.getElementById('reps-' + exId)?.value || '0';
+            const rec = document.getElementById('rec-' + exId)?.value || '60';
+            const serie = document.getElementById('serie-' + exId)?.value || '3';
+            
+            const record = {
+                date: new Date().toISOString(),
+                peso: parseFloat(peso) || 0,
+                reps: parseInt(reps) || 0,
+                rec: parseInt(rec) || 60,
+                serie: parseInt(serie) || 3
+            };
+            
+            if(!history[exId]) history[exId] = [];
+            history[exId].push(record);
+            
+            // Limita a ultimi 50 record per esercizio
+            if(history[exId].length > 50) history[exId] = history[exId].slice(-50);
+            
+            saveWorkoutHistoryData(history);
+        }
+        
+        // ===== STATISTICHE WORKOUT =====
+        let statsChart = null;
+        let weightStatsChart = null;
+        
+        async function loadStatsExercises() {
+            if(!_supabase) return;
+            const select = document.getElementById('stats-exercise');
+            const { data } = await _supabase.from('workout').select('id, esercizi').order('id');
+            
+            if(!data) return;
+            
+            select.innerHTML = '<option value="">Scegli esercizio...</option>' + 
+                data.map(ex => `<option value="${ex.id}">${ex.esercizi}</option>`).join('');
+            
+            // Carica anche le statistiche del peso
+            loadWeightStats();
+        }
+        
+        function switchStats(tab) {
+            document.getElementById('stat-workout-content').classList.toggle('hidden', tab !== 'workout');
+            document.getElementById('stat-peso-content').classList.toggle('hidden', tab !== 'peso');
+            document.querySelectorAll('#stats-section .flex button').forEach(b => b.classList.remove('active-tab', 'text-slate-500'));
+            document.getElementById('tab-stat-' + tab).classList.add('active-tab');
+            
+            if(tab === 'peso') loadWeightStats();
+        }
+        
+        async function loadWeightStats() {
+            if(!_supabase) return;
+            const { data } = await _supabase.from('registro_peso').select('*').order('created_at', { ascending: true });
+            if(!data || data.length === 0) return;
+            
+            // Calcola statistiche
+            const pesos = data.map(p => p.kg);
+            document.getElementById('stat-current-peso').innerText = pesos[pesos.length - 1].toFixed(1) + ' kg';
+            document.getElementById('stat-min-peso').innerText = Math.min(...pesos).toFixed(1) + ' kg';
+            document.getElementById('stat-max-peso-total').innerText = Math.max(...pesos).toFixed(1) + ' kg';
+            
+            // Lista ultimi pesi
+            const recent = data.slice(-10).reverse();
+            document.getElementById('weight-history-list').innerHTML = recent.map(p => `
+                <div class="flex justify-between items-center p-2 bg-slate-800/50 rounded-lg">
+                    <span class="text-[9px] text-slate-500">${new Date(p.created_at).toLocaleDateString('it-IT')}</span>
+                    <span class="text-sm font-black text-emerald-500">${p.kg.toFixed(1)} kg</span>
+                </div>
+            `).join('');
+            
+            // Crea grafico
+            const ctx = document.getElementById('weightStatsChart').getContext('2d');
+            if(weightStatsChart) weightStatsChart.destroy();
+            
+            weightStatsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(p => new Date(p.created_at).toLocaleDateString()),
+                    datasets: [{
+                        label: 'Peso (kg)',
+                        data: data.map(p => p.kg),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { display: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                        x: { display: false }
+                    }
+                }
+            });
+        }
+        
+        function loadStatsChart(exId) {
+            if(!exId) return;
+            const history = getWorkoutHistory();
+            const records = history[exId] || [];
+            
+            // Calcola statistiche
+            const pesos = records.map(r => r.peso).filter(p => p > 0);
+            const reps = records.map(r => r.reps).filter(r => r > 0);
+            
+            document.getElementById('stat-max-peso').innerText = pesos.length > 0 ? Math.max(...pesos) + ' kg' : '-';
+            document.getElementById('stat-max-reps').innerText = reps.length > 0 ? Math.max(...reps) : '-';
+            document.getElementById('stat-sessions').innerText = records.length;
+            
+            // Crea grafico
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            if(statsChart) statsChart.destroy();
+            
+            const labels = records.map((r, i) => '#' + (i + 1));
+            const pesoData = records.map(r => r.peso);
+            const repsData = records.map(r => r.reps);
+            
+            statsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Peso (kg)',
+                            data: pesoData,
+                            borderColor: '#f97316',
+                            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Reps',
+                            data: repsData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { 
+                            labels: { color: '#94a3b8', font: { size: 10 } }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            display: true, 
+                            title: { display: true, text: 'Peso kg', color: '#f97316' },
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { display: true, text: 'Reps', color: '#10b981' },
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: { 
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8', maxRotation: 0 }
+                        }
+                    }
+                }
+            });
         }
 
         function updateBubblesUI(exId, numSerie) {
@@ -485,19 +1110,54 @@
                 } else { totalSeconds = parseInt(timeStr) || 60; }
             } catch(e) {}
             const total = totalSeconds;
-            document.getElementById('timer-overlay').classList.remove('hidden');
+            const overlay = document.getElementById('timer-overlay');
+            overlay.classList.remove('hidden');
+            
+            // Attiva Wake Lock quando parte il timer
+            requestWakeLock();
+            
             const upd = () => {
                 document.getElementById('timer-display').innerText = Math.floor(totalSeconds/60).toString().padStart(2, '0') + ':' + (totalSeconds%60).toString().padStart(2, '0');
                 document.getElementById('timer-progress').style.strokeDashoffset = 722 - (722 * totalSeconds / total);
+                
+                // Cambia colore: rosso quando <= 10 secondi, verde altrimenti
+                if (totalSeconds <= 10 && totalSeconds >= 0) {
+                    overlay.classList.remove('bg-[#10b981]');
+                    overlay.classList.add('bg-red-600');
+                } else {
+                    overlay.classList.remove('bg-red-600');
+                    overlay.classList.add('bg-[#10b981]');
+                }
             };
             upd();
             timerInterval = setInterval(() => { totalSeconds--; if(totalSeconds < 0) stopTimer(); else upd(); }, 1000);
         }
 
-        function stopTimer() { clearInterval(timerInterval); document.getElementById('timer-overlay').classList.add('hidden'); }
+        function stopTimer() { 
+            clearInterval(timerInterval); 
+            const overlay = document.getElementById('timer-overlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('bg-red-600');
+            overlay.classList.add('bg-[#10b981]');
+            // Rilascia Wake Lock solo quando si esce dalla sezione workout
+            // (il wake lock rimane attivo durante tutta la sessione workout)
+        }
 
-        async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); document.getElementById('wake-lock-status').classList.remove('hidden'); } catch (err) {} }
-        function releaseWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; document.getElementById('wake-lock-status').classList.add('hidden'); } }
+        async function requestWakeLock() { 
+            try { 
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen'); 
+                    document.getElementById('wake-lock-status').classList.remove('hidden');
+                }
+            } catch (err) { console.log('Wake Lock non disponibile:', err); } 
+        }
+        function releaseWakeLock() { 
+            if (wakeLock) { 
+                wakeLock.release(); 
+                wakeLock = null; 
+                document.getElementById('wake-lock-status').classList.add('hidden'); 
+            } 
+        }
 
         window.onload = () => { initSupabase(); showSection('home'); };
     </script>
