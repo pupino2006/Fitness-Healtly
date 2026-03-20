@@ -1063,7 +1063,7 @@
                             <p class="text-[7px] text-slate-500 font-bold uppercase">${ex.gruppo_lavoro}</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="number" id="serie-${ex.id}" value="${serieVal}" min="1" max="10" oninput="loadWorkout(document.getElementById('filter-group').value)" class="w-12 bg-slate-900 border border-slate-700 p-1.5 rounded-lg text-xs font-black text-center text-orange-500 outline-none">
+                            <input type="number" id="serie-${ex.id}" value="${serieVal}" min="1" max="10" oninput="updateSeriesRows('${ex.id}', this.value, '${repsVal}', '${recVal}', '${pesoVal}', '${noteVal}')" class="w-12 bg-slate-900 border border-slate-700 p-1.5 rounded-lg text-xs font-black text-center text-orange-500 outline-none">
                             <button onclick="saveExUpdateNew('${ex.id}')" class="text-orange-500 bg-orange-500/10 p-2 rounded-lg border border-orange-500/20"><i class="fas fa-save text-xs"></i></button>
                         </div>
                     </div>
@@ -1124,6 +1124,33 @@
                 note: document.getElementById('note-' + exId + '-1')?.value || ''
             };
             saveExData(data);
+        }
+        
+        function updateSeriesRows(exId, newSerieVal, repsVal, recVal, pesoVal, noteVal) {
+            const container = document.getElementById('series-container-' + exId);
+            const state = getSessionState();
+            const doneSets = state[exId] || [];
+            const numSeries = parseInt(newSerieVal) || 3;
+            
+            let rows = '';
+            for(let i=1; i<=numSeries; i++) {
+                const isDone = doneSets.includes(i) ? 'completed' : '';
+                const btnText = doneSets.includes(i) ? '<i class="fas fa-stop"></i>' : '<i class="fas fa-play"></i>';
+                const btnClass = doneSets.includes(i) ? 'btn-recupero active' : 'btn-recupero';
+                rows += `
+                <div class="serie-row" id="serie-row-${exId}-${i}">
+                    <div class="serie-num ${isDone}" id="set-num-${exId}-${i}">${i}</div>
+                    <input type="text" class="serie-input reps" id="reps-${exId}-${i}" value="${repsVal}" placeholder="Reps">
+                    <input type="text" class="serie-input peso" id="peso-${exId}-${i}" value="${pesoVal}" placeholder="Kg">
+                    <input type="text" class="serie-input rec" id="rec-${exId}-${i}" value="${recVal}" placeholder="Rec">
+                    <input type="text" class="serie-input note" id="note-${exId}-${i}" value="${noteVal}" placeholder="Note">
+                    <button class="${btnClass}" onclick="handleSetClickNew('${exId}', ${i})">${btnText}</button>
+                </div>`;
+            }
+            container.innerHTML = rows;
+            
+            // Salva il nuovo numero di serie
+            autoSaveExDataNew(exId);
         }
         
         async function saveExUpdateNew(id) {
