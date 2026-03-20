@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LR Training Pro - V5.1</title>
+    <title>LR Training Pro - V6.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -35,9 +35,106 @@
         .set-done { background: #10b981 !important; border-color: #059669 !important; color: white; transform: scale(0.95); box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
         
         #confirm-modal { background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); }
+        
+        /* Login screen */
+        #login-screen, #register-screen { transition: opacity 0.3s; }
+        
+        /* Serie row compact */
+        .serie-row { display: grid; grid-template-columns: 30px 1fr 1fr 70px 70px 1fr 50px; gap: 4px; align-items: center; padding: 6px 8px; background: rgba(30, 41, 59, 0.4); border-radius: 8px; margin-bottom: 4px; }
+        .serie-row:first-child { margin-top: 8px; }
+        .serie-num { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.7rem; background: #1e293b; border: 2px solid #334155; }
+        .serie-num.completed { background: #10b981; border-color: #059669; color: white; }
+        .serie-input { background: transparent; border: none; font-weight: 700; font-size: 0.75rem; color: #f8fafc; outline: none; width: 100%; }
+        .serie-input::placeholder { color: #475569; }
+        .serie-input.reps { color: #f8fafc; }
+        .serie-input.peso { color: #f97316; }
+        .serie-input.rec { color: #10b981; }
+        .serie-input.note { color: #94a3b8; font-size: 0.7rem; }
+        
+        .btn-recupero { width: 40px; height: 28px; border-radius: 6px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; font-size: 0.65rem; font-black; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .btn-recupero:hover { background: #10b981; color: white; }
+        .btn-recupero.active { background: #ef4444; border-color: #dc2626; color: white; animation: pulse 1s infinite; }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
     </style>
 </head>
 <body class="pb-28">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 z-[3000] bg-slate-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-xs">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-black italic tracking-tighter text-white">LR <span class="text-orange-500">TRAINING</span></h1>
+                <p class="text-xs text-slate-500 font-bold uppercase mt-2">Accedi al tuo account</p>
+            </div>
+            
+            <div class="glass-card p-6 rounded-3xl border border-white/10 space-y-4">
+                <div>
+                    <label class="text-[10px] text-slate-500 font-black uppercase block mb-2">Username</label>
+                    <input type="text" id="login-username" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-sm font-black text-white outline-none focus:border-orange-500" placeholder="Inserisci username">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-500 font-black uppercase block mb-2">Password</label>
+                    <input type="password" id="login-password" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-sm font-black text-white outline-none focus:border-orange-500" placeholder="Inserisci password">
+                </div>
+                <button onclick="handleLogin()" class="w-full py-4 bg-orange-600 text-white rounded-xl font-black uppercase active:scale-95 transition-all">
+                    Accedi
+                </button>
+                <button onclick="showRegisterForm()" class="w-full py-3 bg-transparent border border-slate-700 text-slate-400 rounded-xl font-bold text-xs uppercase">
+                    Crea nuovo account
+                </button>
+            </div>
+            
+            <div id="login-error" class="mt-4 text-center text-red-500 text-xs font-bold hidden"></div>
+        </div>
+    </div>
+
+    <!-- REGISTER SCREEN -->
+    <div id="register-screen" class="hidden fixed inset-0 z-[3000] bg-slate-950 flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-xs">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-black italic tracking-tighter text-white">NUOVO <span class="text-orange-500">UTENTE</span></h1>
+                <p class="text-xs text-slate-500 font-bold uppercase mt-2">Crea il tuo account</p>
+            </div>
+            
+            <div class="glass-card p-6 rounded-3xl border border-white/10 space-y-4">
+                <div>
+                    <label class="text-[10px] text-slate-500 font-black uppercase block mb-2">Username</label>
+                    <input type="text" id="reg-username" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-sm font-black text-white outline-none focus:border-orange-500" placeholder="Scegli username">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-500 font-black uppercase block mb-2">Password</label>
+                    <input type="password" id="reg-password" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-sm font-black text-white outline-none focus:border-orange-500" placeholder="Scegli password">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-500 font-black uppercase block mb-2">Conferma Password</label>
+                    <input type="password" id="reg-password-confirm" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-sm font-black text-white outline-none focus:border-orange-500" placeholder="Conferma password">
+                </div>
+                <button onclick="handleRegister()" class="w-full py-4 bg-emerald-600 text-white rounded-xl font-black uppercase active:scale-95 transition-all">
+                    Crea Account
+                </button>
+                <button onclick="showLoginForm()" class="w-full py-3 bg-transparent border border-slate-700 text-slate-400 rounded-xl font-bold text-xs uppercase">
+                    Torna al Login
+                </button>
+            </div>
+            
+            <div id="register-error" class="mt-4 text-center text-red-500 text-xs font-bold hidden"></div>
+        </div>
+    </div>
+
+    <!-- USER SWITCHER -->
+    <div id="user-switcher" class="hidden fixed top-4 right-4 z-[100]">
+        <button onclick="showUserMenu()" class="bg-slate-800/90 backdrop-blur px-3 py-2 rounded-lg border border-slate-700 flex items-center gap-2">
+            <i class="fas fa-user-circle text-orange-500"></i>
+            <span id="current-username" class="text-xs font-black text-white uppercase">Utente</span>
+            <i class="fas fa-chevron-down text-[8px] text-slate-500"></i>
+        </button>
+        <div id="user-menu" class="hidden absolute top-full right-0 mt-2 w-48 bg-slate-900 rounded-xl border border-slate-700 overflow-hidden">
+            <button onclick="logout()" class="w-full px-4 py-3 text-left text-xs font-bold text-red-500 hover:bg-slate-800">
+                <i class="fas fa-sign-out-alt mr-2"></i> Esci
+            </button>
+        </div>
+    </div>
 
     <!-- Modal Conferma -->
     <div id="confirm-modal" class="hidden fixed inset-0 z-[2000] flex items-center justify-center p-6">
@@ -256,8 +353,11 @@
                 </div>
                 <input type="file" id="upload-workout" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleWorkoutUpload(this)">
                 <label for="upload-workout" class="block w-full py-3 bg-orange-600 text-white text-center text-xs font-black uppercase rounded-xl cursor-pointer active:scale-95 transition-all">
-                    Seleziona File Excel
+                    Seleziona File CSV
                 </label>
+                <a href="workout_template.csv" download class="block w-full py-2 bg-slate-800 text-slate-400 text-center text-[10px] font-bold uppercase rounded-xl border border-slate-700 mt-2">
+                    <i class="fas fa-download mr-1"></i> Scarica Template CSV
+                </a>
                 <div id="workout-upload-status" class="text-[10px] text-slate-400 italic"></div>
             </div>
 
@@ -265,7 +365,7 @@
             <div class="glass-card p-4 rounded-2xl border border-slate-800">
                 <h4 class="text-[10px] font-black uppercase text-slate-500 mb-2">ℹ️ Informazioni</h4>
                 <p class="text-[9px] text-slate-400">I file caricati aggiorneranno automaticamente il database Supabase. Assicurati che il formato sia corretto.</p>
-                <p class="text-[8px] text-slate-500 mt-2">Versione App: 5.1</p>
+                <p class="text-[8px] text-slate-500 mt-2">Versione App: 6.0</p>
             </div>
             
             <div class="pb-20"></div>
@@ -288,6 +388,117 @@
         let wakeLock = null;
         let weightChart;
         let pendingDeleteId = null;
+        
+        // ===== SISTEMA MULTI-UTENTE =====
+        let currentUser = null;
+        
+        const getUsers = () => JSON.parse(localStorage.getItem('fitness_users') || '{}');
+        const saveUsers = (users) => localStorage.setItem('fitness_users', JSON.stringify(users));
+        const getCurrentUser = () => JSON.parse(localStorage.getItem('fitness_current_user') || 'null');
+        const setCurrentUser = (user) => localStorage.setItem('fitness_current_user', JSON.stringify(user));
+        
+        function showLoginForm() {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('register-screen').classList.add('hidden');
+            document.getElementById('login-error').classList.add('hidden');
+        }
+        
+        function showRegisterForm() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('register-screen').classList.remove('hidden');
+            document.getElementById('register-error').classList.add('hidden');
+        }
+        
+        function handleLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
+            
+            if(!username || !password) {
+                errorEl.textContent = 'Inserisci username e password';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            const users = getUsers();
+            const user = users[username];
+            
+            if(!user || user.password !== password) {
+                errorEl.textContent = 'Username o password errati';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            // Login successful
+            currentUser = { username: username };
+            setCurrentUser(currentUser);
+            document.getElementById('login-screen').classList.add('hidden');
+            initApp();
+        }
+        
+        function handleRegister() {
+            const username = document.getElementById('reg-username').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const passwordConfirm = document.getElementById('reg-password-confirm').value;
+            const errorEl = document.getElementById('register-error');
+            
+            if(!username || !password) {
+                errorEl.textContent = 'Compila tutti i campi';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            if(password !== passwordConfirm) {
+                errorEl.textContent = 'Le password non corrispondono';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            if(password.length < 4) {
+                errorEl.textContent = 'Password troppo corta (min 4 caratteri)';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            const users = getUsers();
+            if(users[username]) {
+                errorEl.textContent = 'Username già esistente';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            // Crea nuovo utente
+            users[username] = { password: password, created: new Date().toISOString() };
+            saveUsers(users);
+            
+            // Login automatico
+            currentUser = { username: username };
+            setCurrentUser(currentUser);
+            document.getElementById('register-screen').classList.add('hidden');
+            initApp();
+        }
+        
+        function showUserMenu() {
+            document.getElementById('user-menu').classList.toggle('hidden');
+        }
+        
+        function logout() {
+            currentUser = null;
+            setCurrentUser(null);
+            document.getElementById('user-menu').classList.add('hidden');
+            document.getElementById('user-switcher').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            showLoginForm();
+        }
+        
+        function checkAuth() {
+            const user = getCurrentUser();
+            if(user) {
+                currentUser = user;
+                return true;
+            }
+            return false;
+        }
 
         const getSessionState = () => JSON.parse(localStorage.getItem('workout_session_v4') || '{}');
         const saveSessionState = (state) => localStorage.setItem('workout_session_v4', JSON.stringify(state));
@@ -815,10 +1026,9 @@
             if(gruppo !== 'all') q = q.eq('gruppo_lavoro', gruppo);
             const { data } = await q;
             const state = getSessionState();
-            const savedExData = getExData(); // Carica i dati salvati localmente
+            const savedExData = getExData();
 
             container.innerHTML = data.map(ex => {
-                // Usa i dati salvati localmente, altrimenti usa i default del DB
                 const savedData = savedExData[ex.id] || {};
                 const serieVal = savedData.serie || ex.serie || 3;
                 const repsVal = savedData.reps || ex.reps || '10';
@@ -827,42 +1037,121 @@
                 const noteVal = savedData.note || ex.note || '';
                 
                 const doneSets = state[ex.id] || [];
-                let bubbles = "";
+                
+                // Genera righe per ogni serie
+                let serieRows = '';
                 for(let i=1; i<=serieVal; i++) {
-                    const isDone = doneSets.includes(i) ? 'set-done' : '';
-                    bubbles += `<div class="set-bubble ${isDone}" onclick="handleSetClick(this, '${ex.id}', ${i})">${i}</div>`;
+                    const isDone = doneSets.includes(i) ? 'completed' : '';
+                    const btnText = doneSets.includes(i) ? '<i class="fas fa-stop"></i>' : '<i class="fas fa-play"></i>';
+                    const btnClass = doneSets.includes(i) ? 'btn-recupero active' : 'btn-recupero';
+                    serieRows += `
+                    <div class="serie-row" id="serie-row-${ex.id}-${i}">
+                        <div class="serie-num ${isDone}" id="set-num-${ex.id}-${i}">${i}</div>
+                        <input type="text" class="serie-input reps" id="reps-${ex.id}-${i}" value="${repsVal}" placeholder="Reps">
+                        <input type="text" class="serie-input peso" id="peso-${ex.id}-${i}" value="${pesoVal}" placeholder="Kg">
+                        <input type="text" class="serie-input rec" id="rec-${ex.id}-${i}" value="${recVal}" placeholder="Rec">
+                        <input type="text" class="serie-input note" id="note-${ex.id}-${i}" value="${noteVal}" placeholder="Note">
+                        <button class="${btnClass}" onclick="handleSetClickNew('${ex.id}', ${i})">${btnText}</button>
+                    </div>`;
                 }
 
                 return `
-                <div class="glass-card p-4 rounded-3xl border border-white/5 space-y-3">
-                    <div class="flex justify-between items-start">
+                <div class="glass-card p-3 rounded-2xl border border-white/5">
+                    <div class="flex justify-between items-center mb-2">
                         <div class="flex-1">
-                            <h3 class="font-black text-lg italic text-orange-400 uppercase leading-tight">${ex.esercizi}</h3>
-                            <p class="text-[8px] text-slate-500 font-bold uppercase">${ex.gruppo_lavoro}</p>
+                            <h3 class="font-black text-sm italic text-orange-400 uppercase leading-tight">${ex.esercizi}</h3>
+                            <p class="text-[7px] text-slate-500 font-bold uppercase">${ex.gruppo_lavoro}</p>
                         </div>
-                        <button onclick="saveExUpdate('${ex.id}')" class="text-orange-500 bg-orange-500/10 p-2.5 rounded-lg border border-orange-500/20"><i class="fas fa-save text-xs"></i></button>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-slate-900/50 p-2 rounded-lg border border-white/5">
-                            <label class="text-[8px] text-slate-500 font-black block uppercase">Serie</label>
-                            <input type="number" id="serie-${ex.id}" value="${serieVal}" oninput="updateBubblesUI('${ex.id}', this.value); autoSaveExData('${ex.id}')" class="w-full bg-transparent font-black text-sm outline-none">
-                        </div>
-                        <div class="bg-slate-900/50 p-2 rounded-lg border border-white/5">
-                            <label class="text-[8px] text-slate-500 font-black block uppercase">Reps</label>
-                            <input type="text" id="reps-${ex.id}" value="${repsVal}" oninput="autoSaveExData('${ex.id}')" class="w-full bg-transparent font-black text-sm outline-none">
-                        </div>
-                        <div class="bg-slate-900/50 p-2 rounded-lg border border-white/5">
-                            <label class="text-[8px] text-emerald-500 font-black block uppercase">Rec</label>
-                            <input type="text" id="rec-${ex.id}" value="${recVal}" oninput="autoSaveExData('${ex.id}')" class="w-full bg-transparent font-black text-sm text-emerald-500 outline-none">
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="serie-${ex.id}" value="${serieVal}" min="1" max="10" oninput="loadWorkout(document.getElementById('filter-group').value)" class="w-12 bg-slate-900 border border-slate-700 p-1.5 rounded-lg text-xs font-black text-center text-orange-500 outline-none">
+                            <button onclick="saveExUpdateNew('${ex.id}')" class="text-orange-500 bg-orange-500/10 p-2 rounded-lg border border-orange-500/20"><i class="fas fa-save text-xs"></i></button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="text" id="peso-${ex.id}" value="${pesoVal}" oninput="autoSaveExData('${ex.id}')" class="bg-slate-950 p-3 rounded-xl border border-white/5 font-black text-orange-500 outline-none" placeholder="Peso (kg)">
-                        <input type="text" id="note-${ex.id}" value="${noteVal}" oninput="autoSaveExData('${ex.id}')" class="bg-slate-950 p-3 rounded-xl border border-white/5 text-[10px] text-slate-400 outline-none" placeholder="Note...">
+                    <!-- Intestazioni colonne -->
+                    <div class="grid grid-cols-[30px_1fr_1fr_70px_70px_1fr_50px] gap-1 px-2 mb-1">
+                        <span class="text-[6px] text-slate-600 font-black uppercase">#</span>
+                        <span class="text-[6px] text-slate-600 font-black uppercase">Reps</span>
+                        <span class="text-[6px] text-slate-600 font-black uppercase">Kg</span>
+                        <span class="text-[6px] text-slate-600 font-black uppercase">Rec</span>
+                        <span class="text-[6px] text-slate-600 font-black uppercase">Note</span>
+                        <span class="text-[6px] text-slate-600 font-black uppercase text-right">Start</span>
                     </div>
-                    <div class="flex flex-wrap gap-2 pt-1" id="bubbles-container-${ex.id}">${bubbles}</div>
+                    <div id="series-container-${ex.id}">${serieRows}</div>
                 </div>`;
             }).join('');
+        }
+        
+        function handleSetClickNew(exId, setNum) {
+            const state = getSessionState();
+            const setNumEl = document.getElementById('set-num-' + exId + '-' + setNum);
+            const btnEl = setNumEl.parentElement.querySelector('.btn-recupero');
+            
+            if(!state[exId]) state[exId] = [];
+            
+            if(state[exId].includes(setNum)) {
+                // Togli completato
+                state[exId] = state[exId].filter(n => n !== setNum);
+                setNumEl.classList.remove('completed');
+                btnEl.classList.remove('active');
+                btnEl.innerHTML = '<i class="fas fa-play"></i>';
+                stopTimer();
+            } else {
+                // Marca completato e avvia timer
+                state[exId].push(setNum);
+                setNumEl.classList.add('completed');
+                btnEl.classList.add('active');
+                btnEl.innerHTML = '<i class="fas fa-stop"></i>';
+                
+                // Avvia timer recupero
+                const recVal = document.getElementById('rec-' + exId + '-' + setNum)?.value || '60';
+                startTimer(recVal);
+                saveWorkoutHistory(exId);
+            }
+            
+            saveSessionState(state);
+        }
+        
+        function autoSaveExDataNew(exId) {
+            // Salva i dati di tutte le serie per questo esercizio
+            const data = getExData();
+            const serieVal = parseInt(document.getElementById('serie-' + exId)?.value) || 3;
+            
+            data[exId] = {
+                serie: serieVal,
+                reps: document.getElementById('reps-' + exId + '-1')?.value || '10',
+                rec: document.getElementById('rec-' + exId + '-1')?.value || '60',
+                peso: document.getElementById('peso-' + exId + '-1')?.value || '',
+                note: document.getElementById('note-' + exId + '-1')?.value || ''
+            };
+            saveExData(data);
+        }
+        
+        async function saveExUpdateNew(id) {
+            const serieVal = document.getElementById('serie-' + id).value;
+            const repsVal = document.getElementById('reps-' + id + '-1')?.value || '10';
+            const recVal = document.getElementById('rec-' + id + '-1')?.value || '60';
+            const pesoVal = document.getElementById('peso-' + id + '-1')?.value || '';
+            const noteVal = document.getElementById('note-' + id + '-1')?.value || '';
+            
+            await _supabase.from('workout').update({ 
+                serie: parseInt(serieVal)||3, 
+                reps: repsVal, 
+                recupero: recVal, 
+                avanzamento_pesi: pesoVal, 
+                note: noteVal 
+            }).eq('id', id);
+            
+            saveWorkoutHistory(id);
+            
+            const btn = document.querySelector(`button[onclick="saveExUpdateNew('${id}')"]`);
+            if(btn) {
+                btn.innerHTML = '<i class="fas fa-check text-xs"></i>';
+                btn.classList.add('bg-emerald-500', 'text-white');
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-save text-xs"></i>';
+                    btn.classList.remove('bg-emerald-500', 'text-white');
+                }, 1000);
+            }
         }
 
         async function saveExUpdate(id) {
@@ -1159,7 +1448,23 @@
             } 
         }
 
-        window.onload = () => { initSupabase(); showSection('home'); };
+        window.onload = () => { 
+            initSupabase(); 
+            if(checkAuth()) {
+                initApp();
+            } else {
+                document.getElementById('login-screen').classList.remove('hidden');
+            }
+        };
+        
+        function initApp() {
+            // Mostra user switcher
+            document.getElementById('user-switcher').classList.remove('hidden');
+            document.getElementById('current-username').textContent = currentUser.username;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('register-screen').classList.add('hidden');
+            showSection('home');
+        }
     </script>
 </body>
 </html>
