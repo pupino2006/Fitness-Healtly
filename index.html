@@ -512,6 +512,7 @@
         const saveExData = (data) => localStorage.setItem('ex_data_v1', JSON.stringify(data));
         
         function autoSaveExData(exId) {
+            // Vecchia logica - mantengo per retrocompatibilità
             const data = getExData();
             data[exId] = {
                 serie: document.getElementById('serie-' + exId).value,
@@ -519,6 +520,20 @@
                 rec: document.getElementById('rec-' + exId).value,
                 peso: document.getElementById('peso-' + exId).value,
                 note: document.getElementById('note-' + exId).value
+            };
+            saveExData(data);
+        }
+        
+        function autoSaveExDataNew(exId, serieNum) {
+            const data = getExData();
+            if(!data[exId]) data[exId] = { serie: 3 };
+            if(!data[exId].serie) data[exId].serie = 3;
+            
+            data[exId][serieNum] = {
+                reps: document.getElementById('reps-' + exId + '-' + serieNum)?.value || '10',
+                peso: document.getElementById('peso-' + exId + '-' + serieNum)?.value || '',
+                rec: document.getElementById('rec-' + exId + '-' + serieNum)?.value || '60',
+                note: document.getElementById('note-' + exId + '-' + serieNum)?.value || ''
             };
             saveExData(data);
         }
@@ -1030,27 +1045,36 @@
 
             container.innerHTML = data.map(ex => {
                 const savedData = savedExData[ex.id] || {};
-                const serieVal = savedData.serie || ex.serie || 3;
-                const repsVal = savedData.reps || ex.reps || '10';
-                const recVal = savedData.rec || ex.recupero || '60';
-                const pesoVal = savedData.peso || ex.avanzamento_pesi || '';
-                const noteVal = savedData.note || ex.note || '';
+                // Usa sempre 3 serie di default
+                const serieVal = 3;
+                // Valori di default dall'esercizio
+                const defaultReps = ex.reps || '10';
+                const defaultRec = ex.recupero || '60';
+                const defaultPeso = ex.avanzamento_pesi || '';
+                const defaultNote = ex.note || '';
                 
                 const doneSets = state[ex.id] || [];
                 
-                // Genera righe per ogni serie
+                // Genera righe per ogni serie con dati individuali
                 let serieRows = '';
                 for(let i=1; i<=serieVal; i++) {
+                    const serieData = savedData[i] || {};
+                    const repsVal = serieData.reps || defaultReps;
+                    const recVal = serieData.rec || defaultRec;
+                    const pesoVal = serieData.peso || defaultPeso;
+                    const noteVal = serieData.note || defaultNote;
+                    
                     const isDone = doneSets.includes(i) ? 'completed' : '';
                     const btnText = doneSets.includes(i) ? '<i class="fas fa-stop"></i>' : '<i class="fas fa-play"></i>';
                     const btnClass = doneSets.includes(i) ? 'btn-recupero active' : 'btn-recupero';
+                    
                     serieRows += `
                     <div class="serie-row" id="serie-row-${ex.id}-${i}">
                         <div class="serie-num ${isDone}" id="set-num-${ex.id}-${i}">${i}</div>
-                        <input type="text" class="serie-input reps" id="reps-${ex.id}-${i}" value="${repsVal}" placeholder="Reps">
-                        <input type="text" class="serie-input peso" id="peso-${ex.id}-${i}" value="${pesoVal}" placeholder="Kg">
-                        <input type="text" class="serie-input rec" id="rec-${ex.id}-${i}" value="${recVal}" placeholder="Rec">
-                        <input type="text" class="serie-input note" id="note-${ex.id}-${i}" value="${noteVal}" placeholder="Note">
+                        <input type="text" class="serie-input reps" id="reps-${ex.id}-${i}" value="${repsVal}" placeholder="Reps" oninput="autoSaveExDataNew('${ex.id}', ${i})">
+                        <input type="text" class="serie-input peso" id="peso-${ex.id}-${i}" value="${pesoVal}" placeholder="Kg" oninput="autoSaveExDataNew('${ex.id}', ${i})">
+                        <input type="text" class="serie-input rec" id="rec-${ex.id}-${i}" value="${recVal}" placeholder="Rec" oninput="autoSaveExDataNew('${ex.id}', ${i})">
+                        <input type="text" class="serie-input note" id="note-${ex.id}-${i}" value="${noteVal}" placeholder="Note" oninput="autoSaveExDataNew('${ex.id}', ${i})">
                         <button class="${btnClass}" onclick="handleSetClickNew('${ex.id}', ${i})">${btnText}</button>
                     </div>`;
                 }
@@ -1063,7 +1087,7 @@
                             <p class="text-[7px] text-slate-500 font-bold uppercase">${ex.gruppo_lavoro}</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="number" id="serie-${ex.id}" value="${serieVal}" min="1" max="10" oninput="updateSeriesRows('${ex.id}', this.value, '${repsVal}', '${recVal}', '${pesoVal}', '${noteVal}')" class="w-12 bg-slate-900 border border-slate-700 p-1.5 rounded-lg text-xs font-black text-center text-orange-500 outline-none">
+                            <input type="number" id="serie-${ex.id}" value="${serieVal}" min="1" max="10" oninput="updateSeriesRows('${ex.id}', this.value)" class="w-12 bg-slate-900 border border-slate-700 p-1.5 rounded-lg text-xs font-black text-center text-orange-500 outline-none">
                             <button onclick="saveExUpdateNew('${ex.id}')" class="text-orange-500 bg-orange-500/10 p-2 rounded-lg border border-orange-500/20"><i class="fas fa-save text-xs"></i></button>
                         </div>
                     </div>
@@ -1126,31 +1150,49 @@
             saveExData(data);
         }
         
-        function updateSeriesRows(exId, newSerieVal, repsVal, recVal, pesoVal, noteVal) {
+        function updateSeriesRows(exId, newSerieVal) {
             const container = document.getElementById('series-container-' + exId);
             const state = getSessionState();
             const doneSets = state[exId] || [];
+            const savedExData = getExData();
+            const savedData = savedExData[exId] || {};
             const numSeries = parseInt(newSerieVal) || 3;
+            
+            // Valori di default
+            const defaultReps = '10';
+            const defaultRec = '60';
+            const defaultPeso = '';
+            const defaultNote = '';
             
             let rows = '';
             for(let i=1; i<=numSeries; i++) {
+                const serieData = savedData[i] || {};
+                const repsVal = serieData.reps || defaultReps;
+                const recVal = serieData.rec || defaultRec;
+                const pesoVal = serieData.peso || defaultPeso;
+                const noteVal = serieData.note || defaultNote;
+                
                 const isDone = doneSets.includes(i) ? 'completed' : '';
                 const btnText = doneSets.includes(i) ? '<i class="fas fa-stop"></i>' : '<i class="fas fa-play"></i>';
                 const btnClass = doneSets.includes(i) ? 'btn-recupero active' : 'btn-recupero';
+                
                 rows += `
                 <div class="serie-row" id="serie-row-${exId}-${i}">
                     <div class="serie-num ${isDone}" id="set-num-${exId}-${i}">${i}</div>
-                    <input type="text" class="serie-input reps" id="reps-${exId}-${i}" value="${repsVal}" placeholder="Reps">
-                    <input type="text" class="serie-input peso" id="peso-${exId}-${i}" value="${pesoVal}" placeholder="Kg">
-                    <input type="text" class="serie-input rec" id="rec-${exId}-${i}" value="${recVal}" placeholder="Rec">
-                    <input type="text" class="serie-input note" id="note-${exId}-${i}" value="${noteVal}" placeholder="Note">
+                    <input type="text" class="serie-input reps" id="reps-${exId}-${i}" value="${repsVal}" placeholder="Reps" oninput="autoSaveExDataNew('${exId}', ${i})">
+                    <input type="text" class="serie-input peso" id="peso-${exId}-${i}" value="${pesoVal}" placeholder="Kg" oninput="autoSaveExDataNew('${exId}', ${i})">
+                    <input type="text" class="serie-input rec" id="rec-${exId}-${i}" value="${recVal}" placeholder="Rec" oninput="autoSaveExDataNew('${exId}', ${i})">
+                    <input type="text" class="serie-input note" id="note-${exId}-${i}" value="${noteVal}" placeholder="Note" oninput="autoSaveExDataNew('${exId}', ${i})">
                     <button class="${btnClass}" onclick="handleSetClickNew('${exId}', ${i})">${btnText}</button>
                 </div>`;
             }
             container.innerHTML = rows;
             
             // Salva il nuovo numero di serie
-            autoSaveExDataNew(exId);
+            const data = getExData();
+            if(!data[exId]) data[exId] = {};
+            data[exId].serie = numSeries;
+            saveExData(data);
         }
         
         async function saveExUpdateNew(id) {
