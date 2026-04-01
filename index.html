@@ -1048,8 +1048,8 @@
                 // Usa sempre 3 serie di default
                 const serieVal = 3;
                 // Valori di default dall'esercizio
-                const defaultReps = ex.reps || '10';
-                const defaultRec = ex.recupero || '60';
+                const defaultReps = ex.reps || '8';
+                const defaultRec = ex.recupero || '90';
                 const defaultPeso = ex.avanzamento_pesi || '';
                 const defaultNote = ex.note || '';
                 
@@ -1142,8 +1142,8 @@
             
             data[exId] = {
                 serie: serieVal,
-                reps: document.getElementById('reps-' + exId + '-1')?.value || '10',
-                rec: document.getElementById('rec-' + exId + '-1')?.value || '60',
+                reps: document.getElementById('reps-' + exId + '-1')?.value || '8',
+                rec: document.getElementById('rec-' + exId + '-1')?.value || '90',
                 peso: document.getElementById('peso-' + exId + '-1')?.value || '',
                 note: document.getElementById('note-' + exId + '-1')?.value || ''
             };
@@ -1159,8 +1159,8 @@
             const numSeries = parseInt(newSerieVal) || 3;
             
             // Valori di default
-            const defaultReps = '10';
-            const defaultRec = '60';
+            const defaultReps = '8';
+            const defaultRec = '90';
             const defaultPeso = '';
             const defaultNote = '';
             
