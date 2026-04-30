@@ -40,16 +40,17 @@
         #login-screen, #register-screen { transition: opacity 0.3s; }
         
         /* Serie row compact */
-        .serie-row { display: grid; grid-template-columns: 30px 1fr 1fr 70px 70px 1fr 50px; gap: 4px; align-items: center; padding: 6px 8px; background: rgba(30, 41, 59, 0.4); border-radius: 8px; margin-bottom: 4px; }
-        .serie-row:first-child { margin-top: 8px; }
+        .serie-container { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+        .serie-container:first-child { margin-top: 8px; }
+        .serie-fields { display: grid; grid-template-columns: 30px 1fr 1fr 2fr; gap: 4px; align-items: center; padding: 8px 12px; background: rgba(30, 41, 59, 0.4); border-radius: 8px; }
         .serie-num { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.7rem; background: #1e293b; border: 2px solid #334155; }
         .serie-num.completed { background: #10b981; border-color: #059669; color: white; }
-        .serie-input { background: transparent; border: none; font-weight: 700; font-size: 0.75rem; color: #f8fafc; outline: none; width: 100%; }
+        .serie-input { background: transparent; border: none; font-weight: 700; font-size: 1.5rem; color: #f8fafc; outline: none; width: 100%; padding: 4px 8px; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
         .serie-input::placeholder { color: #475569; }
         .serie-input.reps { color: #f8fafc; }
         .serie-input.peso { color: #f97316; }
         .serie-input.rec { color: #10b981; }
-        .serie-input.note { color: #94a3b8; font-size: 0.7rem; }
+        .serie-input.note { color: #94a3b8; font-size: 1rem; }
         
         .btn-recupero { width: 40px; height: 28px; border-radius: 6px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; font-size: 0.65rem; font-black; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
         .btn-recupero:hover { background: #10b981; color: white; }
@@ -238,16 +239,53 @@
 
         <!-- SEZIONE WORKOUT -->
         <div id="workout-section" class="hidden space-y-4">
-            <div class="flex gap-2">
-                <select id="filter-group" onchange="loadWorkout(this.value)" class="flex-1 bg-slate-800 p-4 rounded-xl border border-slate-700 text-sm font-black text-orange-500 outline-none">
-                    <option value="all">Tutta la Scheda</option>
-                    <option value="Spinte 1">Spinte 1</option><option value="Gambe 1">Gambe 1</option>
-                    <option value="Tirata 1">Tirata 1</option><option value="Spalle/Petto">Spalle/Petto</option>
-                    <option value="Gambe 2">Gambe 2</option><option value="Schiena 2">Schiena 2</option>
-                </select>
-                <button onclick="resetAllSets()" class="bg-slate-800 px-4 rounded-xl border border-slate-700 text-slate-400 active:scale-90"><i class="fas fa-sync-alt text-sm"></i></button>
+            <!-- Selezione Gruppo -->
+            <div id="select-group" class="space-y-4">
+                <div class="text-center mb-6">
+                    <h2 class="text-lg font-black uppercase text-orange-500">Scegli Tipo Allenamento</h2>
+                    <p class="text-[10px] text-slate-400">Seleziona il gruppo muscolare da allenare</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="selectWorkoutGroup('Spinte 1')" class="p-4 rounded-2xl glass-card border-l-4 border-orange-500 text-left active:scale-95 transition-all">
+                        <h3 class="font-black text-sm uppercase text-orange-500">Spinte 1</h3>
+                        <p class="text-[8px] text-slate-500">Petto, Tricipiti, Spalle</p>
+                    </button>
+                    <button onclick="selectWorkoutGroup('Gambe 1')" class="p-4 rounded-2xl glass-card border-l-4 border-emerald-500 text-left active:scale-95 transition-all">
+                        <h3 class="font-black text-sm uppercase text-emerald-500">Gambe 1</h3>
+                        <p class="text-[8px] text-slate-500">Quadricipiti, Glutei</p>
+                    </button>
+                    <button onclick="selectWorkoutGroup('Tirata 1')" class="p-4 rounded-2xl glass-card border-l-4 border-blue-500 text-left active:scale-95 transition-all">
+                        <h3 class="font-black text-sm uppercase text-blue-500">Tirata 1</h3>
+                        <p class="text-[8px] text-slate-500">Dorso, Bicipiti</p>
+                    </button>
+                    <button onclick="selectWorkoutGroup('Spalle/Petto')" class="p-4 rounded-2xl glass-card border-l-4 border-purple-500 text-left active:scale-95 transition-all">
+                        <h3 class="font-black text-sm uppercase text-purple-500">Spalle/Petto</h3>
+                        <p class="text-[8px] text-slate-500">Spalle, Petto</p>
+                    </button>
+                    <button onclick="selectWorkoutGroup('Gambe 2')" class="p-4 rounded-2xl glass-card border-l-4 border-pink-500 text-left active:scale-95 transition-all">
+                        <h3 class="font-black text-sm uppercase text-pink-500">Gambe 2</h3>
+                        <p class="text-[8px] text-slate-500">Ischiocrurali, Polpacci</p>
+                    </button>
+                    <button onclick="selectWorkoutGroup('Schiena 2')" class="p-4 rounded-2xl glass-card border-l-4 border-cyan-500 text-left active:scale-95 transition-all">
+                        <h3 class="font-black text-sm uppercase text-cyan-500">Schiena 2</h3>
+                        <p class="text-[8px] text-slate-500">Gran Dorsale, Romboide</p>
+                    </button>
+                </div>
+                <button onclick="selectWorkoutGroup('all')" class="w-full p-4 rounded-2xl glass-card border-l-4 border-slate-500 text-center active:scale-95 transition-all">
+                    <h3 class="font-black text-sm uppercase text-slate-500">Tutta la Scheda</h3>
+                    <p class="text-[8px] text-slate-500">Allenamento completo</p>
+                </button>
             </div>
-            <div id="workout-list" class="space-y-4 pb-32"></div>
+
+            <!-- Lista Esercizi -->
+            <div id="workout-list" class="hidden space-y-4">
+                <div class="flex gap-2 items-center">
+                    <button onclick="backToGroupSelection()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-400 active:scale-90"><i class="fas fa-arrow-left text-sm"></i></button>
+                    <span id="current-group-title" class="text-sm font-black uppercase text-orange-500"></span>
+                    <button onclick="resetAllSets()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-400 active:scale-90 ml-auto"><i class="fas fa-sync-alt text-sm"></i></button>
+                </div>
+                <div id="workout-exercises" class="space-y-4 pb-32"></div>
+            </div>
         </div>
 
         <!-- SEZIONE STATISTICHE -->
@@ -500,8 +538,19 @@
             return false;
         }
 
-        const getSessionState = () => JSON.parse(localStorage.getItem('workout_session_v4') || '{}');
-        const saveSessionState = (state) => localStorage.setItem('workout_session_v4', JSON.stringify(state));
+        const getSessionState = () => {
+            const state = JSON.parse(localStorage.getItem('workout_session_v4') || '{}');
+            const today = new Date().toISOString().split('T')[0];
+            if (state.date !== today) {
+                return {};
+            }
+            return state;
+        };
+        const saveSessionState = (state) => {
+            const today = new Date().toISOString().split('T')[0];
+            state.date = today;
+            localStorage.setItem('workout_session_v4', JSON.stringify(state));
+        };
         
         // Salvataggio scelte alimentari (id_pasto -> stringa_scelta)
         const getDietChoices = () => JSON.parse(localStorage.getItem('scelte_dieta_v5') || '{}');
@@ -510,6 +559,8 @@
         // ===== PERSISTENZA DATI ESERCIZI (serie, reps, peso, note, recupero) =====
         const getExData = () => JSON.parse(localStorage.getItem('ex_data_v1') || '{}');
         const saveExData = (data) => localStorage.setItem('ex_data_v1', JSON.stringify(data));
+        const getGlobalRec = () => JSON.parse(localStorage.getItem('global_rec_v1') || '{}');
+        const saveGlobalRec = (data) => localStorage.setItem('global_rec_v1', JSON.stringify(data));
         
         function autoSaveExData(exId) {
             // Vecchia logica - mantengo per retrocompatibilità
@@ -551,9 +602,9 @@
             const navBtn = document.getElementById('nav-' + id);
             if(navBtn) navBtn.className = 'p-3 text-orange-500 transition-all scale-110';
             
-            if(id === 'workout') { 
+            if(id === 'workout') {
                 requestWakeLock();
-                loadWorkout(document.getElementById('filter-group').value); 
+                showGroupSelection();
             } else if(id === 'salute') {
                 releaseWakeLock();
                 switchSalute('dieta');
@@ -1036,12 +1087,13 @@
         // --- WORKOUT ---
         async function loadWorkout(gruppo) {
             if(!_supabase) return;
-            const container = document.getElementById('workout-list');
+            const container = document.getElementById('workout-exercises');
             let q = _supabase.from('workout').select('*').order('id');
             if(gruppo !== 'all') q = q.eq('gruppo_lavoro', gruppo);
-            const { data } = await q;
-            const state = getSessionState();
-            const savedExData = getExData();
+                const { data } = await q;
+                const state = getSessionState();
+                const savedExData = getExData();
+                const globalRecs = getGlobalRec();
 
             container.innerHTML = data.map(ex => {
                 const savedData = savedExData[ex.id] || {};
@@ -1069,13 +1121,83 @@
                     const btnClass = doneSets.includes(i) ? 'btn-recupero active' : 'btn-recupero';
                     
                     serieRows += `
-                    <div class="serie-row" id="serie-row-${ex.id}-${i}">
-                        <div class="serie-num ${isDone}" id="set-num-${ex.id}-${i}">${i}</div>
-                        <input type="text" class="serie-input reps" id="reps-${ex.id}-${i}" value="${repsVal}" placeholder="Reps" oninput="autoSaveExDataNew('${ex.id}', ${i})">
-                        <input type="text" class="serie-input peso" id="peso-${ex.id}-${i}" value="${pesoVal}" placeholder="Kg" oninput="autoSaveExDataNew('${ex.id}', ${i})">
-                        <input type="text" class="serie-input rec" id="rec-${ex.id}-${i}" value="${recVal}" placeholder="Rec" oninput="autoSaveExDataNew('${ex.id}', ${i})">
-                        <input type="text" class="serie-input note" id="note-${ex.id}-${i}" value="${noteVal}" placeholder="Note" oninput="autoSaveExDataNew('${ex.id}', ${i})">
-                        <button class="${btnClass}" onclick="handleSetClickNew('${ex.id}', ${i})">${btnText}</button>
+                    <div class="serie-container" id="serie-row-${ex.id}-${i}">
+                        <div class="serie-fields">
+                            <div class="serie-num ${isDone}" id="set-num-${ex.id}-${i}">${i}</div>
+                            <select class="serie-input reps" id="reps-${ex.id}-${i}" onchange="autoSaveExDataNew('${ex.id}', ${i})">
+                                <option value="1" ${repsVal == '1' ? 'selected' : ''}>1</option>
+                                <option value="2" ${repsVal == '2' ? 'selected' : ''}>2</option>
+                                <option value="3" ${repsVal == '3' ? 'selected' : ''}>3</option>
+                                <option value="4" ${repsVal == '4' ? 'selected' : ''}>4</option>
+                                <option value="5" ${repsVal == '5' ? 'selected' : ''}>5</option>
+                                <option value="6" ${repsVal == '6' ? 'selected' : ''}>6</option>
+                                <option value="7" ${repsVal == '7' ? 'selected' : ''}>7</option>
+                                <option value="8" ${repsVal == '8' ? 'selected' : ''}>8</option>
+                                <option value="9" ${repsVal == '9' ? 'selected' : ''}>9</option>
+                                <option value="10" ${repsVal == '10' ? 'selected' : ''}>10</option>
+                                <option value="11" ${repsVal == '11' ? 'selected' : ''}>11</option>
+                                <option value="12" ${repsVal == '12' ? 'selected' : ''}>12</option>
+                                <option value="13" ${repsVal == '13' ? 'selected' : ''}>13</option>
+                                <option value="14" ${repsVal == '14' ? 'selected' : ''}>14</option>
+                                <option value="15" ${repsVal == '15' ? 'selected' : ''}>15</option>
+                            </select>
+                            <select class="serie-input peso" id="peso-${ex.id}-${i}" onchange="autoSaveExDataNew('${ex.id}', ${i})">
+                                <option value="" ${pesoVal === '' ? 'selected' : ''}>Kg</option>
+                                <option value="10" ${pesoVal == '10' ? 'selected' : ''}>10</option>
+                                <option value="12" ${pesoVal == '12' ? 'selected' : ''}>12</option>
+                                <option value="14" ${pesoVal == '14' ? 'selected' : ''}>14</option>
+                                <option value="16" ${pesoVal == '16' ? 'selected' : ''}>16</option>
+                                <option value="18" ${pesoVal == '18' ? 'selected' : ''}>18</option>
+                                <option value="20" ${pesoVal == '20' ? 'selected' : ''}>20</option>
+                                <option value="22" ${pesoVal == '22' ? 'selected' : ''}>22</option>
+                                <option value="24" ${pesoVal == '24' ? 'selected' : ''}>24</option>
+                                <option value="26" ${pesoVal == '26' ? 'selected' : ''}>26</option>
+                                <option value="28" ${pesoVal == '28' ? 'selected' : ''}>28</option>
+                                <option value="30" ${pesoVal == '30' ? 'selected' : ''}>30</option>
+                                <option value="32" ${pesoVal == '32' ? 'selected' : ''}>32</option>
+                                <option value="34" ${pesoVal == '34' ? 'selected' : ''}>34</option>
+                                <option value="36" ${pesoVal == '36' ? 'selected' : ''}>36</option>
+                                <option value="38" ${pesoVal == '38' ? 'selected' : ''}>38</option>
+                                <option value="40" ${pesoVal == '40' ? 'selected' : ''}>40</option>
+                                <option value="42" ${pesoVal == '42' ? 'selected' : ''}>42</option>
+                                <option value="44" ${pesoVal == '44' ? 'selected' : ''}>44</option>
+                                <option value="46" ${pesoVal == '46' ? 'selected' : ''}>46</option>
+                                <option value="48" ${pesoVal == '48' ? 'selected' : ''}>48</option>
+                                <option value="50" ${pesoVal == '50' ? 'selected' : ''}>50</option>
+                                <option value="55" ${pesoVal == '55' ? 'selected' : ''}>55</option>
+                                <option value="60" ${pesoVal == '60' ? 'selected' : ''}>60</option>
+                                <option value="65" ${pesoVal == '65' ? 'selected' : ''}>65</option>
+                                <option value="70" ${pesoVal == '70' ? 'selected' : ''}>70</option>
+                                <option value="75" ${pesoVal == '75' ? 'selected' : ''}>75</option>
+                                <option value="80" ${pesoVal == '80' ? 'selected' : ''}>80</option>
+                                <option value="85" ${pesoVal == '85' ? 'selected' : ''}>85</option>
+                                <option value="90" ${pesoVal == '90' ? 'selected' : ''}>90</option>
+                                <option value="95" ${pesoVal == '95' ? 'selected' : ''}>95</option>
+                                <option value="100" ${pesoVal == '100' ? 'selected' : ''}>100</option>
+                                <option value="105" ${pesoVal == '105' ? 'selected' : ''}>105</option>
+                                <option value="110" ${pesoVal == '110' ? 'selected' : ''}>110</option>
+                                <option value="115" ${pesoVal == '115' ? 'selected' : ''}>115</option>
+                                <option value="120" ${pesoVal == '120' ? 'selected' : ''}>120</option>
+                                <option value="125" ${pesoVal == '125' ? 'selected' : ''}>125</option>
+                                <option value="130" ${pesoVal == '130' ? 'selected' : ''}>130</option>
+                                <option value="135" ${pesoVal == '135' ? 'selected' : ''}>135</option>
+                                <option value="140" ${pesoVal == '140' ? 'selected' : ''}>140</option>
+                                <option value="145" ${pesoVal == '145' ? 'selected' : ''}>145</option>
+                                <option value="150" ${pesoVal == '150' ? 'selected' : ''}>150</option>
+                                <option value="155" ${pesoVal == '155' ? 'selected' : ''}>155</option>
+                                <option value="160" ${pesoVal == '160' ? 'selected' : ''}>160</option>
+                                <option value="165" ${pesoVal == '165' ? 'selected' : ''}>165</option>
+                                <option value="170" ${pesoVal == '170' ? 'selected' : ''}>170</option>
+                                <option value="175" ${pesoVal == '175' ? 'selected' : ''}>175</option>
+                                <option value="180" ${pesoVal == '180' ? 'selected' : ''}>180</option>
+                                <option value="185" ${pesoVal == '185' ? 'selected' : ''}>185</option>
+                                <option value="190" ${pesoVal == '190' ? 'selected' : ''}>190</option>
+                                <option value="195" ${pesoVal == '195' ? 'selected' : ''}>195</option>
+                                <option value="200" ${pesoVal == '200' ? 'selected' : ''}>200</option>
+                            </select>
+                            <textarea rows="4" class="serie-input note" id="note-${ex.id}-${i}" placeholder="Note" oninput="autoSaveExDataNew('${ex.id}', ${i})">${noteVal}</textarea>
+                        </div>
+                        <button class="${btnClass}" onclick="handleSetClickNew('${ex.id}', ${i})" style="width: 100%; padding: 12px; font-size: 1.2rem; border-radius: 8px;">${btnText}</button>
                     </div>`;
                 }
 
@@ -1087,18 +1209,19 @@
                             <p class="text-[7px] text-slate-500 font-bold uppercase">${ex.gruppo_lavoro}</p>
                         </div>
                         <div class="flex items-center gap-2">
+                            <select id="rec-global-${ex.id}" onchange="updateGlobalRec('${ex.id}', this.value)" class="w-20 bg-slate-900 border border-slate-700 p-1.5 rounded-lg text-xs font-black text-center text-emerald-500 outline-none">
+                                ${[30,45,60,75,90,105,120,135,150,165,180,195,210,225,240,255,270,285,300].map(s => `<option value="${s}" ${s == (globalRecs[ex.id] || 60) ? 'selected' : ''}>${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}</option>`).join('')}
+                            </select>
                             <input type="number" id="serie-${ex.id}" value="${serieVal}" min="1" max="10" oninput="updateSeriesRows('${ex.id}', this.value)" class="w-12 bg-slate-900 border border-slate-700 p-1.5 rounded-lg text-xs font-black text-center text-orange-500 outline-none">
                             <button onclick="saveExUpdateNew('${ex.id}')" class="text-orange-500 bg-orange-500/10 p-2 rounded-lg border border-orange-500/20"><i class="fas fa-save text-xs"></i></button>
                         </div>
                     </div>
                     <!-- Intestazioni colonne -->
-                    <div class="grid grid-cols-[30px_1fr_1fr_70px_70px_1fr_50px] gap-1 px-2 mb-1">
+                    <div class="grid grid-cols-[30px_1fr_1fr_2fr] gap-1 px-2 mb-1">
                         <span class="text-[6px] text-slate-600 font-black uppercase">#</span>
                         <span class="text-[6px] text-slate-600 font-black uppercase">Reps</span>
                         <span class="text-[6px] text-slate-600 font-black uppercase">Kg</span>
-                        <span class="text-[6px] text-slate-600 font-black uppercase">Rec</span>
                         <span class="text-[6px] text-slate-600 font-black uppercase">Note</span>
-                        <span class="text-[6px] text-slate-600 font-black uppercase text-right">Start</span>
                     </div>
                     <div id="series-container-${ex.id}">${serieRows}</div>
                 </div>`;
@@ -1108,10 +1231,11 @@
         function handleSetClickNew(exId, setNum) {
             const state = getSessionState();
             const setNumEl = document.getElementById('set-num-' + exId + '-' + setNum);
-            const btnEl = setNumEl.parentElement.querySelector('.btn-recupero');
-            
+            const container = document.getElementById('serie-row-' + exId + '-' + setNum);
+            const btnEl = container.querySelector('.btn-recupero');
+
             if(!state[exId]) state[exId] = [];
-            
+
             if(state[exId].includes(setNum)) {
                 // Togli completato
                 state[exId] = state[exId].filter(n => n !== setNum);
@@ -1125,13 +1249,14 @@
                 setNumEl.classList.add('completed');
                 btnEl.classList.add('active');
                 btnEl.innerHTML = '<i class="fas fa-stop"></i>';
-                
+
                 // Avvia timer recupero
-                const recVal = document.getElementById('rec-' + exId + '-' + setNum)?.value || '60';
+                const globalRecs = getGlobalRec();
+                const recVal = globalRecs[exId] || 60;
                 startTimer(recVal);
                 saveWorkoutHistory(exId);
             }
-            
+
             saveSessionState(state);
         }
         
@@ -1177,13 +1302,83 @@
                 const btnClass = doneSets.includes(i) ? 'btn-recupero active' : 'btn-recupero';
                 
                 rows += `
-                <div class="serie-row" id="serie-row-${exId}-${i}">
-                    <div class="serie-num ${isDone}" id="set-num-${exId}-${i}">${i}</div>
-                    <input type="text" class="serie-input reps" id="reps-${exId}-${i}" value="${repsVal}" placeholder="Reps" oninput="autoSaveExDataNew('${exId}', ${i})">
-                    <input type="text" class="serie-input peso" id="peso-${exId}-${i}" value="${pesoVal}" placeholder="Kg" oninput="autoSaveExDataNew('${exId}', ${i})">
-                    <input type="text" class="serie-input rec" id="rec-${exId}-${i}" value="${recVal}" placeholder="Rec" oninput="autoSaveExDataNew('${exId}', ${i})">
-                    <input type="text" class="serie-input note" id="note-${exId}-${i}" value="${noteVal}" placeholder="Note" oninput="autoSaveExDataNew('${exId}', ${i})">
-                    <button class="${btnClass}" onclick="handleSetClickNew('${exId}', ${i})">${btnText}</button>
+                <div class="serie-container" id="serie-row-${exId}-${i}">
+                    <div class="serie-fields">
+                        <div class="serie-num ${isDone}" id="set-num-${exId}-${i}">${i}</div>
+                        <select class="serie-input reps" id="reps-${exId}-${i}" onchange="autoSaveExDataNew('${exId}', ${i})">
+                            <option value="1" ${repsVal == '1' ? 'selected' : ''}>1</option>
+                            <option value="2" ${repsVal == '2' ? 'selected' : ''}>2</option>
+                            <option value="3" ${repsVal == '3' ? 'selected' : ''}>3</option>
+                            <option value="4" ${repsVal == '4' ? 'selected' : ''}>4</option>
+                            <option value="5" ${repsVal == '5' ? 'selected' : ''}>5</option>
+                            <option value="6" ${repsVal == '6' ? 'selected' : ''}>6</option>
+                            <option value="7" ${repsVal == '7' ? 'selected' : ''}>7</option>
+                            <option value="8" ${repsVal == '8' ? 'selected' : ''}>8</option>
+                            <option value="9" ${repsVal == '9' ? 'selected' : ''}>9</option>
+                            <option value="10" ${repsVal == '10' ? 'selected' : ''}>10</option>
+                            <option value="11" ${repsVal == '11' ? 'selected' : ''}>11</option>
+                            <option value="12" ${repsVal == '12' ? 'selected' : ''}>12</option>
+                            <option value="13" ${repsVal == '13' ? 'selected' : ''}>13</option>
+                            <option value="14" ${repsVal == '14' ? 'selected' : ''}>14</option>
+                            <option value="15" ${repsVal == '15' ? 'selected' : ''}>15</option>
+                        </select>
+                        <select class="serie-input peso" id="peso-${exId}-${i}" onchange="autoSaveExDataNew('${exId}', ${i})">
+                            <option value="" ${pesoVal === '' ? 'selected' : ''}>Kg</option>
+                            <option value="10" ${pesoVal == '10' ? 'selected' : ''}>10</option>
+                            <option value="12" ${pesoVal == '12' ? 'selected' : ''}>12</option>
+                            <option value="14" ${pesoVal == '14' ? 'selected' : ''}>14</option>
+                            <option value="16" ${pesoVal == '16' ? 'selected' : ''}>16</option>
+                            <option value="18" ${pesoVal == '18' ? 'selected' : ''}>18</option>
+                            <option value="20" ${pesoVal == '20' ? 'selected' : ''}>20</option>
+                            <option value="22" ${pesoVal == '22' ? 'selected' : ''}>22</option>
+                            <option value="24" ${pesoVal == '24' ? 'selected' : ''}>24</option>
+                            <option value="26" ${pesoVal == '26' ? 'selected' : ''}>26</option>
+                            <option value="28" ${pesoVal == '28' ? 'selected' : ''}>28</option>
+                            <option value="30" ${pesoVal == '30' ? 'selected' : ''}>30</option>
+                            <option value="32" ${pesoVal == '32' ? 'selected' : ''}>32</option>
+                            <option value="34" ${pesoVal == '34' ? 'selected' : ''}>34</option>
+                            <option value="36" ${pesoVal == '36' ? 'selected' : ''}>36</option>
+                            <option value="38" ${pesoVal == '38' ? 'selected' : ''}>38</option>
+                            <option value="40" ${pesoVal == '40' ? 'selected' : ''}>40</option>
+                            <option value="42" ${pesoVal == '42' ? 'selected' : ''}>42</option>
+                            <option value="44" ${pesoVal == '44' ? 'selected' : ''}>44</option>
+                            <option value="46" ${pesoVal == '46' ? 'selected' : ''}>46</option>
+                            <option value="48" ${pesoVal == '48' ? 'selected' : ''}>48</option>
+                            <option value="50" ${pesoVal == '50' ? 'selected' : ''}>50</option>
+                            <option value="55" ${pesoVal == '55' ? 'selected' : ''}>55</option>
+                            <option value="60" ${pesoVal == '60' ? 'selected' : ''}>60</option>
+                            <option value="65" ${pesoVal == '65' ? 'selected' : ''}>65</option>
+                            <option value="70" ${pesoVal == '70' ? 'selected' : ''}>70</option>
+                            <option value="75" ${pesoVal == '75' ? 'selected' : ''}>75</option>
+                            <option value="80" ${pesoVal == '80' ? 'selected' : ''}>80</option>
+                            <option value="85" ${pesoVal == '85' ? 'selected' : ''}>85</option>
+                            <option value="90" ${pesoVal == '90' ? 'selected' : ''}>90</option>
+                            <option value="95" ${pesoVal == '95' ? 'selected' : ''}>95</option>
+                            <option value="100" ${pesoVal == '100' ? 'selected' : ''}>100</option>
+                            <option value="105" ${pesoVal == '105' ? 'selected' : ''}>105</option>
+                            <option value="110" ${pesoVal == '110' ? 'selected' : ''}>110</option>
+                            <option value="115" ${pesoVal == '115' ? 'selected' : ''}>115</option>
+                            <option value="120" ${pesoVal == '120' ? 'selected' : ''}>120</option>
+                            <option value="125" ${pesoVal == '125' ? 'selected' : ''}>125</option>
+                            <option value="130" ${pesoVal == '130' ? 'selected' : ''}>130</option>
+                            <option value="135" ${pesoVal == '135' ? 'selected' : ''}>135</option>
+                            <option value="140" ${pesoVal == '140' ? 'selected' : ''}>140</option>
+                            <option value="145" ${pesoVal == '145' ? 'selected' : ''}>145</option>
+                            <option value="150" ${pesoVal == '150' ? 'selected' : ''}>150</option>
+                            <option value="155" ${pesoVal == '155' ? 'selected' : ''}>155</option>
+                            <option value="160" ${pesoVal == '160' ? 'selected' : ''}>160</option>
+                            <option value="165" ${pesoVal == '165' ? 'selected' : ''}>165</option>
+                            <option value="170" ${pesoVal == '170' ? 'selected' : ''}>170</option>
+                            <option value="175" ${pesoVal == '175' ? 'selected' : ''}>175</option>
+                            <option value="180" ${pesoVal == '180' ? 'selected' : ''}>180</option>
+                            <option value="185" ${pesoVal == '185' ? 'selected' : ''}>185</option>
+                            <option value="190" ${pesoVal == '190' ? 'selected' : ''}>190</option>
+                            <option value="195" ${pesoVal == '195' ? 'selected' : ''}>195</option>
+                            <option value="200" ${pesoVal == '200' ? 'selected' : ''}>200</option>
+                        </select>
+                        <textarea rows="4" class="serie-input note" id="note-${exId}-${i}" placeholder="Note" oninput="autoSaveExDataNew('${exId}', ${i})">${noteVal}</textarea>
+                    </div>
+                    <button class="${btnClass}" onclick="handleSetClickNew('${exId}', ${i})" style="width: 100%; padding: 12px; font-size: 1.2rem; border-radius: 8px;">${btnText}</button>
                 </div>`;
             }
             container.innerHTML = rows;
@@ -1455,7 +1650,30 @@
             container.innerHTML = html;
         }
 
-        function resetAllSets() { if(confirm("Resettare la sessione?")) { saveSessionState({}); loadWorkout(document.getElementById('filter-group').value); } }
+        function updateGlobalRec(exId, value) {
+            const recs = getGlobalRec();
+            recs[exId] = parseInt(value);
+            saveGlobalRec(recs);
+        }
+
+        function showGroupSelection() {
+            document.getElementById('select-group').classList.remove('hidden');
+            document.getElementById('workout-list').classList.add('hidden');
+        }
+
+        function selectWorkoutGroup(gruppo) {
+            document.getElementById('select-group').classList.add('hidden');
+            document.getElementById('workout-list').classList.remove('hidden');
+            document.getElementById('current-group-title').textContent = gruppo;
+            loadWorkout(gruppo);
+        }
+
+        function backToGroupSelection() {
+            document.getElementById('workout-list').classList.add('hidden');
+            document.getElementById('select-group').classList.remove('hidden');
+        }
+
+        function resetAllSets() { if(confirm("Resettare la sessione?")) { saveSessionState({}); loadWorkout(document.getElementById('current-group-title').textContent || 'all'); } }
 
         function startTimer(timeStr) {
             clearInterval(timerInterval);
