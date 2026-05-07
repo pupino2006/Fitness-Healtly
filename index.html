@@ -60,7 +60,7 @@
 <body class="pb-28">
 
     <!-- LOGIN SCREEN -->
-    <div id="login-screen" class="fixed inset-0 z-[3000] bg-slate-950 flex flex-col items-center justify-center p-6">
+    <div id="login-screen" class="fixed inset-0 z-[3000] bg-slate-950 flex flex-col items-center justify-center p-6 hidden">
         <div class="w-full max-w-xs">
             <div class="text-center mb-8">
                 <h1 class="text-4xl font-black italic tracking-tighter text-white">LR <span class="text-orange-500">TRAINING</span></h1>
@@ -402,6 +402,9 @@
                 <h4 class="text-[10px] font-black uppercase text-slate-500 mb-2">ℹ️ Informazioni</h4>
                 <p class="text-[9px] text-slate-400">I file caricati aggiorneranno automaticamente il database Supabase. Assicurati che il formato sia corretto per PDF o Excel.</p>
                 <p class="text-[8px] text-slate-500 mt-2">Versione App: 6.0</p>
+                <button onclick="logout()" class="mt-3 w-full py-2 bg-red-600 text-white text-[10px] font-black uppercase rounded-xl">
+                    Torna al Login
+                </button>
             </div>
             
             <div class="pb-20"></div>
@@ -531,7 +534,8 @@
             document.getElementById('user-menu').classList.add('hidden');
             document.getElementById('user-switcher').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
-            showLoginForm();
+            // Nascondi tutte le sezioni principali
+            document.querySelectorAll('main > div').forEach(d => d.classList.add('hidden'));
         }
         
         function checkAuth() {
@@ -596,12 +600,18 @@
         }
 
         function initSupabase() {
+            console.log('initSupabase called, window.supabase:', !!window.supabase);
             if (window.supabase) {
                 _supabase = window.supabase.createClient(SB_URL, SB_KEY);
-            } else { setTimeout(initSupabase, 300); }
+                console.log('_supabase initialized:', !!_supabase);
+            } else { 
+                console.log('window.supabase not available, retrying...');
+                setTimeout(initSupabase, 300); 
+            }
         }
 
         function showSection(id) {
+            console.log('showSection called with id:', id);
             document.querySelectorAll('main > div').forEach(d => d.classList.add('hidden'));
             document.getElementById(id + '-section').classList.remove('hidden');
             document.querySelectorAll('nav button').forEach(b => b.className = 'p-3 text-slate-500 transition-all');
@@ -670,6 +680,11 @@
                 const records = parseDietText(fullText);
                 
                 if(records.length > 0) {
+                    if(!_supabase) {
+                        status.innerHTML = '❌ Database non disponibile. Riprova più tardi.';
+                        return;
+                    }
+                    
                     status.innerHTML = `📄 Trovati ${records.length} alimenti!<br>⏳ Aggiornamento database...`;
                     
                     // In Supabase, prima eliminiamo i vecchi dati poi inseriamo i nuovi
@@ -760,6 +775,8 @@
             
             return text;
         }
+
+        function parseDietText(text) {
             // Parsing migliorato basato sullo schema del file Excel della dieta
             // Struttura: pasti con alimenti per ogni giorno, con quantità, unità, alimento, e alternative
             const records = [];
@@ -866,6 +883,7 @@
             });
             
             return groupedRecords;
+        }
         
         async function handleWorkoutUpload(input) {
             const file = input.files[0];
@@ -1880,17 +1898,21 @@
 
         window.onload = () => { 
             initSupabase(); 
-            if(checkAuth()) {
-                console.log('Auth successful, calling initApp');
-                initApp();
-            } else {
-                console.log('No auth, showing login');
-                document.getElementById('login-screen').classList.remove('hidden');
-            }
+            // Temporaneamente bypass login per debug
+            console.log('Bypassing auth for debug');
+            initApp();
+            // if(checkAuth()) {
+            //     console.log('Auth successful, calling initApp');
+            //     initApp();
+            // } else {
+            //     console.log('No auth, showing login');
+            //     document.getElementById('login-screen').classList.remove('hidden');
+            // }
         };
         
         function initApp() {
             // Mostra user switcher
+            currentUser = { username: 'Debug User' }; // Temporaneo per debug
             document.getElementById('user-switcher').classList.remove('hidden');
             document.getElementById('current-username').textContent = currentUser.username;
             document.getElementById('login-screen').classList.add('hidden');
