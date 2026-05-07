@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LR Training Pro - V6.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
@@ -367,13 +365,13 @@
                         <i class="fas fa-file-pdf text-xl"></i>
                     </div>
                     <div class="flex-1">
-                        <h4 class="text-sm font-black uppercase text-slate-200">Carica Dieta (PDF)</h4>
+                        <h4 class="text-sm font-black uppercase text-slate-200">Carica Dieta (PDF/Excel)</h4>
                         <p class="text-[9px] text-slate-500">Aggiorna il piano alimentare</p>
                     </div>
                 </div>
-                <input type="file" id="upload-diet" accept=".pdf" class="hidden" onchange="handleDietUpload(this)">
+                <input type="file" id="upload-diet" accept=".pdf,.xlsx,.xls" class="hidden" onchange="handleDietUpload(this)">
                 <label for="upload-diet" class="block w-full py-3 bg-emerald-600 text-white text-center text-xs font-black uppercase rounded-xl cursor-pointer active:scale-95 transition-all">
-                    Seleziona File PDF
+                    Seleziona File PDF/Excel
                 </label>
                 <div id="diet-upload-status" class="text-[10px] text-slate-400 italic"></div>
             </div>
@@ -402,7 +400,7 @@
             <!-- Info -->
             <div class="glass-card p-4 rounded-2xl border border-slate-800">
                 <h4 class="text-[10px] font-black uppercase text-slate-500 mb-2">ℹ️ Informazioni</h4>
-                <p class="text-[9px] text-slate-400">I file caricati aggiorneranno automaticamente il database Supabase. Assicurati che il formato sia corretto.</p>
+                <p class="text-[9px] text-slate-400">I file caricati aggiorneranno automaticamente il database Supabase. Assicurati che il formato sia corretto per PDF o Excel.</p>
                 <p class="text-[8px] text-slate-500 mt-2">Versione App: 6.0</p>
             </div>
             
@@ -623,24 +621,42 @@
             if(!file) return;
             
             const status = document.getElementById('diet-upload-status');
-            status.innerHTML = '📤 Caricamento PDF...';
+            status.innerHTML = '📤 Caricamento file...';
             
             try {
-                // Inizializza PDF.js
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                
-                const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                
                 let fullText = '';
-                for(let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const textContent = await page.getTextContent();
-                    const pageText = textContent.items.map(item => item.str).join(' ');
-                    fullText += pageText + '\n';
-                }
                 
-                status.innerHTML = `📄 PDF letto! (${pdf.numPages} pagine)<br>⏳ Elaborazione in corso...`;
+                if(file.name.toLowerCase().endsWith('.pdf')) {
+                    // Gestione PDF
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    
+                    for(let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(' ');
+                        fullText += pageText + '\n';
+                    }
+                    
+                    status.innerHTML = `📄 PDF letto! (${pdf.numPages} pagine)<br>⏳ Elaborazione in corso...`;
+                } else if(file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+                    // Gestione Excel
+                    const arrayBuffer = await file.arrayBuffer();
+                    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    // Converti i dati Excel in formato testuale simile al PDF
+                    fullText = convertExcelToText(jsonData);
+                    
+                    status.innerHTML = `📊 Excel letto! (${jsonData.length} righe)<br>⏳ Elaborazione in corso...`;
+                } else {
+                    status.innerHTML = '❌ Formato file non supportato. Usa PDF o Excel.';
+                    return;
+                }
                 
                 // Parsing del testo della dieta
                 const records = parseDietText(fullText);
@@ -659,7 +675,7 @@
                         status.innerHTML = `✅ Dieta aggiornata!<br>${records.length} alimenti caricati.`;
                     }
                 } else {
-                    status.innerHTML = '⚠️ Nessun alimento trovato nel PDF. Formato non riconosciuto.';
+                    status.innerHTML = '⚠️ Nessun alimento trovato nel file. Formato non riconosciuto.';
                 }
             } catch(err) {
                 status.innerHTML = `❌ Errore: ${err.message}`;
@@ -668,19 +684,87 @@
             input.value = ''; // Reset
         }
         
-        function parseDietText(text) {
-            // Parsing semplificato del PDF della dieta
-            // Cerca i pattern tipo "Giorno;Pasto;Alimento;Quantità"
+        function convertExcelToText(jsonData) {
+            const days = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
+            const dayColumns = [1, 4, 7, 10, 13, 16, 19]; // Indici delle colonne per ogni giorno
+            let text = '';
+            
+            // Trova i pasti (righe dove colonna 0 contiene un pasto)
+            const meals = [];
+            for(let rowIndex = 0; rowIndex < jsonData.length; rowIndex++) {
+                const row = jsonData[rowIndex];
+                if(!row || row.length === 0) continue;
+                const mealCell = row[0]?.toString().trim().toLowerCase();
+                if(['colazione', 'spuntino', 'pranzo', 'merenda', 'cena'].includes(mealCell)) {
+                    meals.push({ name: mealCell.toUpperCase(), startRow: rowIndex });
+                }
+            }
+            
+            // Per ogni giorno
+            for(let dayIndex = 0; dayIndex < days.length; dayIndex++) {
+                const day = days[dayIndex].toUpperCase();
+                text += day + '\n';
+                
+                // Per ogni pasto
+                meals.forEach(mealInfo => {
+                    const meal = mealInfo.name;
+                    text += meal + '\n';
+                    
+                    // Trova tutte le righe per questo pasto
+                    let rowIndex = mealInfo.startRow;
+                    let isAlternative = false;
+                    
+                    while(rowIndex < jsonData.length) {
+                        const row = jsonData[rowIndex];
+                        if(!row) break;
+                        
+                        const mealCell = row[0]?.toString().trim().toLowerCase();
+                        
+                        // Se è un nuovo pasto, ferma
+                        if(mealCell && ['colazione', 'spuntino', 'pranzo', 'merenda', 'cena'].includes(mealCell) && mealCell !== meal.toLowerCase()) {
+                            break;
+                        }
+                        
+                        // Se è "alternativa"
+                        if(mealCell === 'alternativa') {
+                            text += 'Alternativa\n';
+                            isAlternative = true;
+                            rowIndex++;
+                            continue;
+                        }
+                        
+                        // Estrai alimento per questo giorno
+                        const colStart = dayColumns[dayIndex];
+                        if(colStart < row.length) {
+                            const qty = row[colStart];
+                            const unit = row[colStart + 1];
+                            const food = row[colStart + 2];
+                            
+                            if(qty && unit && food) {
+                                text += `${qty} ${unit} ${food}\n`;
+                            }
+                        }
+                        
+                        rowIndex++;
+                    }
+                });
+            }
+            
+            return text;
+        }
+            // Parsing migliorato basato sullo schema del file Excel della dieta
+            // Struttura: pasti con alimenti per ogni giorno, con quantità, unità, alimento, e alternative
             const records = [];
             const days = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
             const meals = ['COLAZIONE', 'SPUNTINO', 'PRANZO', 'MERENDA', 'CENA'];
             
             // Estrai le linee del PDF
-            const lines = text.split(/\n|\r/).filter(l => l.trim().length > 5);
+            const lines = text.split(/\n|\r/).filter(l => l.trim().length > 2);
             
             let currentDay = '';
             let currentMeal = '';
             let order = 1;
+            let alternativeMode = false;
             
             for(let line of lines) {
                 line = line.trim();
@@ -691,6 +775,7 @@
                         currentDay = day;
                         currentMeal = '';
                         order = 1;
+                        alternativeMode = false;
                         break;
                     }
                 }
@@ -700,29 +785,79 @@
                     if(line.toUpperCase().includes(meal)) {
                         currentMeal = meal;
                         order = 1;
+                        alternativeMode = false;
                         break;
                     }
                 }
                 
+                // Rileva "Alternativa"
+                if(line.toUpperCase().includes('ALTERNATIVA')) {
+                    alternativeMode = true;
+                    continue;
+                }
+                
                 // Se abbiamo giorno e pasto, cerchiamo gli alimenti
-                if(currentDay && currentMeal && !line.toUpperCase().includes('ALTERNATIVE')) {
-                    // Pattern: "Alimento - quantità" o simile
-                    const match = line.match(/^([A-Za-zÀ-ÿ\s]+?)\s+(\d+)\s*g?/);
-                    if(match && line.length > 5 && line.length < 100) {
+                if(currentDay && currentMeal) {
+                    // Pattern migliorato: quantità unità alimento (es: "200 Gr Latte" o "30 Gr Anacardi")
+                    const match = line.match(/^(\d+(?:[.,]\d+)?)\s*(g|gr|ml|pz|fette|uova|pz\.?)\s+(.+)$/i);
+                    if(match) {
+                        const quantita = match[1];
+                        const unita = match[2].toLowerCase() === 'gr' ? 'g' : match[2].toLowerCase();
+                        const alimento = match[3].trim();
+                        
+                        // Salta linee troppo corte o troppo lunghe
+                        if(alimento.length < 3 || alimento.length > 100) continue;
+                        
+                        // Determina se è principale o alternativa
+                        const isAlternative = alternativeMode;
+                        
                         records.push({
                             giorno: currentDay,
                             pasto: currentMeal,
-                            alimento_principale: match[1].trim(),
-                            quantita: match[2],
-                            unità_misura: 'g',
+                            alimento_principale: isAlternative ? '' : alimento,
+                            alternative: isAlternative ? alimento : '',
+                            quantita: quantita,
+                            unità_misura: unita,
                             componente_ordine: order++
                         });
+                        
+                        // Dopo un'alternativa, torna a principale
+                        if(isAlternative) alternativeMode = false;
                     }
                 }
             }
             
-            return records;
-        }
+            // Raggruppa alternative con il principale
+            const groupedRecords = [];
+            const mealMap = {};
+            
+            records.forEach(record => {
+                const key = `${record.giorno}-${record.pasto}-${record.componente_ordine}`;
+                if(!mealMap[key]) {
+                    mealMap[key] = {
+                        giorno: record.giorno,
+                        pasto: record.pasto,
+                        alimento_principale: record.alimento_principale,
+                        quantita: record.quantita,
+                        unità_misura: record.unità_misura,
+                        componente_ordine: record.componente_ordine,
+                        alternative: []
+                    };
+                }
+                if(record.alternative) {
+                    mealMap[key].alternative.push(record.alternative);
+                }
+            });
+            
+            // Converti in array e unisci alternative
+            Object.values(mealMap).forEach(item => {
+                groupedRecords.push({
+                    ...item,
+                    alternative: item.alternative.join(', ')
+                });
+            });
+            
+            return groupedRecords;
         
         async function handleWorkoutUpload(input) {
             const file = input.files[0];
