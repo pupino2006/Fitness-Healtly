@@ -611,26 +611,36 @@
         }
 
         function showSection(id) {
-            console.log('showSection called with id:', id);
-            document.querySelectorAll('main > div').forEach(d => d.classList.add('hidden'));
-            document.getElementById(id + '-section').classList.remove('hidden');
-            document.querySelectorAll('nav button').forEach(b => b.className = 'p-3 text-slate-500 transition-all');
-            const navBtn = document.getElementById('nav-' + id);
-            if(navBtn) navBtn.className = 'p-3 text-orange-500 transition-all scale-110';
-            
-            if(id === 'workout') {
-                requestWakeLock();
-                showGroupSelection();
-            } else if(id === 'salute') {
-                releaseWakeLock();
-                switchSalute('dieta');
-            } else if(id === 'stats') {
-                releaseWakeLock();
-                loadStatsExercises();
-            } else if(id === 'settings') {
-                releaseWakeLock();
-            } else { releaseWakeLock(); }
-            window.scrollTo(0, 0);
+            try {
+                console.log('showSection called with id:', id);
+                document.querySelectorAll('main > div').forEach(d => d.classList.add('hidden'));
+                const section = document.getElementById(id + '-section');
+                if(section) {
+                    section.classList.remove('hidden');
+                } else {
+                    console.error('Section not found:', id + '-section');
+                    return;
+                }
+                document.querySelectorAll('nav button').forEach(b => b.className = 'p-3 text-slate-500 transition-all');
+                const navBtn = document.getElementById('nav-' + id);
+                if(navBtn) navBtn.className = 'p-3 text-orange-500 transition-all scale-110';
+                
+                if(id === 'workout') {
+                    requestWakeLock();
+                    showGroupSelection();
+                } else if(id === 'salute') {
+                    releaseWakeLock();
+                    switchSalute('dieta');
+                } else if(id === 'stats') {
+                    releaseWakeLock();
+                    loadStatsExercises();
+                } else if(id === 'settings') {
+                    releaseWakeLock();
+                } else { releaseWakeLock(); }
+                window.scrollTo(0, 0);
+            } catch(err) {
+                console.error('Error in showSection:', err);
+            }
         }
         
         // ===== GESTIONE UPLOAD FILE =====
@@ -1897,27 +1907,38 @@
         }
 
         window.onload = () => { 
-            initSupabase(); 
-            // Temporaneamente bypass login per debug
-            console.log('Bypassing auth for debug');
-            initApp();
-            // if(checkAuth()) {
-            //     console.log('Auth successful, calling initApp');
-            //     initApp();
-            // } else {
-            //     console.log('No auth, showing login');
-            //     document.getElementById('login-screen').classList.remove('hidden');
-            // }
+            try {
+                console.log('=== APP STARTING ===');
+                initSupabase();
+                console.log('Supabase initialized');
+                // Temporaneamente bypass login per debug
+                console.log('Bypassing auth for debug');
+                initApp();
+                console.log('App initialized successfully');
+            } catch(err) {
+                console.error('Fatal error on load:', err);
+            }
         };
         
         function initApp() {
-            // Mostra user switcher
-            currentUser = { username: 'Debug User' }; // Temporaneo per debug
-            document.getElementById('user-switcher').classList.remove('hidden');
-            document.getElementById('current-username').textContent = currentUser.username;
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('register-screen').classList.add('hidden');
-            showSection('home');
+            try {
+                console.log('initApp called');
+                // Mostra user switcher
+                currentUser = { username: 'Debug User' }; // Temporaneo per debug
+                const userSwitcher = document.getElementById('user-switcher');
+                if(userSwitcher) userSwitcher.classList.remove('hidden');
+                const currentUsername = document.getElementById('current-username');
+                if(currentUsername) currentUsername.textContent = currentUser.username;
+                const loginScreen = document.getElementById('login-screen');
+                if(loginScreen) loginScreen.classList.add('hidden');
+                const registerScreen = document.getElementById('register-screen');
+                if(registerScreen) registerScreen.classList.add('hidden');
+                console.log('About to show home section');
+                showSection('home');
+                console.log('initApp completed');
+            } catch(err) {
+                console.error('Error in initApp:', err);
+            }
         }
     </script>
 </body>
