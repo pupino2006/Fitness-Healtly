@@ -450,6 +450,8 @@
             const password = document.getElementById('login-password').value;
             const errorEl = document.getElementById('login-error');
             
+            console.log('handleLogin - username:', username, 'password:', password);
+            
             if(!username || !password) {
                 errorEl.textContent = 'Inserisci username e password';
                 errorEl.classList.remove('hidden');
@@ -457,6 +459,7 @@
             }
             
             const users = getUsers();
+            console.log('handleLogin - users:', users);
             const user = users[username];
             
             if(!user || user.password !== password) {
@@ -478,6 +481,8 @@
             const passwordConfirm = document.getElementById('reg-password-confirm').value;
             const errorEl = document.getElementById('register-error');
             
+            console.log('handleRegister - username:', username);
+            
             if(!username || !password) {
                 errorEl.textContent = 'Compila tutti i campi';
                 errorEl.classList.remove('hidden');
@@ -497,6 +502,7 @@
             }
             
             const users = getUsers();
+            console.log('handleRegister - existing users:', users);
             if(users[username]) {
                 errorEl.textContent = 'Username già esistente';
                 errorEl.classList.remove('hidden');
@@ -506,6 +512,7 @@
             // Crea nuovo utente
             users[username] = { password: password, created: new Date().toISOString() };
             saveUsers(users);
+            console.log('handleRegister - user created:', users[username]);
             
             // Login automatico
             currentUser = { username: username };
@@ -529,6 +536,7 @@
         
         function checkAuth() {
             const user = getCurrentUser();
+            console.log('checkAuth - user:', user);
             if(user) {
                 currentUser = user;
                 return true;
@@ -1873,8 +1881,10 @@
         window.onload = () => { 
             initSupabase(); 
             if(checkAuth()) {
+                console.log('Auth successful, calling initApp');
                 initApp();
             } else {
+                console.log('No auth, showing login');
                 document.getElementById('login-screen').classList.remove('hidden');
             }
         };
