@@ -32,6 +32,7 @@ post_install do |installer|
       end
       # Silenzia warning noti di CapacitorCordova (quoted includes)
       config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
     end
   end
 end
