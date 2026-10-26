@@ -259,6 +259,14 @@
                         <h3 class="font-black text-sm uppercase text-blue-500">Tirata 1</h3>
                         <p class="text-[8px] text-slate-500">Dorso, Bicipiti</p>
                     </button>
+                    <button onclick="selectWorkoutGroup('SS Gambe/Dorso 1')" class="p-4 rounded-2xl glass-card border-l-4 border-amber-500 text-left active:scale-95 transition-all">
+                        <h3 class="font-black text-sm uppercase text-amber-500">SS Gambe/Dorso 1</h3>
+                        <p class="text-[8px] text-slate-500">Superserie · giorno I</p>
+                    </button>
+                    <button onclick="selectWorkoutGroup('SS Petto/Spalle 1')" class="p-4 rounded-2xl glass-card border-l-4 border-yellow-500 text-left active:scale-95 transition-all">
+                        <h3 class="font-black text-sm uppercase text-yellow-500">SS Petto/Spalle 1</h3>
+                        <p class="text-[8px] text-slate-500">Superserie · giorno II</p>
+                    </button>
                     <button onclick="selectWorkoutGroup('Spalle/Petto')" class="p-4 rounded-2xl glass-card border-l-4 border-purple-500 text-left active:scale-95 transition-all">
                         <h3 class="font-black text-sm uppercase text-purple-500">Spalle/Petto</h3>
                         <p class="text-[8px] text-slate-500">Spalle, Petto</p>
@@ -270,6 +278,14 @@
                     <button onclick="selectWorkoutGroup('Schiena 2')" class="p-4 rounded-2xl glass-card border-l-4 border-cyan-500 text-left active:scale-95 transition-all">
                         <h3 class="font-black text-sm uppercase text-cyan-500">Schiena 2</h3>
                         <p class="text-[8px] text-slate-500">Gran Dorsale, Romboide</p>
+                    </button>
+                    <button onclick="selectWorkoutGroup('SS Gambe/Dorso 2')" class="p-4 rounded-2xl glass-card border-l-4 border-lime-500 text-left active:scale-95 transition-all">
+                        <h3 class="font-black text-sm uppercase text-lime-500">SS Gambe/Dorso 2</h3>
+                        <p class="text-[8px] text-slate-500">Superserie · giorno III</p>
+                    </button>
+                    <button onclick="selectWorkoutGroup('SS Petto/Spalle 2')" class="p-4 rounded-2xl glass-card border-l-4 border-rose-500 text-left active:scale-95 transition-all">
+                        <h3 class="font-black text-sm uppercase text-rose-500">SS Petto/Spalle 2</h3>
+                        <p class="text-[8px] text-slate-500">Superserie · giorno IV</p>
                     </button>
                 </div>
                 <button onclick="selectWorkoutGroup('all')" class="w-full p-4 rounded-2xl glass-card border-l-4 border-slate-500 text-center active:scale-95 transition-all">
@@ -398,6 +414,10 @@
                     <i class="fas fa-download mr-1"></i> Scarica Template CSV
                 </a>
                 <div id="workout-upload-status" class="text-[10px] text-slate-400 italic"></div>
+                <button onclick="ensureSuperserieWorkouts(true)" class="block w-full py-3 bg-amber-600 text-white text-center text-xs font-black uppercase rounded-xl active:scale-95 transition-all mt-2">
+                    Aggiungi 4 Schede Superserie
+                </button>
+                <div id="superserie-status" class="text-[10px] text-slate-400 italic"></div>
             </div>
 
             <!-- Info -->
@@ -584,20 +604,6 @@
                 rec: document.getElementById('rec-' + exId).value,
                 peso: document.getElementById('peso-' + exId).value,
                 note: document.getElementById('note-' + exId).value
-            };
-            saveExData(data);
-        }
-        
-        function autoSaveExDataNew(exId, serieNum) {
-            const data = getExData();
-            if(!data[exId]) data[exId] = { serie: 3 };
-            if(!data[exId].serie) data[exId].serie = 3;
-            
-            data[exId][serieNum] = {
-                reps: document.getElementById('reps-' + exId + '-' + serieNum)?.value || '10',
-                peso: document.getElementById('peso-' + exId + '-' + serieNum)?.value || '',
-                rec: document.getElementById('rec-' + exId + '-' + serieNum)?.value || '60',
-                note: document.getElementById('note-' + exId + '-' + serieNum)?.value || ''
             };
             saveExData(data);
         }
@@ -962,9 +968,9 @@
                         records.push({
                             gruppo_lavoro: gruppo,
                             esercizi: esercizio,
-                            parte_corpo: parte_corpo,
-                            serie: numSerie,
-                            reps: reps || '8-10',
+                            gruppi_muscolari: parte_corpo,
+                            serie: String(numSerie),
+                            note_rep: reps || '8-10',
                             recupero: recupero || '02:00',
                             note: note,
                             avanzamento_pesi: avanzamento
@@ -1271,24 +1277,26 @@
 
             container.innerHTML = data.map(ex => {
                 const savedData = savedExData[ex.id] || {};
-                // Usa sempre 3 serie di default
-                const serieVal = 3;
-                // Valori di default dall'esercizio
-                const defaultReps = ex.reps || '8';
+                const serieVal = parseInt(savedData.serie) || parseInt(ex.serie) || 3;
+                // Valori di default dall'esercizio (peso DB solo se numerico e matcha la select)
+                const defaultReps = parseInt(ex.reps || ex.note_rep) || 10;
                 const defaultRec = ex.recupero || '90';
-                const defaultPeso = ex.avanzamento_pesi || '';
                 const defaultNote = ex.note || '';
+                const dbPeso = String(ex.avanzamento_pesi || '').replace(/[^\d.]/g, '');
                 
                 const doneSets = state[ex.id] || [];
                 
                 // Genera righe per ogni serie con dati individuali
                 let serieRows = '';
                 for(let i=1; i<=serieVal; i++) {
-                    const serieData = savedData[i] || {};
+                    // Preferisci dati per-serie; fallback al vecchio formato flat (solo serie 1)
+                    const serieData = savedData[i] || (i === 1 && savedData.peso !== undefined && !savedData[1] ? {
+                        reps: savedData.reps, peso: savedData.peso, rec: savedData.rec, note: savedData.note
+                    } : {});
                     const repsVal = serieData.reps || defaultReps;
                     const recVal = serieData.rec || defaultRec;
-                    const pesoVal = serieData.peso || defaultPeso;
-                    const noteVal = serieData.note || defaultNote;
+                    const pesoVal = serieData.peso || (i === 1 ? dbPeso : '') || '';
+                    const noteVal = serieData.note || (i === 1 ? defaultNote : '');
                     
                     const isDone = doneSets.includes(i) ? 'completed' : '';
                     const btnText = doneSets.includes(i) ? '<i class="fas fa-stop"></i>' : '<i class="fas fa-play"></i>';
@@ -1314,6 +1322,7 @@
                                 <option value="13" ${repsVal == '13' ? 'selected' : ''}>13</option>
                                 <option value="14" ${repsVal == '14' ? 'selected' : ''}>14</option>
                                 <option value="15" ${repsVal == '15' ? 'selected' : ''}>15</option>
+                                <option value="16" ${repsVal == '16' ? 'selected' : ''}>16</option>
                             </select>
                             <select class="serie-input peso" id="peso-${ex.id}-${i}" onchange="autoSaveExDataNew('${ex.id}', ${i})">
                                 <option value="" ${pesoVal === '' ? 'selected' : ''}>Kg</option>
@@ -1434,22 +1443,37 @@
             saveSessionState(state);
         }
         
-        function autoSaveExDataNew(exId) {
-            // Salva i dati di tutte le serie per questo esercizio
+        function autoSaveExDataNew(exId, serieNum) {
+            // Salva per-serie (reps/peso/note) così restano dopo il refresh
             const data = getExData();
             const serieVal = parseInt(document.getElementById('serie-' + exId)?.value) || 3;
-            
-            data[exId] = {
-                serie: serieVal,
-                reps: document.getElementById('reps-' + exId + '-1')?.value || '8',
-                rec: document.getElementById('rec-' + exId + '-1')?.value || '90',
-                peso: document.getElementById('peso-' + exId + '-1')?.value || '',
-                note: document.getElementById('note-' + exId + '-1')?.value || ''
+            if(!data[exId] || typeof data[exId] !== 'object') data[exId] = {};
+            data[exId].serie = serieVal;
+
+            const saveOne = (n) => {
+                const repsEl = document.getElementById('reps-' + exId + '-' + n);
+                const pesoEl = document.getElementById('peso-' + exId + '-' + n);
+                const noteEl = document.getElementById('note-' + exId + '-' + n);
+                if(!repsEl && !pesoEl) return;
+                data[exId][n] = {
+                    reps: repsEl?.value || '10',
+                    peso: pesoEl?.value || '',
+                    rec: document.getElementById('rec-' + exId + '-' + n)?.value || '90',
+                    note: noteEl?.value || ''
+                };
             };
+
+            if(serieNum != null) {
+                saveOne(serieNum);
+            } else {
+                for(let i = 1; i <= serieVal; i++) saveOne(i);
+            }
             saveExData(data);
         }
         
         function updateSeriesRows(exId, newSerieVal) {
+            // Salva i valori correnti prima di ricostruire le righe
+            autoSaveExDataNew(exId);
             const container = document.getElementById('series-container-' + exId);
             const state = getSessionState();
             const doneSets = state[exId] || [];
@@ -1495,6 +1519,7 @@
                             <option value="13" ${repsVal == '13' ? 'selected' : ''}>13</option>
                             <option value="14" ${repsVal == '14' ? 'selected' : ''}>14</option>
                             <option value="15" ${repsVal == '15' ? 'selected' : ''}>15</option>
+                            <option value="16" ${repsVal == '16' ? 'selected' : ''}>16</option>
                         </select>
                         <select class="serie-input peso" id="peso-${exId}-${i}" onchange="autoSaveExDataNew('${exId}', ${i})">
                             <option value="" ${pesoVal === '' ? 'selected' : ''}>Kg</option>
@@ -1565,19 +1590,22 @@
         }
         
         async function saveExUpdateNew(id) {
+            autoSaveExDataNew(id); // persiste tutte le serie in localStorage
             const serieVal = document.getElementById('serie-' + id).value;
             const repsVal = document.getElementById('reps-' + id + '-1')?.value || '10';
-            const recVal = document.getElementById('rec-' + id + '-1')?.value || '60';
+            const recVal = getGlobalRec()[id] || 90;
             const pesoVal = document.getElementById('peso-' + id + '-1')?.value || '';
             const noteVal = document.getElementById('note-' + id + '-1')?.value || '';
             
-            await _supabase.from('workout').update({ 
-                serie: parseInt(serieVal)||3, 
-                reps: repsVal, 
-                recupero: recVal, 
-                avanzamento_pesi: pesoVal, 
-                note: noteVal 
-            }).eq('id', id);
+            if(_supabase) {
+                await _supabase.from('workout').update({ 
+                    serie: String(parseInt(serieVal)||3), 
+                    note_rep: repsVal, 
+                    recupero: String(recVal), 
+                    avanzamento_pesi: pesoVal, 
+                    note: noteVal 
+                }).eq('id', id);
+            }
             
             saveWorkoutHistory(id);
             
@@ -1598,7 +1626,7 @@
             const rec = document.getElementById('rec-' + id).value;
             const peso = document.getElementById('peso-' + id).value;
             const note = document.getElementById('note-' + id).value;
-            await _supabase.from('workout').update({ serie: parseInt(serie)||3, reps, recupero: rec, avanzamento_pesi: peso, note }).eq('id', id);
+            await _supabase.from('workout').update({ serie: String(parseInt(serie)||3), note_rep: reps, recupero: rec, avanzamento_pesi: peso, note }).eq('id', id);
             
             // Salva anche nella cronologia
             saveWorkoutHistory(id);
@@ -1909,6 +1937,70 @@
             } 
         }
 
+        // ===== 4 SCHEDE SUPERSERIE (da scheda cartacea) =====
+        // Ciclo: Spinte1 → Gambe1 → Tirata1 → SS Gambe/Dorso 1 → SS Petto/Spalle 1
+        //      → Spalle/Petto → Gambe2 → Schiena2 → SS Gambe/Dorso 2 → SS Petto/Spalle 2
+        const SUPERSerie_WORKOUTS = [
+            // --- Giorno I: dopo Tirata 1 ---
+            { gruppo_lavoro: 'SS Gambe/Dorso 1', esercizi: 'Squat KB / Rematore macchina seduto (SS)', gruppi_muscolari: 'Gambe/Dorso', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. 3x10-16. Rec max 90s. Scalzo se possibile.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Gambe/Dorso 1', esercizi: 'Hip thrust / Bicipiti femorali (SS)', gruppi_muscolari: 'Gambe', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Alzata del bacino + leg curl.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Gambe/Dorso 1', esercizi: 'Rematore unilaterale in piedi / Addominali (SS)', gruppi_muscolari: 'Dorso/Core', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Rematore 1 braccio + abs.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Gambe/Dorso 1', esercizi: 'Stacchi rumeni KB / Hammer curl manubri (SS)', gruppi_muscolari: 'Gambe/Bicipiti', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. RDL 2 piedi a terra + bicipiti presa martello.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Gambe/Dorso 1', esercizi: 'Scala bicipiti 6x6 salire + 6x6 scendere', gruppi_muscolari: 'Bicipiti', serie: '1', note_rep: '6', recupero: '00:00', note: '6x6 a salire + 6x6 a scendere senza soste.', avanzamento_pesi: '' },
+            // --- Giorno II ---
+            { gruppo_lavoro: 'SS Petto/Spalle 1', esercizi: 'Panca piana manubri / Deltoidi posteriori (SS)', gruppi_muscolari: 'Petto/Spalle', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Flat DB press + rear delt in piedi.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Petto/Spalle 1', esercizi: 'Fly cavo in piedi / Alzate frontali (SS)', gruppi_muscolari: 'Petto/Spalle', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Cable fly + front raise disco/manubrio.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Petto/Spalle 1', esercizi: 'Spinta verticale manubri / Alzate laterali (SS)', gruppi_muscolari: 'Spalle', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Overhead press in piedi + lateral raise.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Petto/Spalle 1', esercizi: 'Pushdown tricipiti / Flessioni mani larghe (SS)', gruppi_muscolari: 'Tricipiti/Petto', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Pushdown + push-up wide grip.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Petto/Spalle 1', esercizi: 'Scala tricipiti 6x6 salire + 6x6 scendere', gruppi_muscolari: 'Tricipiti', serie: '1', note_rep: '6', recupero: '00:00', note: '6x6 a salire + 6x6 a scendere senza soste.', avanzamento_pesi: '' },
+            // --- Giorno III: dopo Schiena 2 ---
+            { gruppo_lavoro: 'SS Gambe/Dorso 2', esercizi: 'Gamba unilaterale / Lat machine presa variabile (SS)', gruppi_muscolari: 'Gambe/Dorso', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Affondi DB / Bulgarian / step-up a scelta + lat machine presa variabile.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Gambe/Dorso 2', esercizi: 'Wall sit 1 gamba >30s / Pullover manubrio (SS)', gruppi_muscolari: 'Gambe/Dorso', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Wall sit monolaterale oltre 30s + pullover su panca.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Gambe/Dorso 2', esercizi: 'Piston squat rematore cavo / Australian pull-up (SS)', gruppi_muscolari: 'Gambe/Dorso', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Piston squat + rematore cavo / trazioni australiane al bilanciere.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Gambe/Dorso 2', esercizi: 'Bicipiti concentrati manubri / Addominali (SS)', gruppi_muscolari: 'Bicipiti/Core', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Concentration curl in piedi + abs.', avanzamento_pesi: '' },
+            // --- Giorno IV ---
+            { gruppo_lavoro: 'SS Petto/Spalle 2', esercizi: 'Panca inclinata manubri / Upright rows (SS)', gruppi_muscolari: 'Petto/Spalle', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Incline DB press + tirate manubri.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Petto/Spalle 2', esercizi: 'Alzate frontali + laterali + posteriori (SS triplo)', gruppi_muscolari: 'Spalle', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superset triplo: frontali + laterali + posteriori senza sosta tra i 3.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Petto/Spalle 2', esercizi: 'Flessioni su palla a cedimento / Addominali (SS)', gruppi_muscolari: 'Petto/Core', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Push-up su palla a cedimento + abs.', avanzamento_pesi: '' },
+            { gruppo_lavoro: 'SS Petto/Spalle 2', esercizi: 'Shrugs manubri / Hyperextension (SS)', gruppi_muscolari: 'Trapezi/Lombari', serie: '3', note_rep: '10-16', recupero: '01:30', note: 'Superserie. Shrugs + hyperextension. Note: plank intermittente e aerobica basso impatto a piacere. 1 riposo/settimana.', avanzamento_pesi: '' }
+        ];
+
+        async function ensureSuperserieWorkouts(forceNotify) {
+            const status = document.getElementById('superserie-status');
+            try {
+                if(!_supabase) {
+                    if(forceNotify && status) status.innerHTML = '❌ Database non pronto. Riprova tra un attimo.';
+                    return;
+                }
+                const groups = ['SS Gambe/Dorso 1', 'SS Petto/Spalle 1', 'SS Gambe/Dorso 2', 'SS Petto/Spalle 2'];
+                const { data: existing, error: readErr } = await _supabase
+                    .from('workout')
+                    .select('gruppo_lavoro')
+                    .in('gruppo_lavoro', groups);
+
+                if(readErr) throw readErr;
+
+                const have = new Set((existing || []).map(r => r.gruppo_lavoro));
+                const missingGroups = groups.filter(g => !have.has(g));
+
+                if(missingGroups.length === 0) {
+                    if(forceNotify && status) status.innerHTML = '✅ Schede superserie già presenti.';
+                    return;
+                }
+
+                const toInsert = SUPERSerie_WORKOUTS.filter(ex => missingGroups.includes(ex.gruppo_lavoro));
+                const { error } = await _supabase.from('workout').insert(toInsert);
+                if(error) throw error;
+
+                if(status) status.innerHTML = `✅ Aggiunte ${toInsert.length} esercizi superserie (${missingGroups.join(', ')}).`;
+                else if(forceNotify) alert('Schede superserie aggiunte!');
+            } catch(err) {
+                console.error('ensureSuperserieWorkouts', err);
+                if(status) status.innerHTML = `❌ Errore: ${err.message}`;
+                else if(forceNotify) alert('Errore aggiunta superserie: ' + err.message);
+            }
+        }
+
         window.onload = () => { 
             try {
                 console.log('=== APP STARTING ===');
@@ -1917,6 +2009,8 @@
                 // Temporaneamente bypass login per debug
                 console.log('Bypassing auth for debug');
                 initApp();
+                // Inserisce le superserie se mancano (non tocca le schede esistenti)
+                setTimeout(() => ensureSuperserieWorkouts(false), 800);
                 console.log('App initialized successfully');
             } catch(err) {
                 console.error('Fatal error on load:', err);

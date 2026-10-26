@@ -19,3 +19,21 @@ Schiena 2;Stacco;Schiena;3;02:30;Principale;5-8;80kg
 Schiena 2;Pull Up;Schiena;3;02:00;Corpo libero;6-10;0kg
 Schiena 2;T-Bar;Schiena;3;02:00;Barra;10-12;20kg
 Schiena 2;Curl Martello;Bicipiti;3;01:30;Alternato;12-15;6kg
+SS Gambe/Dorso 1;Squat KB / Rematore macchina seduto (SS);Gambe/Dorso;3;01:30;Superserie. 3x10-16. Rec max 90s.;10-16;
+SS Gambe/Dorso 1;Hip thrust / Bicipiti femorali (SS);Gambe;3;01:30;Superserie. Alzata del bacino + leg curl.;10-16;
+SS Gambe/Dorso 1;Rematore unilaterale in piedi / Addominali (SS);Dorso/Core;3;01:30;Superserie. Rematore 1 braccio + abs.;10-16;
+SS Gambe/Dorso 1;Stacchi rumeni KB / Hammer curl manubri (SS);Gambe/Bicipiti;3;01:30;Superserie. RDL + hammer curl.;10-16;
+SS Gambe/Dorso 1;Scala bicipiti 6x6 salire + 6x6 scendere;Bicipiti;1;00:00;6x6 a salire + 6x6 a scendere senza soste.;6;
+SS Petto/Spalle 1;Panca piana manubri / Deltoidi posteriori (SS);Petto/Spalle;3;01:30;Superserie. Flat DB press + rear delt.;10-16;
+SS Petto/Spalle 1;Fly cavo in piedi / Alzate frontali (SS);Petto/Spalle;3;01:30;Superserie. Cable fly + front raise.;10-16;
+SS Petto/Spalle 1;Spinta verticale manubri / Alzate laterali (SS);Spalle;3;01:30;Superserie. OHP + lateral raise.;10-16;
+SS Petto/Spalle 1;Pushdown tricipiti / Flessioni mani larghe (SS);Tricipiti/Petto;3;01:30;Superserie. Pushdown + wide push-up.;10-16;
+SS Petto/Spalle 1;Scala tricipiti 6x6 salire + 6x6 scendere;Tricipiti;1;00:00;6x6 a salire + 6x6 a scendere senza soste.;6;
+SS Gambe/Dorso 2;Gamba unilaterale / Lat machine presa variabile (SS);Gambe/Dorso;3;01:30;Affondi/Bulgarian/step-up + lat machine.;10-16;
+SS Gambe/Dorso 2;Wall sit 1 gamba >30s / Pullover manubrio (SS);Gambe/Dorso;3;01:30;Wall sit monolaterale + pullover.;10-16;
+SS Gambe/Dorso 2;Piston squat rematore cavo / Australian pull-up (SS);Gambe/Dorso;3;01:30;Piston squat + rematore / australian.;10-16;
+SS Gambe/Dorso 2;Bicipiti concentrati manubri / Addominali (SS);Bicipiti/Core;3;01:30;Concentration curl + abs.;10-16;
+SS Petto/Spalle 2;Panca inclinata manubri / Upright rows (SS);Petto/Spalle;3;01:30;Incline press + tirate manubri.;10-16;
+SS Petto/Spalle 2;Alzate frontali + laterali + posteriori (SS triplo);Spalle;3;01:30;Superset triplo spalle.;10-16;
+SS Petto/Spalle 2;Flessioni su palla a cedimento / Addominali (SS);Petto/Core;3;01:30;Push-up palla a cedimento + abs.;MAX;
+SS Petto/Spalle 2;Shrugs manubri / Hyperextension (SS);Trapezi/Lombari;3;01:30;Shrugs + hyperextension.;10-16;
