@@ -151,22 +151,19 @@
     },
 
     _renderMetrics(m) {
-      const el = document.getElementById('native-metrics-bar');
-      if (!el) return;
-      if (!m?.isActive) {
-        el.classList.add('hidden');
-        return;
+      // Aggiorna il live workout stile Fitness se attivo
+      if (global.liveWorkout && m) {
+        if (m.heartRate != null) global.liveWorkout.heartRate = m.heartRate;
+        if (m.activeCalories != null) {
+          global.liveWorkout.nativeActiveKcal = Math.round(m.activeCalories);
+          global.liveWorkout.activeCalories = global.liveWorkout.nativeActiveKcal;
+        }
+        if (typeof global.refreshLiveMetricsUI === 'function') global.refreshLiveMetricsUI();
       }
-      el.classList.remove('hidden');
-      const hr = m.heartRate != null ? Math.round(m.heartRate) + ' bpm' : '--';
-      const kcal = m.activeCalories != null ? Math.round(m.activeCalories) + ' kcal' : '--';
-      const min = Math.floor((m.elapsedSeconds || 0) / 60);
-      const sec = (m.elapsedSeconds || 0) % 60;
-      el.innerHTML = `
-        <span><i class="fas fa-heart text-red-400"></i> ${hr}</span>
-        <span><i class="fas fa-fire text-orange-400"></i> ${kcal}</span>
-        <span><i class="fas fa-clock text-slate-400"></i> ${min}:${String(sec).padStart(2, '0')}</span>
-      `;
+      const el = document.getElementById('live-hr');
+      if (el && m?.heartRate != null) el.textContent = Math.round(m.heartRate);
+      const ka = document.getElementById('live-kcal-active');
+      if (ka && m?.activeCalories != null) ka.textContent = Math.round(m.activeCalories);
     },
 
     _onWatchEvent(ev) {
@@ -183,22 +180,31 @@
         return;
       }
 
-      if (ev.type === 'setComplete' && ev.exId != null && ev.setNum != null) {
-        // Simula tap sul set se non già completato
-        const state = typeof getSessionState === 'function' ? getSessionState() : {};
-        const done = state[ev.exId] || [];
-        if (!done.includes(ev.setNum) && typeof handleSetClickNew === 'function') {
-          handleSetClickNew(String(ev.exId), parseInt(ev.setNum, 10));
+      if (ev.type === 'setComplete') {
+        if (typeof completeLiveSet === 'function' && global.liveWorkout) {
+          completeLiveSet();
         }
         return;
       }
 
-      if (ev.type === 'setUndo' && ev.exId != null && ev.setNum != null) {
-        const state = typeof getSessionState === 'function' ? getSessionState() : {};
-        const done = state[ev.exId] || [];
-        if (done.includes(ev.setNum) && typeof handleSetClickNew === 'function') {
-          handleSetClickNew(String(ev.exId), parseInt(ev.setNum, 10));
+      if (ev.type === 'setUndo' && global.liveWorkout) {
+        const ex = global.liveWorkout.exercises[global.liveWorkout.exIndex];
+        const last = [...(ex?.sets || [])].reverse().find((s) => s.done);
+        if (last) {
+          last.done = false;
+          if (typeof persistLiveSetToStorage === 'function') persistLiveSetToStorage();
+          if (typeof renderLiveStep === 'function') renderLiveStep();
         }
+        return;
+      }
+
+      if (ev.type === 'nextExercise' && typeof nextLiveExercise === 'function') {
+        nextLiveExercise(false);
+        return;
+      }
+      if (ev.type === 'prevExercise' && global.liveWorkout) {
+        global.liveWorkout.exIndex = Math.max(0, global.liveWorkout.exIndex - 1);
+        if (typeof renderLiveStep === 'function') renderLiveStep();
         return;
       }
 

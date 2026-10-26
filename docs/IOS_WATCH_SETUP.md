@@ -8,15 +8,20 @@ Questa guida collega l’app web esistente a una build nativa Capacitor con:
 
 ## Prerequisiti
 
-1. **Xcode 16+** dall’App Store (obbligatorio — su questa macchina al momento c’è solo Command Line Tools, **non** `/Applications/Xcode.app`)
-2. Dopo l’installazione:
+1. **Xcode ufficiale** (obbligatorio per HealthKit/Watch nativi):
+   - **App Store** → cerca “Xcode”, oppure
+   - [Apple Developer Downloads](https://developer.apple.com/download/all/) con Apple ID (versioni precedenti se il Mac non supporta l’ultima)
+   - **Non** usare Xcode da siti terzi / torrent / “crack”: non è supportato, rischioso, e non posso aiutarti a scaricarlo da lì.
+2. Se non vuoi aggiornare il Mac: prendi da developer.apple.com una **versione Xcode compatibile** col tuo macOS, oppure usa un Mac in cloud (MacStadium, GitHub Actions `macos-latest`) solo per firmare/buildare.
+3. Dopo l’installazione:
    ```bash
    sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
    sudo xcodebuild -license accept
    brew install cocoapods
    ```
-3. Account Apple Developer (per device reale + Watch; il simulatore Watch non legge FC vera)
-4. iPhone + Apple Watch accoppiati
+4. Account Apple Developer + iPhone/Watch reali (il simulatore non dà FC vera)
+
+**Nota:** l’app web ha già un flusso stile Fitness (timer, pausa, kcal stimate, step esercizi). Le kcal “vere” da Watch arrivano solo con la build nativa HealthKit.
 
 ## Setup rapido
 

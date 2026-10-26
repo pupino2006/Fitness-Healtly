@@ -341,22 +341,116 @@
                 </button>
             </div>
 
-            <!-- Lista Esercizi (sessione attiva) -->
-            <div id="workout-list" class="hidden space-y-4">
-                <div class="flex gap-2 items-center">
-                    <button onclick="backToWorkoutHubFromSession()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-400 active:scale-90"><i class="fas fa-home text-sm"></i></button>
-                    <div class="min-w-0 flex-1">
-                        <span id="current-group-title" class="text-sm font-black uppercase text-orange-500 block truncate"></span>
-                        <span id="session-timer-label" class="text-[9px] text-slate-500 font-bold uppercase">Sessione attiva</span>
+            <!-- Sessione live stile Apple Fitness -->
+            <div id="workout-list" class="hidden space-y-3">
+                <div class="flex items-center gap-2">
+                    <button onclick="openLiveWorkoutMenu()" class="bg-slate-800 px-3 py-2 rounded-xl border border-slate-700 text-slate-300 active:scale-90"><i class="fas fa-ellipsis"></i></button>
+                    <div class="min-w-0 flex-1 text-center">
+                        <span id="current-group-title" class="text-xs font-black uppercase text-orange-500 block truncate"></span>
+                        <span id="live-status-label" class="text-[9px] text-emerald-400 font-bold uppercase">In corso</span>
                     </div>
-                    <button onclick="resetAllSets()" class="bg-slate-800 px-3 py-2 rounded-xl border border-slate-700 text-slate-400 active:scale-90" title="Reset serie"><i class="fas fa-sync-alt text-sm"></i></button>
-                    <button onclick="finishWorkoutSession()" class="bg-emerald-600 px-3 py-2 rounded-xl text-white active:scale-90" title="Termina"><i class="fas fa-flag-checkered text-sm"></i></button>
+                    <button onclick="togglePauseLiveWorkout()" id="btn-pause-live" class="bg-slate-800 px-3 py-2 rounded-xl border border-slate-700 text-slate-200 active:scale-90"><i class="fas fa-pause"></i></button>
                 </div>
-                <button onclick="finishWorkoutSession()" class="w-full py-3 bg-emerald-600/90 text-white text-xs font-black uppercase rounded-xl active:scale-95 transition-all">
-                    Termina e salva sessione
-                </button>
-                <div id="native-metrics-bar" class="hidden glass-card px-4 py-2 rounded-xl border border-red-500/20 flex justify-between text-[10px] font-black uppercase tracking-wide"></div>
-                <div id="workout-exercises" class="space-y-4 pb-32"></div>
+
+                <!-- Metriche live -->
+                <div class="glass-card rounded-3xl p-4 border border-orange-500/20">
+                    <div class="text-center mb-3">
+                        <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest">Durata</p>
+                        <p id="live-duration" class="text-4xl font-black tracking-tight tabular-nums text-white">00:00</p>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div>
+                            <p class="text-[8px] text-slate-500 font-black uppercase">Attive</p>
+                            <p id="live-kcal-active" class="text-lg font-black text-orange-400 tabular-nums">0</p>
+                            <p class="text-[8px] text-slate-600">kcal</p>
+                        </div>
+                        <div>
+                            <p class="text-[8px] text-slate-500 font-black uppercase">Totali</p>
+                            <p id="live-kcal-total" class="text-lg font-black text-emerald-400 tabular-nums">0</p>
+                            <p class="text-[8px] text-slate-600">kcal</p>
+                        </div>
+                        <div>
+                            <p class="text-[8px] text-slate-500 font-black uppercase">FC</p>
+                            <p id="live-hr" class="text-lg font-black text-red-400 tabular-nums">--</p>
+                            <p class="text-[8px] text-slate-600">bpm</p>
+                        </div>
+                    </div>
+                    <div id="native-metrics-bar" class="hidden"></div>
+                </div>
+
+                <!-- Step esercizio corrente -->
+                <div id="live-step-card" class="glass-card rounded-3xl p-4 border border-white/5 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <p id="live-progress" class="text-[9px] font-black uppercase text-slate-500">Esercizio 1/1</p>
+                        <p id="live-set-progress" class="text-[9px] font-black uppercase text-orange-400">Serie 1/3</p>
+                    </div>
+                    <h3 id="live-ex-name" class="text-base font-black italic uppercase text-orange-400 leading-tight">—</h3>
+                    <p id="live-ex-note" class="text-[10px] text-slate-400 leading-snug"></p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-slate-900/70 rounded-2xl p-3 text-center">
+                            <p class="text-[8px] text-slate-500 font-black uppercase">Reps</p>
+                            <select id="live-reps" onchange="updateLiveSetField('reps', this.value)" class="w-full bg-transparent text-center text-2xl font-black text-white outline-none"></select>
+                        </div>
+                        <div class="bg-slate-900/70 rounded-2xl p-3 text-center">
+                            <p class="text-[8px] text-slate-500 font-black uppercase">Kg</p>
+                            <select id="live-peso" onchange="updateLiveSetField('peso', this.value)" class="w-full bg-transparent text-center text-2xl font-black text-orange-400 outline-none"></select>
+                        </div>
+                    </div>
+                    <div id="live-set-dots" class="flex gap-1.5 justify-center flex-wrap"></div>
+                    <button onclick="completeLiveSet()" id="btn-complete-set" class="w-full py-4 bg-emerald-600 text-white text-sm font-black uppercase rounded-2xl active:scale-95 transition-all shadow-lg shadow-emerald-900/30">
+                        Completa serie
+                    </button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="skipLiveRecovery()" id="btn-skip-rec" class="hidden py-3 bg-slate-800 text-slate-300 text-[10px] font-black uppercase rounded-xl border border-slate-700">Salta recupero</button>
+                        <button onclick="nextLiveExercise(true)" class="py-3 bg-slate-800 text-slate-300 text-[10px] font-black uppercase rounded-xl border border-slate-700 col-span-2">Salta esercizio</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pb-28">
+                    <button onclick="requestEndLiveWorkout()" class="py-3 bg-emerald-600 text-white text-xs font-black uppercase rounded-xl active:scale-95">Termina</button>
+                    <button onclick="cancelLiveWorkout()" class="py-3 bg-red-600/20 text-red-400 text-xs font-black uppercase rounded-xl border border-red-500/30 active:scale-95">Annulla</button>
+                </div>
+
+                <!-- DOM nascosto per snapshot compatibilità / sync Watch -->
+                <div id="workout-exercises" class="hidden"></div>
+            </div>
+
+            <!-- Menu sessione -->
+            <div id="live-menu-overlay" class="hidden fixed inset-0 z-[900] bg-black/70 backdrop-blur-sm flex items-end justify-center p-4" onclick="if(event.target===this)closeLiveWorkoutMenu()">
+                <div class="w-full max-w-md glass-card rounded-3xl p-4 space-y-2 border border-slate-700">
+                    <p class="text-xs font-black uppercase text-slate-400 mb-2 text-center">Sessione</p>
+                    <button onclick="togglePauseLiveWorkout();closeLiveWorkoutMenu()" class="w-full py-3 rounded-xl bg-slate-800 text-sm font-black uppercase" id="menu-pause-label">Pausa</button>
+                    <button onclick="closeLiveWorkoutMenu();requestEndLiveWorkout()" class="w-full py-3 rounded-xl bg-emerald-600 text-sm font-black uppercase text-white">Termina e salva</button>
+                    <button onclick="closeLiveWorkoutMenu();cancelLiveWorkout()" class="w-full py-3 rounded-xl bg-red-600/20 text-red-400 text-sm font-black uppercase border border-red-500/30">Annulla allenamento</button>
+                    <button onclick="closeLiveWorkoutMenu()" class="w-full py-3 rounded-xl text-slate-500 text-xs font-bold uppercase">Chiudi</button>
+                </div>
+            </div>
+
+            <!-- Riepilogo fine workout -->
+            <div id="live-summary-overlay" class="hidden fixed inset-0 z-[950] bg-[#0b0f1a] flex flex-col p-5 overflow-y-auto">
+                <p class="text-[10px] font-black uppercase text-emerald-400 tracking-widest mb-1">Allenamento completato</p>
+                <h2 id="summary-gruppo" class="text-2xl font-black uppercase text-white mb-4">—</h2>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="glass-card rounded-2xl p-4 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Durata</p>
+                        <p id="summary-duration" class="text-xl font-black">—</p>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Kcal attive</p>
+                        <p id="summary-kcal-active" class="text-xl font-black text-orange-400">—</p>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Kcal totali</p>
+                        <p id="summary-kcal-total" class="text-xl font-black text-emerald-400">—</p>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">FC media</p>
+                        <p id="summary-hr" class="text-xl font-black text-red-400">—</p>
+                    </div>
+                </div>
+                <div id="summary-exercises" class="space-y-2 mb-6 flex-1"></div>
+                <button onclick="confirmSaveLiveWorkout()" class="w-full py-4 bg-emerald-600 text-white text-sm font-black uppercase rounded-2xl active:scale-95 mb-2">Salva</button>
+                <button onclick="discardSummaryAndCancel()" class="w-full py-3 text-red-400 text-xs font-black uppercase">Non salvare</button>
             </div>
         </div>
 
@@ -1347,150 +1441,19 @@
         // --- WORKOUT ---
         async function loadWorkout(gruppo) {
             if(!_supabase) return;
-            const container = document.getElementById('workout-exercises');
             let q = _supabase.from('workout').select('*').order('id');
             if(gruppo !== 'all') q = q.eq('gruppo_lavoro', gruppo);
-                const { data } = await q;
-                const state = getSessionState();
-                const savedExData = getExData();
-                const globalRecs = getGlobalRec();
-
-            container.innerHTML = data.map(ex => {
-                const savedData = savedExData[ex.id] || {};
-                const serieVal = parseInt(savedData.serie) || parseInt(ex.serie) || 3;
-                // Valori di default dall'esercizio (peso DB solo se numerico e matcha la select)
-                const defaultReps = parseInt(ex.reps || ex.note_rep) || 10;
-                const defaultRec = ex.recupero || '90';
-                const defaultNote = ex.note || '';
-                const dbPeso = String(ex.avanzamento_pesi || '').replace(/[^\d.]/g, '');
-                
-                const doneSets = state[ex.id] || [];
-                
-                // Genera righe per ogni serie con dati individuali
-                let serieRows = '';
-                for(let i=1; i<=serieVal; i++) {
-                    // Preferisci dati per-serie; fallback al vecchio formato flat (solo serie 1)
-                    const serieData = savedData[i] || (i === 1 && savedData.peso !== undefined && !savedData[1] ? {
-                        reps: savedData.reps, peso: savedData.peso, rec: savedData.rec, note: savedData.note
-                    } : {});
-                    const repsVal = serieData.reps || defaultReps;
-                    const recVal = serieData.rec || defaultRec;
-                    const pesoVal = serieData.peso || (i === 1 ? dbPeso : '') || '';
-                    const noteVal = serieData.note || (i === 1 ? defaultNote : '');
-                    
-                    const isDone = doneSets.includes(i) ? 'completed' : '';
-                    const btnText = doneSets.includes(i) ? '<i class="fas fa-stop"></i>' : '<i class="fas fa-play"></i>';
-                    const btnClass = doneSets.includes(i) ? 'btn-recupero active' : 'btn-recupero';
-                    
-                    serieRows += `
-                    <div class="serie-container" id="serie-row-${ex.id}-${i}">
-                        <div class="serie-fields">
-                            <div class="serie-num ${isDone}" id="set-num-${ex.id}-${i}">${i}</div>
-                            <select class="serie-input reps" id="reps-${ex.id}-${i}" onchange="autoSaveExDataNew('${ex.id}', ${i})">
-                                <option value="1" ${repsVal == '1' ? 'selected' : ''}>1</option>
-                                <option value="2" ${repsVal == '2' ? 'selected' : ''}>2</option>
-                                <option value="3" ${repsVal == '3' ? 'selected' : ''}>3</option>
-                                <option value="4" ${repsVal == '4' ? 'selected' : ''}>4</option>
-                                <option value="5" ${repsVal == '5' ? 'selected' : ''}>5</option>
-                                <option value="6" ${repsVal == '6' ? 'selected' : ''}>6</option>
-                                <option value="7" ${repsVal == '7' ? 'selected' : ''}>7</option>
-                                <option value="8" ${repsVal == '8' ? 'selected' : ''}>8</option>
-                                <option value="9" ${repsVal == '9' ? 'selected' : ''}>9</option>
-                                <option value="10" ${repsVal == '10' ? 'selected' : ''}>10</option>
-                                <option value="11" ${repsVal == '11' ? 'selected' : ''}>11</option>
-                                <option value="12" ${repsVal == '12' ? 'selected' : ''}>12</option>
-                                <option value="13" ${repsVal == '13' ? 'selected' : ''}>13</option>
-                                <option value="14" ${repsVal == '14' ? 'selected' : ''}>14</option>
-                                <option value="15" ${repsVal == '15' ? 'selected' : ''}>15</option>
-                                <option value="16" ${repsVal == '16' ? 'selected' : ''}>16</option>
-                            </select>
-                            <select class="serie-input peso" id="peso-${ex.id}-${i}" onchange="autoSaveExDataNew('${ex.id}', ${i})">
-                                <option value="" ${pesoVal === '' ? 'selected' : ''}>Kg</option>
-                                <option value="10" ${pesoVal == '10' ? 'selected' : ''}>10</option>
-                                <option value="12" ${pesoVal == '12' ? 'selected' : ''}>12</option>
-                                <option value="14" ${pesoVal == '14' ? 'selected' : ''}>14</option>
-                                <option value="16" ${pesoVal == '16' ? 'selected' : ''}>16</option>
-                                <option value="18" ${pesoVal == '18' ? 'selected' : ''}>18</option>
-                                <option value="20" ${pesoVal == '20' ? 'selected' : ''}>20</option>
-                                <option value="22" ${pesoVal == '22' ? 'selected' : ''}>22</option>
-                                <option value="24" ${pesoVal == '24' ? 'selected' : ''}>24</option>
-                                <option value="26" ${pesoVal == '26' ? 'selected' : ''}>26</option>
-                                <option value="28" ${pesoVal == '28' ? 'selected' : ''}>28</option>
-                                <option value="30" ${pesoVal == '30' ? 'selected' : ''}>30</option>
-                                <option value="32" ${pesoVal == '32' ? 'selected' : ''}>32</option>
-                                <option value="34" ${pesoVal == '34' ? 'selected' : ''}>34</option>
-                                <option value="36" ${pesoVal == '36' ? 'selected' : ''}>36</option>
-                                <option value="38" ${pesoVal == '38' ? 'selected' : ''}>38</option>
-                                <option value="40" ${pesoVal == '40' ? 'selected' : ''}>40</option>
-                                <option value="42" ${pesoVal == '42' ? 'selected' : ''}>42</option>
-                                <option value="44" ${pesoVal == '44' ? 'selected' : ''}>44</option>
-                                <option value="46" ${pesoVal == '46' ? 'selected' : ''}>46</option>
-                                <option value="48" ${pesoVal == '48' ? 'selected' : ''}>48</option>
-                                <option value="50" ${pesoVal == '50' ? 'selected' : ''}>50</option>
-                                <option value="55" ${pesoVal == '55' ? 'selected' : ''}>55</option>
-                                <option value="60" ${pesoVal == '60' ? 'selected' : ''}>60</option>
-                                <option value="65" ${pesoVal == '65' ? 'selected' : ''}>65</option>
-                                <option value="70" ${pesoVal == '70' ? 'selected' : ''}>70</option>
-                                <option value="75" ${pesoVal == '75' ? 'selected' : ''}>75</option>
-                                <option value="80" ${pesoVal == '80' ? 'selected' : ''}>80</option>
-                                <option value="85" ${pesoVal == '85' ? 'selected' : ''}>85</option>
-                                <option value="90" ${pesoVal == '90' ? 'selected' : ''}>90</option>
-                                <option value="95" ${pesoVal == '95' ? 'selected' : ''}>95</option>
-                                <option value="100" ${pesoVal == '100' ? 'selected' : ''}>100</option>
-                                <option value="105" ${pesoVal == '105' ? 'selected' : ''}>105</option>
-                                <option value="110" ${pesoVal == '110' ? 'selected' : ''}>110</option>
-                                <option value="115" ${pesoVal == '115' ? 'selected' : ''}>115</option>
-                                <option value="120" ${pesoVal == '120' ? 'selected' : ''}>120</option>
-                                <option value="125" ${pesoVal == '125' ? 'selected' : ''}>125</option>
-                                <option value="130" ${pesoVal == '130' ? 'selected' : ''}>130</option>
-                                <option value="135" ${pesoVal == '135' ? 'selected' : ''}>135</option>
-                                <option value="140" ${pesoVal == '140' ? 'selected' : ''}>140</option>
-                                <option value="145" ${pesoVal == '145' ? 'selected' : ''}>145</option>
-                                <option value="150" ${pesoVal == '150' ? 'selected' : ''}>150</option>
-                                <option value="155" ${pesoVal == '155' ? 'selected' : ''}>155</option>
-                                <option value="160" ${pesoVal == '160' ? 'selected' : ''}>160</option>
-                                <option value="165" ${pesoVal == '165' ? 'selected' : ''}>165</option>
-                                <option value="170" ${pesoVal == '170' ? 'selected' : ''}>170</option>
-                                <option value="175" ${pesoVal == '175' ? 'selected' : ''}>175</option>
-                                <option value="180" ${pesoVal == '180' ? 'selected' : ''}>180</option>
-                                <option value="185" ${pesoVal == '185' ? 'selected' : ''}>185</option>
-                                <option value="190" ${pesoVal == '190' ? 'selected' : ''}>190</option>
-                                <option value="195" ${pesoVal == '195' ? 'selected' : ''}>195</option>
-                                <option value="200" ${pesoVal == '200' ? 'selected' : ''}>200</option>
-                            </select>
-                            <textarea rows="4" class="serie-input note" id="note-${ex.id}-${i}" placeholder="Note" oninput="autoSaveExDataNew('${ex.id}', ${i})">${noteVal}</textarea>
-                        </div>
-                        <button class="${btnClass}" onclick="handleSetClickNew('${ex.id}', ${i})" style="width: 100%; padding: 12px; font-size: 1.2rem; border-radius: 8px;">${btnText}</button>
-                    </div>`;
-                }
-
-                return `
-                <div class="glass-card p-3 rounded-2xl border border-white/5">
-                    <div class="flex justify-between items-center mb-2">
-                        <div class="flex-1">
-                            <h3 class="font-black text-sm italic text-orange-400 uppercase leading-tight">${ex.esercizi}</h3>
-                            <p class="text-[7px] text-slate-500 font-bold uppercase">${ex.gruppo_lavoro}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <select id="rec-global-${ex.id}" onchange="updateGlobalRec('${ex.id}', this.value)" class="w-20 bg-slate-900 border border-slate-700 p-1.5 rounded-lg text-xs font-black text-center text-emerald-500 outline-none">
-                                ${[30,45,60,75,90,105,120,135,150,165,180,195,210,225,240,255,270,285,300].map(s => `<option value="${s}" ${s == (globalRecs[ex.id] || 60) ? 'selected' : ''}>${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}</option>`).join('')}
-                            </select>
-                            <input type="number" id="serie-${ex.id}" value="${serieVal}" min="1" max="10" oninput="updateSeriesRows('${ex.id}', this.value)" class="w-12 bg-slate-900 border border-slate-700 p-1.5 rounded-lg text-xs font-black text-center text-orange-500 outline-none">
-                            <button onclick="saveExUpdateNew('${ex.id}')" class="text-orange-500 bg-orange-500/10 p-2 rounded-lg border border-orange-500/20"><i class="fas fa-save text-xs"></i></button>
-                        </div>
-                    </div>
-                    <!-- Intestazioni colonne -->
-                    <div class="grid grid-cols-[30px_1fr_1fr_2fr] gap-1 px-2 mb-1">
-                        <span class="text-[6px] text-slate-600 font-black uppercase">#</span>
-                        <span class="text-[6px] text-slate-600 font-black uppercase">Reps</span>
-                        <span class="text-[6px] text-slate-600 font-black uppercase">Kg</span>
-                        <span class="text-[6px] text-slate-600 font-black uppercase">Note</span>
-                    </div>
-                    <div id="series-container-${ex.id}">${serieRows}</div>
-                </div>`;
-            }).join('');
+            const { data } = await q;
+            if(!data || !data.length) {
+                alert('Nessun esercizio trovato per questa scheda.');
+                showWorkoutHub();
+                return;
+            }
+            // Modalità guidata stile Fitness
+            initLiveWorkoutFromData(gruppo, data);
+            setTimeout(syncActiveSessionToWatch, 500);
         }
-        
+
         function handleSetClickNew(exId, setNum) {
             const state = getSessionState();
             const setNumEl = document.getElementById('set-num-' + exId + '-' + setNum);
@@ -1833,6 +1796,7 @@
             list.innerHTML = history.slice(0, 12).map(s => {
                 const d = new Date(s.endedAt || s.startedAt);
                 const mins = s.durationMin != null ? s.durationMin + ' min' : '-';
+                const kcal = s.activeCalories != null ? Math.round(s.activeCalories) + ' kcal' : '';
                 const setsDone = (s.exercises || []).reduce((acc, ex) => acc + (ex.sets?.filter(x => x.peso > 0 || x.reps > 0).length || 0), 0);
                 return `
                 <button onclick="viewSessionDetail('${s.id}')" class="w-full text-left p-3 rounded-xl bg-slate-800/60 border border-slate-700/80 active:scale-[0.98] transition-all">
@@ -1843,7 +1807,7 @@
                         </div>
                         <div class="text-right shrink-0">
                             <p class="text-[10px] font-black text-emerald-400">${mins}</p>
-                            <p class="text-[8px] text-slate-500">${setsDone} set</p>
+                            <p class="text-[8px] text-slate-500">${kcal || (setsDone + " set")}</p>
                         </div>
                     </div>
                 </button>`;
@@ -1861,6 +1825,115 @@
             alert(`${s.gruppo}\n${new Date(s.endedAt || s.startedAt).toLocaleString('it-IT')}\nDurata: ${s.durationMin ?? '-'} min\n\n${lines || 'Nessun dato serie'}`);
         }
 
+        // ===== LIVE WORKOUT (stile Apple Fitness) =====
+        // su window così il bridge Watch/HealthKit può aggiornare le metriche
+        window.liveWorkout = null;
+        let liveTickTimer = null;
+        let pendingSummary = null;
+        // Proxy: codice usa liveWorkout, bridge legge window.liveWorkout
+        var liveWorkout = null;
+
+        function getBodyWeightKg() {
+            const saved = parseFloat(localStorage.getItem('user_body_kg') || '');
+            if (saved > 30 && saved < 250) return saved;
+            return 80; // default fino a sync peso corporeo
+        }
+
+        function formatDuration(sec) {
+            const s = Math.max(0, Math.floor(sec));
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const r = s % 60;
+            if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+            return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+        }
+
+        function liveElapsedSeconds() {
+            if (!liveWorkout) return 0;
+            let elapsed = liveWorkout.accumulatedSec || 0;
+            if (!liveWorkout.paused && liveWorkout.segmentStartedAt) {
+                elapsed += (Date.now() - liveWorkout.segmentStartedAt) / 1000;
+            }
+            return elapsed;
+        }
+
+        function estimateCalories(totalSec, activeSec) {
+            // Stima tipo Fitness finché non c'è HealthKit reale
+            const kg = getBodyWeightKg();
+            const totalH = Math.max(0, totalSec) / 3600;
+            const activeH = Math.max(0, activeSec) / 3600;
+            // MET ~5.5 strength; basale sempre sulla durata totale (anche in pausa)
+            const active = 5.5 * kg * activeH;
+            const basal = 1.05 * kg * totalH;
+            return {
+                activeCalories: Math.round(active),
+                totalCalories: Math.round(active + basal)
+            };
+        }
+
+        function liveActiveSeconds() {
+            if (!liveWorkout) return 0;
+            let active = liveWorkout.activeAccumulatedSec || 0;
+            if (!liveWorkout.paused && liveWorkout.segmentStartedAt) {
+                active += (Date.now() - liveWorkout.segmentStartedAt) / 1000;
+            }
+            return active;
+        }
+
+        function startLiveClock() {
+            stopLiveClock();
+            liveTickTimer = setInterval(() => {
+                if (!liveWorkout) return;
+                refreshLiveMetricsUI();
+            }, 1000);
+        }
+
+        function stopLiveClock() {
+            if (liveTickTimer) clearInterval(liveTickTimer);
+            liveTickTimer = null;
+        }
+
+        function refreshLiveMetricsUI() {
+            window.liveWorkout = liveWorkout;
+            window.refreshLiveMetricsUI = refreshLiveMetricsUI;
+            window.completeLiveSet = completeLiveSet;
+            window.renderLiveStep = renderLiveStep;
+            window.persistLiveSetToStorage = persistLiveSetToStorage;
+            window.nextLiveExercise = nextLiveExercise;
+            if (!liveWorkout) return;
+            const elapsed = liveElapsedSeconds();
+            document.getElementById('live-duration').textContent = formatDuration(elapsed);
+
+            // Preferisci metriche native se presenti
+            let active = liveWorkout.nativeActiveKcal;
+            let total = liveWorkout.nativeTotalKcal;
+            if (active == null || total == null) {
+                const est = estimateCalories(elapsed, liveActiveSeconds());
+                if (active == null) active = est.activeCalories;
+                if (total == null) total = est.totalCalories;
+            }
+            liveWorkout.activeCalories = active;
+            liveWorkout.totalCalories = total;
+
+            document.getElementById('live-kcal-active').textContent = active;
+            document.getElementById('live-kcal-total').textContent = total;
+            document.getElementById('live-hr').textContent =
+                liveWorkout.heartRate != null ? Math.round(liveWorkout.heartRate) : '--';
+
+            const status = document.getElementById('live-status-label');
+            if (liveWorkout.paused) {
+                status.textContent = 'In pausa';
+                status.className = 'text-[9px] text-amber-400 font-bold uppercase';
+            } else if (liveWorkout.inRecovery) {
+                status.textContent = 'Recupero';
+                status.className = 'text-[9px] text-blue-400 font-bold uppercase';
+            } else {
+                status.textContent = 'In corso';
+                status.className = 'text-[9px] text-emerald-400 font-bold uppercase';
+            }
+            updateSessionTimerLabel();
+        }
+
         function startWorkoutSession(gruppo) {
             const store = getSessionsStore();
             if(store.active) {
@@ -1869,21 +1942,22 @@
                     resumeActiveSession();
                     return;
                 }
+                stopLiveClock();
+                liveWorkout = null;
             }
             store.active = {
                 id: 's_' + Date.now(),
                 gruppo,
                 startedAt: new Date().toISOString(),
-                completedSets: {}
+                completedSets: {},
+                paused: false,
+                accumulatedSec: 0
             };
             saveSessionsStore(store);
-            // Reset set del giorno per la nuova sessione
             saveSessionState({});
 
-            // HealthKit + Watch (no-op su browser)
             if (window.NativeWorkout) {
                 NativeWorkout.start(store.active.id, gruppo).then(() => {
-                    // sync dopo che il DOM esercizi è pronto
                     setTimeout(syncActiveSessionToWatch, 800);
                 });
             }
@@ -1892,6 +1966,22 @@
         function syncActiveSessionToWatch() {
             const store = getSessionsStore();
             if (!store.active || !window.NativeWorkout) return;
+            // Usa payload da liveWorkout se disponibile
+            if (liveWorkout) {
+                NativeWorkout.syncSession({
+                    id: store.active.id,
+                    gruppo: store.active.gruppo,
+                    startedAt: store.active.startedAt,
+                    currentExerciseIndex: liveWorkout.exIndex,
+                    exercises: liveWorkout.exercises.map(ex => ({
+                        exId: String(ex.id),
+                        name: ex.name,
+                        currentSet: (ex.sets.find(s => !s.done)?.set) || ex.sets.length,
+                        sets: ex.sets.map(s => ({ set: s.set, reps: s.reps, peso: s.peso, done: !!s.done }))
+                    }))
+                });
+                return;
+            }
             const payload = NativeWorkout.buildWatchPayload(
                 store.active.gruppo,
                 store.active.id,
@@ -1906,7 +1996,6 @@
                 showWorkoutHub();
                 return;
             }
-            // Ripristina set completati
             if(store.active.completedSets) {
                 const todayState = store.active.completedSets;
                 todayState.date = new Date().toISOString().split('T')[0];
@@ -1916,13 +2005,304 @@
             document.getElementById('select-group').classList.add('hidden');
             document.getElementById('workout-list').classList.remove('hidden');
             document.getElementById('current-group-title').textContent = store.active.gruppo;
-            updateSessionTimerLabel();
             loadWorkout(store.active.gruppo);
             setTimeout(syncActiveSessionToWatch, 800);
         }
 
         function discardActiveSession() {
-            if(!confirm('Annullare la sessione in corso senza salvarla?')) return;
+            cancelLiveWorkout();
+        }
+
+        function backToWorkoutHubFromSession() {
+            // Mette in pausa e torna all'hub (sessione riprendibile)
+            if (liveWorkout && !liveWorkout.paused) togglePauseLiveWorkout();
+            showWorkoutHub();
+        }
+
+        function updateSessionTimerLabel() {
+            // legacy no-op: UI aggiornata da refreshLiveMetricsUI
+        }
+
+        function initLiveWorkoutFromData(gruppo, data) {
+            const savedExData = getExData();
+            const state = getSessionState();
+            const store = getSessionsStore();
+
+            const exercises = (data || []).map(ex => {
+                const savedData = savedExData[ex.id] || {};
+                const serieVal = parseInt(savedData.serie) || parseInt(ex.serie) || 3;
+                const defaultReps = parseInt(ex.reps || ex.note_rep) || 10;
+                const dbPeso = parseFloat(String(ex.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
+                const doneSets = state[ex.id] || [];
+                const sets = [];
+                for (let i = 1; i <= serieVal; i++) {
+                    const serieData = savedData[i] || {};
+                    sets.push({
+                        set: i,
+                        reps: parseInt(serieData.reps) || defaultReps,
+                        peso: parseFloat(serieData.peso) || (i === 1 ? dbPeso : 0) || 0,
+                        note: serieData.note || (i === 1 ? (ex.note || '') : ''),
+                        done: doneSets.includes(i)
+                    });
+                }
+                return {
+                    id: String(ex.id),
+                    name: ex.esercizi,
+                    note: ex.note || '',
+                    recSec: (() => {
+                        const r = String(ex.recupero || '90');
+                        if (r.includes(':')) {
+                            const [a,b] = r.split(':');
+                            return (parseInt(a)||0)*60 + (parseInt(b)||0);
+                        }
+                        return parseInt(r) || 90;
+                    })(),
+                    sets
+                };
+            });
+
+            // Riprendi dal primo esercizio/set incompleto
+            let exIndex = exercises.findIndex(ex => ex.sets.some(s => !s.done));
+            if (exIndex < 0) exIndex = 0;
+
+            liveWorkout = {
+                id: store.active?.id,
+                gruppo,
+                exercises,
+                exIndex,
+                paused: !!store.active?.paused,
+                accumulatedSec: store.active?.accumulatedSec || 0,
+                activeAccumulatedSec: store.active?.activeAccumulatedSec || 0,
+                segmentStartedAt: store.active?.paused ? null : Date.now(),
+                inRecovery: false,
+                heartRate: null,
+                nativeActiveKcal: null,
+                nativeTotalKcal: null,
+                activeCalories: 0,
+                totalCalories: 0
+            };
+
+            // Sync body weight da ultimo peso se presente in local cache stats
+            trySyncBodyWeight();
+
+            window.liveWorkout = liveWorkout;
+            startLiveClock();
+            renderLiveStep();
+            refreshLiveMetricsUI();
+            rebuildHiddenWorkoutDom();
+        }
+
+        async function trySyncBodyWeight() {
+            try {
+                if (!_supabase) return;
+                const { data } = await _supabase.from('registro_peso').select('kg').order('created_at', { ascending: false }).limit(1);
+                if (data?.[0]?.kg) localStorage.setItem('user_body_kg', String(data[0].kg));
+            } catch (_) {}
+        }
+
+        function currentLiveExercise() {
+            return liveWorkout?.exercises?.[liveWorkout.exIndex] || null;
+        }
+
+        function currentLiveSet() {
+            const ex = currentLiveExercise();
+            if (!ex) return null;
+            return ex.sets.find(s => !s.done) || null;
+        }
+
+        function renderLiveStep() {
+            if (!liveWorkout) return;
+            const ex = currentLiveExercise();
+            const allDone = liveWorkout.exercises.every(e => e.sets.every(s => s.done));
+
+            document.getElementById('live-progress').textContent =
+                `Esercizio ${liveWorkout.exIndex + 1}/${liveWorkout.exercises.length}`;
+
+            if (allDone) {
+                document.getElementById('live-ex-name').textContent = 'Scheda completata';
+                document.getElementById('live-ex-note').textContent = 'Hai finito tutti gli esercizi. Termina per salvare.';
+                document.getElementById('live-set-progress').textContent = 'Fine';
+                document.getElementById('btn-complete-set').textContent = 'Termina allenamento';
+                document.getElementById('btn-complete-set').onclick = () => requestEndLiveWorkout();
+                document.getElementById('live-set-dots').innerHTML = '';
+                return;
+            }
+
+            document.getElementById('btn-complete-set').onclick = () => completeLiveSet();
+            document.getElementById('btn-complete-set').textContent = 'Completa serie';
+
+            if (!ex) return;
+            const set = currentLiveSet();
+            const doneCount = ex.sets.filter(s => s.done).length;
+            document.getElementById('live-ex-name').textContent = ex.name;
+            document.getElementById('live-ex-note').textContent = ex.note || '';
+            document.getElementById('live-set-progress').textContent = set
+                ? `Serie ${set.set}/${ex.sets.length}`
+                : `Serie ${ex.sets.length}/${ex.sets.length}`;
+
+            // dots
+            document.getElementById('live-set-dots').innerHTML = ex.sets.map(s =>
+                `<span class="w-3 h-3 rounded-full ${s.done ? 'bg-emerald-500' : (set && s.set === set.set ? 'bg-orange-500' : 'bg-slate-700')}"></span>`
+            ).join('');
+
+            // selects
+            fillLiveSelects(set || ex.sets[ex.sets.length - 1]);
+        }
+
+        function fillLiveSelects(set) {
+            const repsEl = document.getElementById('live-reps');
+            const pesoEl = document.getElementById('live-peso');
+            if (!set || !repsEl || !pesoEl) return;
+            repsEl.innerHTML = Array.from({length: 16}, (_, i) => i + 1).map(n =>
+                `<option value="${n}" ${n == set.reps ? 'selected' : ''}>${n}</option>`
+            ).join('');
+            const pesos = [0,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200];
+            pesoEl.innerHTML = pesos.map(n =>
+                `<option value="${n}" ${n == set.peso ? 'selected' : ''}>${n || '—'}</option>`
+            ).join('');
+        }
+
+        function updateLiveSetField(field, value) {
+            const set = currentLiveSet();
+            if (!set) return;
+            if (field === 'reps') set.reps = parseInt(value) || 0;
+            if (field === 'peso') set.peso = parseFloat(value) || 0;
+            persistLiveSetToStorage();
+            rebuildHiddenWorkoutDom();
+            syncActiveSessionToWatch();
+        }
+
+        function persistLiveSetToStorage() {
+            if (!liveWorkout) return;
+            const data = getExData();
+            const state = getSessionState();
+            liveWorkout.exercises.forEach(ex => {
+                if (!data[ex.id]) data[ex.id] = { serie: ex.sets.length };
+                data[ex.id].serie = ex.sets.length;
+                ex.sets.forEach(s => {
+                    data[ex.id][s.set] = { reps: String(s.reps), peso: String(s.peso || ''), rec: String(ex.recSec), note: s.note || '' };
+                });
+                state[ex.id] = ex.sets.filter(s => s.done).map(s => s.set);
+            });
+            saveExData(data);
+            saveSessionState(state);
+            const store = getSessionsStore();
+            if (store.active) {
+                store.active.completedSets = state;
+                store.active.paused = !!liveWorkout.paused;
+                store.active.accumulatedSec = liveWorkout.accumulatedSec;
+                saveSessionsStore(store);
+            }
+        }
+
+        function completeLiveSet() {
+            if (!liveWorkout || liveWorkout.paused) {
+                if (liveWorkout?.paused) alert('Riprendi l\'allenamento per continuare.');
+                return;
+            }
+            const ex = currentLiveExercise();
+            const set = currentLiveSet();
+            if (!ex || !set) {
+                // esercizio finito → prossimo
+                nextLiveExercise(false);
+                return;
+            }
+            set.done = true;
+            persistLiveSetToStorage();
+            rebuildHiddenWorkoutDom();
+
+            // Avvia recupero
+            const rec = ex.recSec || 90;
+            liveWorkout.inRecovery = true;
+            document.getElementById('btn-skip-rec').classList.remove('hidden');
+            document.getElementById('btn-skip-rec').classList.add('col-span-1');
+            document.querySelector('#live-step-card .grid.grid-cols-2 button:last-child')?.classList.remove('col-span-2');
+            startTimer(rec);
+            if (window.NativeWorkout) NativeWorkout.startRecovery(rec, ex.name);
+
+            // Se finite le serie di questo esercizio, passa al prossimo dopo breve delay post-render
+            if (!currentLiveSet()) {
+                // resta in recupero, al next set click or after recovery user taps continua
+                document.getElementById('btn-complete-set').textContent = liveWorkout.exIndex < liveWorkout.exercises.length - 1
+                    ? 'Prossimo esercizio'
+                    : 'Termina allenamento';
+                document.getElementById('btn-complete-set').onclick = () => {
+                    skipLiveRecovery();
+                    if (liveWorkout.exIndex < liveWorkout.exercises.length - 1) nextLiveExercise(false);
+                    else requestEndLiveWorkout();
+                };
+            }
+
+            renderLiveStep();
+            syncActiveSessionToWatch();
+            refreshLiveMetricsUI();
+        }
+
+        function skipLiveRecovery() {
+            stopTimer();
+            if (liveWorkout) liveWorkout.inRecovery = false;
+            document.getElementById('btn-skip-rec').classList.add('hidden');
+            if (window.NativeWorkout) NativeWorkout.stopRecovery();
+            renderLiveStep();
+            refreshLiveMetricsUI();
+        }
+
+        function nextLiveExercise(forceSkip) {
+            if (!liveWorkout) return;
+            if (forceSkip) {
+                const ex = currentLiveExercise();
+                if (ex) ex.sets.forEach(s => { s.done = true; });
+                persistLiveSetToStorage();
+            }
+            skipLiveRecovery();
+            if (liveWorkout.exIndex < liveWorkout.exercises.length - 1) {
+                liveWorkout.exIndex += 1;
+            }
+            document.getElementById('btn-complete-set').onclick = () => completeLiveSet();
+            document.getElementById('btn-complete-set').textContent = 'Completa serie';
+            renderLiveStep();
+            syncActiveSessionToWatch();
+        }
+
+        function togglePauseLiveWorkout() {
+            if (!liveWorkout) return;
+            if (liveWorkout.paused) {
+                // resume
+                liveWorkout.paused = false;
+                liveWorkout.segmentStartedAt = Date.now();
+                document.getElementById('btn-pause-live').innerHTML = '<i class="fas fa-pause"></i>';
+                document.getElementById('menu-pause-label').textContent = 'Pausa';
+            } else {
+                liveWorkout.activeAccumulatedSec = liveActiveSeconds();
+                liveWorkout.accumulatedSec = liveElapsedSeconds();
+                liveWorkout.segmentStartedAt = null;
+                liveWorkout.paused = true;
+                document.getElementById('btn-pause-live').innerHTML = '<i class="fas fa-play"></i>';
+                document.getElementById('menu-pause-label').textContent = 'Riprendi';
+                skipLiveRecovery();
+            }
+            persistLiveSetToStorage();
+            refreshLiveMetricsUI();
+        }
+
+        function openLiveWorkoutMenu() {
+            document.getElementById('live-menu-overlay').classList.remove('hidden');
+        }
+        function closeLiveWorkoutMenu() {
+            document.getElementById('live-menu-overlay').classList.add('hidden');
+        }
+
+        function cancelLiveWorkout() {
+            if (!getSessionsStore().active && !liveWorkout) {
+                showWorkoutHub();
+                return;
+            }
+            if (!confirm('Annullare l\'allenamento? Non verrà salvato.')) return;
+            stopLiveClock();
+            stopTimer();
+            liveWorkout = null;
+            pendingSummary = null;
+            document.getElementById('live-summary-overlay')?.classList.add('hidden');
             const store = getSessionsStore();
             store.active = null;
             saveSessionsStore(store);
@@ -1931,75 +2311,158 @@
             showWorkoutHub();
         }
 
-        function backToWorkoutHubFromSession() {
-            // Torna all'hub lasciando la sessione attiva (riprendibile)
-            showWorkoutHub();
-        }
+        async function requestEndLiveWorkout() {
+            if (!liveWorkout && !getSessionsStore().active) return;
+            skipLiveRecovery();
 
-        function updateSessionTimerLabel() {
-            const el = document.getElementById('session-timer-label');
-            const store = getSessionsStore();
-            if(!store.active || !el) return;
-            const mins = Math.max(0, Math.round((Date.now() - new Date(store.active.startedAt).getTime()) / 60000));
-            el.textContent = `In corso · ${mins} min`;
-        }
-
-        async function finishWorkoutSession(skipConfirm) {
-            const store = getSessionsStore();
-            if(!store.active) {
-                alert('Nessuna sessione attiva.');
-                showWorkoutHub();
-                return;
+            // Congela durata
+            if (liveWorkout && !liveWorkout.paused) {
+                liveWorkout.activeAccumulatedSec = liveActiveSeconds();
+                liveWorkout.accumulatedSec = liveElapsedSeconds();
+                liveWorkout.segmentStartedAt = null;
+                liveWorkout.paused = true;
             }
-            if(!skipConfirm && !confirm('Terminare e salvare questa sessione nello storico?')) return;
 
-            // Snapshot di tutti gli esercizi visibili
-            const cards = [...document.querySelectorAll('#workout-exercises .glass-card')];
-            const exercises = [];
-            cards.forEach(card => {
-                const title = card.querySelector('h3')?.textContent?.trim() || '';
-                const serieInput = card.querySelector('input[id^="serie-"]');
-                if(!serieInput) return;
-                const exId = serieInput.id.replace('serie-', '');
-                autoSaveExDataNew(exId);
-                exercises.push(collectExerciseSnapshot(exId, title));
-                saveWorkoutHistory(exId);
-            });
-
-            // Chiudi HealthKit / Watch e recupera calorie
             let healthExtras = {};
             if (window.NativeWorkout) {
                 const metrics = await NativeWorkout.end();
-                if (metrics) {
+                if (metrics?.ok) {
                     healthExtras = {
                         activeCalories: metrics.activeCalories,
                         averageHeartRate: metrics.averageHeartRate,
                         healthKitDuration: metrics.durationSeconds
                     };
+                    if (liveWorkout) {
+                        if (metrics.activeCalories != null) {
+                            liveWorkout.nativeActiveKcal = Math.round(metrics.activeCalories);
+                            liveWorkout.activeCalories = liveWorkout.nativeActiveKcal;
+                        }
+                        if (metrics.averageHeartRate != null) liveWorkout.heartRate = metrics.averageHeartRate;
+                        // total ≈ active + basal stimato sulla durata HK
+                        const dur = metrics.durationSeconds || liveElapsedSeconds();
+                        const basal = Math.round(1.05 * getBodyWeightKg() * (dur / 3600));
+                        liveWorkout.nativeTotalKcal = (liveWorkout.activeCalories || 0) + basal;
+                        liveWorkout.totalCalories = liveWorkout.nativeTotalKcal;
+                    }
                 }
             }
 
-            const endedAt = new Date().toISOString();
-            const durationMin = Math.max(1, Math.round((new Date(endedAt) - new Date(store.active.startedAt)) / 60000));
-            const session = {
-                id: store.active.id,
-                gruppo: store.active.gruppo,
-                startedAt: store.active.startedAt,
-                endedAt,
-                durationMin,
+            const elapsed = liveWorkout ? liveWorkout.accumulatedSec : 0;
+            if (!liveWorkout?.nativeActiveKcal) {
+                const est = estimateCalories(elapsed, liveWorkout ? (liveWorkout.activeAccumulatedSec || elapsed) : elapsed);
+                if (liveWorkout) {
+                    liveWorkout.activeCalories = est.activeCalories;
+                    liveWorkout.totalCalories = est.totalCalories;
+                }
+            }
+
+            const exercises = (liveWorkout?.exercises || []).map(ex => ({
+                exId: ex.id,
+                name: ex.name,
+                sets: ex.sets.map(s => ({ set: s.set, reps: s.reps, peso: s.peso, note: s.note || '' })),
+                maxPeso: Math.max(0, ...ex.sets.map(s => s.peso || 0)),
+                maxReps: Math.max(0, ...ex.sets.map(s => s.reps || 0)),
+                serie: ex.sets.length
+            }));
+
+            pendingSummary = {
+                id: getSessionsStore().active?.id || liveWorkout?.id,
+                gruppo: getSessionsStore().active?.gruppo || liveWorkout?.gruppo,
+                startedAt: getSessionsStore().active?.startedAt,
+                endedAt: new Date().toISOString(),
+                durationMin: Math.max(1, Math.round(elapsed / 60)),
+                durationSec: Math.round(elapsed),
+                activeCalories: liveWorkout?.activeCalories ?? null,
+                totalCalories: liveWorkout?.totalCalories ?? null,
+                averageHeartRate: liveWorkout?.heartRate ?? healthExtras.averageHeartRate ?? null,
                 exercises,
                 ...healthExtras
             };
-            store.history = [session, ...(store.history || [])].slice(0, 100);
+
+            document.getElementById('summary-gruppo').textContent = pendingSummary.gruppo;
+            document.getElementById('summary-duration').textContent = formatDuration(pendingSummary.durationSec);
+            document.getElementById('summary-kcal-active').textContent = pendingSummary.activeCalories ?? '—';
+            document.getElementById('summary-kcal-total').textContent = pendingSummary.totalCalories ?? '—';
+            document.getElementById('summary-hr').textContent =
+                pendingSummary.averageHeartRate != null ? Math.round(pendingSummary.averageHeartRate) : '—';
+            document.getElementById('summary-exercises').innerHTML = exercises.map(ex => {
+                const done = ex.sets.filter(s => s.peso || s.reps).length;
+                return `<div class="glass-card p-3 rounded-xl border border-slate-800">
+                    <p class="text-xs font-black text-orange-400 uppercase">${ex.name}</p>
+                    <p class="text-[9px] text-slate-500">${done} serie · max ${ex.maxPeso || '-'} kg</p>
+                </div>`;
+            }).join('');
+
+            document.getElementById('live-summary-overlay').classList.remove('hidden');
+            stopLiveClock();
+        }
+
+        function confirmSaveLiveWorkout() {
+            if (!pendingSummary) return;
+            const store = getSessionsStore();
+            // history per esercizio
+            pendingSummary.exercises.forEach(ex => {
+                const history = getWorkoutHistory();
+                const record = {
+                    date: pendingSummary.endedAt,
+                    sessionId: pendingSummary.id,
+                    peso: ex.maxPeso,
+                    reps: ex.maxReps,
+                    serie: ex.serie,
+                    sets: ex.sets
+                };
+                if (!history[ex.exId]) history[ex.exId] = [];
+                history[ex.exId].push(record);
+                if (history[ex.exId].length > 80) history[ex.exId] = history[ex.exId].slice(-80);
+                saveWorkoutHistoryData(history);
+            });
+
+            store.history = [pendingSummary, ...(store.history || [])].slice(0, 100);
             store.active = null;
             saveSessionsStore(store);
             saveSessionState({});
-            stopTimer();
-            const kcalLine = healthExtras.activeCalories != null
-                ? `\n${Math.round(healthExtras.activeCalories)} kcal · FC media ${healthExtras.averageHeartRate != null ? Math.round(healthExtras.averageHeartRate) : '-'} bpm`
-                : '';
-            alert(`Sessione salvata!\n${session.gruppo} · ${durationMin} min · ${exercises.length} esercizi${kcalLine}`);
+            pendingSummary = null;
+            liveWorkout = null;
+            document.getElementById('live-summary-overlay').classList.add('hidden');
             showWorkoutHub();
+        }
+
+        function discardSummaryAndCancel() {
+            pendingSummary = null;
+            document.getElementById('live-summary-overlay').classList.add('hidden');
+            const store = getSessionsStore();
+            store.active = null;
+            saveSessionsStore(store);
+            saveSessionState({});
+            liveWorkout = null;
+            showWorkoutHub();
+        }
+
+        // Compat: chiamate vecchie
+        async function finishWorkoutSession(skipConfirm) {
+            if (skipConfirm) {
+                await requestEndLiveWorkout();
+                confirmSaveLiveWorkout();
+            } else {
+                await requestEndLiveWorkout();
+            }
+        }
+
+        function rebuildHiddenWorkoutDom() {
+            // DOM minimo per sync Watch / collect snapshot legacy
+            const container = document.getElementById('workout-exercises');
+            if (!container || !liveWorkout) return;
+            container.innerHTML = liveWorkout.exercises.map(ex => `
+                <div class="glass-card">
+                    <h3>${ex.name}</h3>
+                    <input type="number" id="serie-${ex.id}" value="${ex.sets.length}">
+                    ${ex.sets.map(s => `
+                        <select id="reps-${ex.id}-${s.set}"><option selected value="${s.reps}">${s.reps}</option></select>
+                        <select id="peso-${ex.id}-${s.set}"><option selected value="${s.peso}">${s.peso}</option></select>
+                        <textarea id="note-${ex.id}-${s.set}">${s.note || ''}</textarea>
+                    `).join('')}
+                </div>
+            `).join('');
         }
         
         // ===== STATISTICHE WORKOUT =====
@@ -2355,8 +2818,9 @@
             overlay.classList.add('hidden');
             overlay.classList.remove('bg-red-600');
             overlay.classList.add('bg-[#10b981]');
-            // Rilascia Wake Lock solo quando si esce dalla sezione workout
-            // (il wake lock rimane attivo durante tutta la sessione workout)
+            if (liveWorkout) liveWorkout.inRecovery = false;
+            const skip = document.getElementById('btn-skip-rec');
+            if (skip) skip.classList.add('hidden');
         }
 
         async function requestWakeLock() { 
