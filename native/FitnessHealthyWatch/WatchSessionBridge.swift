@@ -25,14 +25,14 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
         guard var sess = session, var ex = sess.currentExercise else { return }
         guard let idx = ex.sets.firstIndex(where: { !$0.done }) else { return }
         ex.sets[idx].done = true
-        ex.currentSet = min(ex.sets.count, ex.sets[idx].set + 1)
+        ex.currentSet = min(ex.sets.count, ex.sets[idx].setNumber + 1)
         sess.exercises[sess.currentExerciseIndex] = ex
         session = sess
 
         sendToPhone([
             "type": "setComplete",
             "exId": ex.exId,
-            "setNum": ex.sets[idx].set
+            "setNum": ex.sets[idx].setNumber
         ])
     }
 
@@ -40,14 +40,14 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
         guard var sess = session, var ex = sess.currentExercise else { return }
         guard let idx = ex.sets.lastIndex(where: { $0.done }) else { return }
         ex.sets[idx].done = false
-        ex.currentSet = ex.sets[idx].set
+        ex.currentSet = ex.sets[idx].setNumber
         sess.exercises[sess.currentExerciseIndex] = ex
         session = sess
 
         sendToPhone([
             "type": "setUndo",
             "exId": ex.exId,
-            "setNum": ex.sets[idx].set
+            "setNum": ex.sets[idx].setNumber
         ])
     }
 
@@ -167,7 +167,7 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
                     if let sArr = item["sets"] as? [[String: Any]] {
                         for s in sArr {
                             sets.append(WatchExerciseSet(
-                                set: s["set"] as? Int ?? sets.count + 1,
+                                setNumber: s["set"] as? Int ?? sets.count + 1,
                                 reps: s["reps"] as? Int ?? 10,
                                 peso: (s["peso"] as? Double) ?? Double(s["peso"] as? Int ?? 0),
                                 done: s["done"] as? Bool ?? false
