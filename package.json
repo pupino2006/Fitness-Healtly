@@ -1,0 +1,24 @@
+{
+  "name": "fitness-healtly",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LR Training Pro — Capacitor + HealthKit + Apple Watch",
+  "scripts": {
+    "build:www": "node scripts/sync-www.js",
+    "cap:sync": "npm run build:www && npx cap sync ios",
+    "cap:open": "npx cap open ios",
+    "ios": "npm run cap:sync && npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/app": "^7.0.1",
+    "@capacitor/core": "^7.2.0",
+    "@capacitor/haptics": "^7.0.1",
+    "@capacitor/ios": "^7.2.0",
+    "@capacitor/preferences": "^7.0.1",
+    "@capacitor/status-bar": "^7.0.1",
+    "@fitness/workout-bridge": "file:plugins/workout-bridge"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.2.0"
+  }
+}

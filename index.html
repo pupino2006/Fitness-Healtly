@@ -240,11 +240,58 @@
 
         <!-- SEZIONE WORKOUT -->
         <div id="workout-section" class="hidden space-y-4">
+            <!-- Hub: Inizia / Riprendi / Storico -->
+            <div id="workout-hub" class="space-y-4">
+                <div class="text-center mb-2">
+                    <h2 class="text-lg font-black uppercase text-orange-500">Workout</h2>
+                    <p class="text-[10px] text-slate-400">Avvia una sessione e salvala nello storico</p>
+                </div>
+
+                <div id="active-session-banner" class="hidden glass-card p-4 rounded-2xl border border-emerald-500/40 space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-400">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[9px] text-emerald-400 font-black uppercase">Sessione in corso</p>
+                            <p id="active-session-label" class="text-sm font-black text-slate-100 truncate">-</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="resumeActiveSession()" class="py-3 bg-emerald-600 text-white text-xs font-black uppercase rounded-xl active:scale-95 transition-all">Riprendi</button>
+                        <button onclick="discardActiveSession()" class="py-3 bg-slate-800 text-slate-300 text-xs font-black uppercase rounded-xl border border-slate-700 active:scale-95 transition-all">Annulla</button>
+                    </div>
+                </div>
+
+                <button onclick="showGroupSelection()" class="w-full p-5 rounded-[2rem] glass-card border-l-[6px] border-orange-500 shadow-xl flex items-center gap-4 active:scale-95 transition-all">
+                    <div class="w-14 h-14 rounded-2xl bg-orange-500/15 flex items-center justify-center text-orange-500">
+                        <i class="fas fa-bolt text-2xl"></i>
+                    </div>
+                    <div class="text-left">
+                        <h3 class="text-base font-black uppercase tracking-tight">Inizia Workout</h3>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase">Scegli la scheda da allenare</p>
+                    </div>
+                </button>
+
+                <div class="glass-card p-4 rounded-2xl border border-slate-800">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xs font-black uppercase text-slate-300">Ultime sessioni</h3>
+                        <span id="session-count-badge" class="text-[9px] font-black text-slate-500">0</span>
+                    </div>
+                    <div id="recent-sessions-list" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-[10px] text-slate-500 italic">Nessuna sessione ancora. Premi Inizia Workout.</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Selezione Gruppo -->
-            <div id="select-group" class="space-y-4">
-                <div class="text-center mb-6">
-                    <h2 class="text-lg font-black uppercase text-orange-500">Scegli Tipo Allenamento</h2>
-                    <p class="text-[10px] text-slate-400">Seleziona il gruppo muscolare da allenare</p>
+            <div id="select-group" class="hidden space-y-4">
+                <div class="flex gap-2 items-center mb-2">
+                    <button onclick="showWorkoutHub()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-400 active:scale-90"><i class="fas fa-arrow-left text-sm"></i></button>
+                    <div>
+                        <h2 class="text-sm font-black uppercase text-orange-500">Scegli la scheda</h2>
+                        <p class="text-[9px] text-slate-400">Poi parte la sessione</p>
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <button onclick="selectWorkoutGroup('Spinte 1')" class="p-4 rounded-2xl glass-card border-l-4 border-orange-500 text-left active:scale-95 transition-all">
@@ -294,13 +341,21 @@
                 </button>
             </div>
 
-            <!-- Lista Esercizi -->
+            <!-- Lista Esercizi (sessione attiva) -->
             <div id="workout-list" class="hidden space-y-4">
                 <div class="flex gap-2 items-center">
-                    <button onclick="backToGroupSelection()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-400 active:scale-90"><i class="fas fa-arrow-left text-sm"></i></button>
-                    <span id="current-group-title" class="text-sm font-black uppercase text-orange-500"></span>
-                    <button onclick="resetAllSets()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-400 active:scale-90 ml-auto"><i class="fas fa-sync-alt text-sm"></i></button>
+                    <button onclick="backToWorkoutHubFromSession()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-400 active:scale-90"><i class="fas fa-home text-sm"></i></button>
+                    <div class="min-w-0 flex-1">
+                        <span id="current-group-title" class="text-sm font-black uppercase text-orange-500 block truncate"></span>
+                        <span id="session-timer-label" class="text-[9px] text-slate-500 font-bold uppercase">Sessione attiva</span>
+                    </div>
+                    <button onclick="resetAllSets()" class="bg-slate-800 px-3 py-2 rounded-xl border border-slate-700 text-slate-400 active:scale-90" title="Reset serie"><i class="fas fa-sync-alt text-sm"></i></button>
+                    <button onclick="finishWorkoutSession()" class="bg-emerald-600 px-3 py-2 rounded-xl text-white active:scale-90" title="Termina"><i class="fas fa-flag-checkered text-sm"></i></button>
                 </div>
+                <button onclick="finishWorkoutSession()" class="w-full py-3 bg-emerald-600/90 text-white text-xs font-black uppercase rounded-xl active:scale-95 transition-all">
+                    Termina e salva sessione
+                </button>
+                <div id="native-metrics-bar" class="hidden glass-card px-4 py-2 rounded-xl border border-red-500/20 flex justify-between text-[10px] font-black uppercase tracking-wide"></div>
                 <div id="workout-exercises" class="space-y-4 pb-32"></div>
             </div>
         </div>
@@ -313,12 +368,35 @@
             
             <!-- Tab Statistiche -->
             <div class="flex bg-slate-900/80 p-1 rounded-xl border border-slate-800">
-                <button id="tab-stat-workout" onclick="switchStats('workout')" class="flex-1 py-2.5 rounded-lg text-[10px] font-black transition-all active-tab uppercase">Workout</button>
+                <button id="tab-stat-sessioni" onclick="switchStats('sessioni')" class="flex-1 py-2.5 rounded-lg text-[10px] font-black transition-all active-tab uppercase">Sessioni</button>
+                <button id="tab-stat-workout" onclick="switchStats('workout')" class="flex-1 py-2.5 rounded-lg text-[10px] font-black transition-all text-slate-500 uppercase">Esercizi</button>
                 <button id="tab-stat-peso" onclick="switchStats('peso')" class="flex-1 py-2.5 rounded-lg text-[10px] font-black transition-all text-slate-500 uppercase">Peso</button>
+            </div>
+
+            <!-- Contenuto Statistiche Sessioni -->
+            <div id="stat-sessioni-content" class="space-y-3">
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Totale</p>
+                        <p id="stat-total-sessions" class="text-lg font-black text-orange-500">0</p>
+                    </div>
+                    <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Questa sett.</p>
+                        <p id="stat-week-sessions" class="text-lg font-black text-emerald-500">0</p>
+                    </div>
+                    <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Durata media</p>
+                        <p id="stat-avg-duration" class="text-lg font-black text-blue-500">-</p>
+                    </div>
+                </div>
+                <div class="glass-card p-3 rounded-2xl border border-slate-800">
+                    <canvas id="sessionsChart" style="width:100%; max-height: 180px;"></canvas>
+                </div>
+                <div id="stats-sessions-list" class="space-y-2"></div>
             </div>
             
             <!-- Contenuto Statistiche Workout -->
-            <div id="stat-workout-content">
+            <div id="stat-workout-content" class="hidden">
                 <p class="text-[10px] text-slate-400 mb-2">Seleziona un esercizio per vedere l'andamento</p>
                 <select id="stats-exercise" onchange="loadStatsChart(this.value)" class="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 text-sm font-black text-orange-500 outline-none mb-3">
                     <option value="">Scegli esercizio...</option>
@@ -442,6 +520,7 @@
         <button onclick="showSection('settings')" id="nav-settings" class="p-3 text-slate-500 transition-all"><i class="fas fa-cog text-xl"></i></button>
     </nav>
 
+    <script src="js/native-bridge.js"></script>
     <script>
         const SB_URL = "https://vnzrewcbnoqbqvzckome.supabase.co";
         const SB_KEY = "sb_publishable_Sq9txbu-PmKdbxETSx2cjw_WqWEFBPO";
@@ -636,13 +715,14 @@
                 
                 if(id === 'workout') {
                     requestWakeLock();
-                    showGroupSelection();
+                    showWorkoutHub();
                 } else if(id === 'salute') {
                     releaseWakeLock();
                     switchSalute('dieta');
                 } else if(id === 'stats') {
                     releaseWakeLock();
                     loadStatsExercises();
+                    switchStats('sessioni');
                 } else if(id === 'settings') {
                     releaseWakeLock();
                 } else { releaseWakeLock(); }
@@ -1438,9 +1518,20 @@
                 const recVal = globalRecs[exId] || 60;
                 startTimer(recVal);
                 saveWorkoutHistory(exId);
+                updateSessionTimerLabel();
+                // Recupero anche sull'Apple Watch
+                const name = document.querySelector(`#serie-${exId}`)?.closest('.glass-card')?.querySelector('h3')?.textContent || '';
+                if (window.NativeWorkout) NativeWorkout.startRecovery(parseInt(recVal) || 60, name);
             }
 
             saveSessionState(state);
+            const store = getSessionsStore();
+            if(store.active) {
+                store.active.completedSets = state;
+                saveSessionsStore(store);
+            }
+            // Aggiorna UI Watch con set completati
+            syncActiveSessionToWatch();
         }
         
         function autoSaveExDataNew(exId, serieNum) {
@@ -1659,39 +1750,265 @@
             saveSessionState(state);
         }
         
-        // ===== CRONOLOGIA WORKOUT =====
+        // ===== SESSIONI WORKOUT + CRONOLOGIA =====
+        const getSessionsStore = () => JSON.parse(localStorage.getItem('workout_sessions_v1') || '{"active":null,"history":[]}');
+        const saveSessionsStore = (store) => localStorage.setItem('workout_sessions_v1', JSON.stringify(store));
         const getWorkoutHistory = () => JSON.parse(localStorage.getItem('workout_history_v1') || '{}');
         const saveWorkoutHistoryData = (data) => localStorage.setItem('workout_history_v1', JSON.stringify(data));
-        
+
+        function collectExerciseSnapshot(exId, name) {
+            const serieVal = parseInt(document.getElementById('serie-' + exId)?.value) || 3;
+            const sets = [];
+            let maxPeso = 0;
+            let maxReps = 0;
+            for(let i = 1; i <= serieVal; i++) {
+                const reps = parseInt(document.getElementById('reps-' + exId + '-' + i)?.value) || 0;
+                const peso = parseFloat(document.getElementById('peso-' + exId + '-' + i)?.value) || 0;
+                const note = document.getElementById('note-' + exId + '-' + i)?.value || '';
+                sets.push({ set: i, reps, peso, note });
+                if(peso > maxPeso) maxPeso = peso;
+                if(reps > maxReps) maxReps = reps;
+            }
+            return { exId: String(exId), name: name || '', sets, maxPeso, maxReps, serie: serieVal };
+        }
+
         function saveWorkoutHistory(exId) {
+            // Snapshot live della serie corrente (per grafici esercizio)
+            const snap = collectExerciseSnapshot(exId);
             const history = getWorkoutHistory();
-            const peso = document.getElementById('peso-' + exId)?.value || '0';
-            const reps = document.getElementById('reps-' + exId)?.value || '0';
-            const rec = document.getElementById('rec-' + exId)?.value || '60';
-            const serie = document.getElementById('serie-' + exId)?.value || '3';
-            
             const record = {
                 date: new Date().toISOString(),
-                peso: parseFloat(peso) || 0,
-                reps: parseInt(reps) || 0,
-                rec: parseInt(rec) || 60,
-                serie: parseInt(serie) || 3
+                sessionId: getSessionsStore().active?.id || null,
+                peso: snap.maxPeso,
+                reps: snap.maxReps,
+                serie: snap.serie,
+                sets: snap.sets
             };
-            
             if(!history[exId]) history[exId] = [];
-            history[exId].push(record);
-            
-            // Limita a ultimi 50 record per esercizio
-            if(history[exId].length > 50) history[exId] = history[exId].slice(-50);
-            
+            // Evita duplicati a raffica: aggiorna ultimo record della stessa sessione
+            const last = history[exId][history[exId].length - 1];
+            if(last && last.sessionId && last.sessionId === record.sessionId) {
+                history[exId][history[exId].length - 1] = record;
+            } else {
+                history[exId].push(record);
+            }
+            if(history[exId].length > 80) history[exId] = history[exId].slice(-80);
             saveWorkoutHistoryData(history);
+
+            // Aggiorna anche i set completati nella sessione attiva
+            const store = getSessionsStore();
+            if(store.active) {
+                const state = getSessionState();
+                store.active.completedSets = state;
+                saveSessionsStore(store);
+            }
+        }
+
+        function showWorkoutHub() {
+            document.getElementById('workout-hub').classList.remove('hidden');
+            document.getElementById('select-group').classList.add('hidden');
+            document.getElementById('workout-list').classList.add('hidden');
+            renderWorkoutHub();
+        }
+
+        function renderWorkoutHub() {
+            const store = getSessionsStore();
+            const banner = document.getElementById('active-session-banner');
+            const label = document.getElementById('active-session-label');
+            if(store.active) {
+                banner.classList.remove('hidden');
+                const started = new Date(store.active.startedAt);
+                label.textContent = `${store.active.gruppo} · dalle ${started.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
+            } else {
+                banner.classList.add('hidden');
+            }
+
+            const history = store.history || [];
+            document.getElementById('session-count-badge').textContent = history.length + ' tot.';
+            const list = document.getElementById('recent-sessions-list');
+            if(!history.length) {
+                list.innerHTML = '<p class="text-[10px] text-slate-500 italic">Nessuna sessione ancora. Premi Inizia Workout.</p>';
+                return;
+            }
+            list.innerHTML = history.slice(0, 12).map(s => {
+                const d = new Date(s.endedAt || s.startedAt);
+                const mins = s.durationMin != null ? s.durationMin + ' min' : '-';
+                const setsDone = (s.exercises || []).reduce((acc, ex) => acc + (ex.sets?.filter(x => x.peso > 0 || x.reps > 0).length || 0), 0);
+                return `
+                <button onclick="viewSessionDetail('${s.id}')" class="w-full text-left p-3 rounded-xl bg-slate-800/60 border border-slate-700/80 active:scale-[0.98] transition-all">
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="min-w-0">
+                            <p class="text-xs font-black text-orange-400 uppercase truncate">${s.gruppo}</p>
+                            <p class="text-[9px] text-slate-500">${d.toLocaleDateString('it-IT')} · ${d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <p class="text-[10px] font-black text-emerald-400">${mins}</p>
+                            <p class="text-[8px] text-slate-500">${setsDone} set</p>
+                        </div>
+                    </div>
+                </button>`;
+            }).join('');
+        }
+
+        function viewSessionDetail(sessionId) {
+            const store = getSessionsStore();
+            const s = (store.history || []).find(x => x.id === sessionId);
+            if(!s) return;
+            const lines = (s.exercises || []).map(ex => {
+                const best = ex.maxPeso ? `${ex.maxPeso}kg` : '-';
+                return `• ${ex.name}: max ${best} / ${ex.maxReps || '-'} reps`;
+            }).join('\n');
+            alert(`${s.gruppo}\n${new Date(s.endedAt || s.startedAt).toLocaleString('it-IT')}\nDurata: ${s.durationMin ?? '-'} min\n\n${lines || 'Nessun dato serie'}`);
+        }
+
+        function startWorkoutSession(gruppo) {
+            const store = getSessionsStore();
+            if(store.active) {
+                const keep = confirm('Hai già una sessione aperta (' + store.active.gruppo + '). Vuoi scartarla e iniziarne una nuova?');
+                if(!keep) {
+                    resumeActiveSession();
+                    return;
+                }
+            }
+            store.active = {
+                id: 's_' + Date.now(),
+                gruppo,
+                startedAt: new Date().toISOString(),
+                completedSets: {}
+            };
+            saveSessionsStore(store);
+            // Reset set del giorno per la nuova sessione
+            saveSessionState({});
+
+            // HealthKit + Watch (no-op su browser)
+            if (window.NativeWorkout) {
+                NativeWorkout.start(store.active.id, gruppo).then(() => {
+                    // sync dopo che il DOM esercizi è pronto
+                    setTimeout(syncActiveSessionToWatch, 800);
+                });
+            }
+        }
+
+        function syncActiveSessionToWatch() {
+            const store = getSessionsStore();
+            if (!store.active || !window.NativeWorkout) return;
+            const payload = NativeWorkout.buildWatchPayload(
+                store.active.gruppo,
+                store.active.id,
+                store.active.startedAt
+            );
+            NativeWorkout.syncSession(payload);
+        }
+
+        function resumeActiveSession() {
+            const store = getSessionsStore();
+            if(!store.active) {
+                showWorkoutHub();
+                return;
+            }
+            // Ripristina set completati
+            if(store.active.completedSets) {
+                const todayState = store.active.completedSets;
+                todayState.date = new Date().toISOString().split('T')[0];
+                localStorage.setItem('workout_session_v4', JSON.stringify(todayState));
+            }
+            document.getElementById('workout-hub').classList.add('hidden');
+            document.getElementById('select-group').classList.add('hidden');
+            document.getElementById('workout-list').classList.remove('hidden');
+            document.getElementById('current-group-title').textContent = store.active.gruppo;
+            updateSessionTimerLabel();
+            loadWorkout(store.active.gruppo);
+            setTimeout(syncActiveSessionToWatch, 800);
+        }
+
+        function discardActiveSession() {
+            if(!confirm('Annullare la sessione in corso senza salvarla?')) return;
+            const store = getSessionsStore();
+            store.active = null;
+            saveSessionsStore(store);
+            saveSessionState({});
+            if (window.NativeWorkout) NativeWorkout.end();
+            showWorkoutHub();
+        }
+
+        function backToWorkoutHubFromSession() {
+            // Torna all'hub lasciando la sessione attiva (riprendibile)
+            showWorkoutHub();
+        }
+
+        function updateSessionTimerLabel() {
+            const el = document.getElementById('session-timer-label');
+            const store = getSessionsStore();
+            if(!store.active || !el) return;
+            const mins = Math.max(0, Math.round((Date.now() - new Date(store.active.startedAt).getTime()) / 60000));
+            el.textContent = `In corso · ${mins} min`;
+        }
+
+        async function finishWorkoutSession(skipConfirm) {
+            const store = getSessionsStore();
+            if(!store.active) {
+                alert('Nessuna sessione attiva.');
+                showWorkoutHub();
+                return;
+            }
+            if(!skipConfirm && !confirm('Terminare e salvare questa sessione nello storico?')) return;
+
+            // Snapshot di tutti gli esercizi visibili
+            const cards = [...document.querySelectorAll('#workout-exercises .glass-card')];
+            const exercises = [];
+            cards.forEach(card => {
+                const title = card.querySelector('h3')?.textContent?.trim() || '';
+                const serieInput = card.querySelector('input[id^="serie-"]');
+                if(!serieInput) return;
+                const exId = serieInput.id.replace('serie-', '');
+                autoSaveExDataNew(exId);
+                exercises.push(collectExerciseSnapshot(exId, title));
+                saveWorkoutHistory(exId);
+            });
+
+            // Chiudi HealthKit / Watch e recupera calorie
+            let healthExtras = {};
+            if (window.NativeWorkout) {
+                const metrics = await NativeWorkout.end();
+                if (metrics) {
+                    healthExtras = {
+                        activeCalories: metrics.activeCalories,
+                        averageHeartRate: metrics.averageHeartRate,
+                        healthKitDuration: metrics.durationSeconds
+                    };
+                }
+            }
+
+            const endedAt = new Date().toISOString();
+            const durationMin = Math.max(1, Math.round((new Date(endedAt) - new Date(store.active.startedAt)) / 60000));
+            const session = {
+                id: store.active.id,
+                gruppo: store.active.gruppo,
+                startedAt: store.active.startedAt,
+                endedAt,
+                durationMin,
+                exercises,
+                ...healthExtras
+            };
+            store.history = [session, ...(store.history || [])].slice(0, 100);
+            store.active = null;
+            saveSessionsStore(store);
+            saveSessionState({});
+            stopTimer();
+            const kcalLine = healthExtras.activeCalories != null
+                ? `\n${Math.round(healthExtras.activeCalories)} kcal · FC media ${healthExtras.averageHeartRate != null ? Math.round(healthExtras.averageHeartRate) : '-'} bpm`
+                : '';
+            alert(`Sessione salvata!\n${session.gruppo} · ${durationMin} min · ${exercises.length} esercizi${kcalLine}`);
+            showWorkoutHub();
         }
         
         // ===== STATISTICHE WORKOUT =====
         let statsChart = null;
         let weightStatsChart = null;
+        let sessionsChart = null;
         
         async function loadStatsExercises() {
+            loadSessionsStats();
             if(!_supabase) return;
             const select = document.getElementById('stats-exercise');
             const { data } = await _supabase.from('workout').select('id, esercizi').order('id');
@@ -1701,17 +2018,105 @@
             select.innerHTML = '<option value="">Scegli esercizio...</option>' + 
                 data.map(ex => `<option value="${ex.id}">${ex.esercizi}</option>`).join('');
             
-            // Carica anche le statistiche del peso
             loadWeightStats();
         }
         
         function switchStats(tab) {
+            document.getElementById('stat-sessioni-content')?.classList.toggle('hidden', tab !== 'sessioni');
             document.getElementById('stat-workout-content').classList.toggle('hidden', tab !== 'workout');
             document.getElementById('stat-peso-content').classList.toggle('hidden', tab !== 'peso');
-            document.querySelectorAll('#stats-section .flex button').forEach(b => b.classList.remove('active-tab', 'text-slate-500'));
-            document.getElementById('tab-stat-' + tab).classList.add('active-tab');
+            document.querySelectorAll('#stats-section .flex button').forEach(b => {
+                b.classList.remove('active-tab');
+                b.classList.add('text-slate-500');
+            });
+            const activeBtn = document.getElementById('tab-stat-' + tab);
+            if(activeBtn) {
+                activeBtn.classList.add('active-tab');
+                activeBtn.classList.remove('text-slate-500');
+            }
             
             if(tab === 'peso') loadWeightStats();
+            if(tab === 'sessioni') loadSessionsStats();
+        }
+
+        function loadSessionsStats() {
+            const history = getSessionsStore().history || [];
+            document.getElementById('stat-total-sessions').innerText = history.length;
+
+            const now = new Date();
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const weekCount = history.filter(s => new Date(s.endedAt || s.startedAt) >= weekAgo).length;
+            document.getElementById('stat-week-sessions').innerText = weekCount;
+
+            const durations = history.map(s => s.durationMin || 0).filter(d => d > 0);
+            document.getElementById('stat-avg-duration').innerText =
+                durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) + 'm' : '-';
+
+            // Grafico: sessioni per giorno (ultimi 14 giorni)
+            const days = [];
+            for(let i = 13; i >= 0; i--) {
+                const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+                days.push(d.toISOString().split('T')[0]);
+            }
+            const counts = days.map(day => history.filter(s => (s.endedAt || s.startedAt || '').startsWith(day)).length);
+            const labels = days.map(d => {
+                const dt = new Date(d + 'T12:00:00');
+                return dt.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+            });
+
+            const canvas = document.getElementById('sessionsChart');
+            if(canvas) {
+                const ctx = canvas.getContext('2d');
+                if(sessionsChart) sessionsChart.destroy();
+                sessionsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Sessioni',
+                            data: counts,
+                            backgroundColor: 'rgba(249, 115, 22, 0.55)',
+                            borderColor: '#f97316',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, color: '#94a3b8' },
+                                grid: { color: '#334155' }
+                            },
+                            x: {
+                                ticks: { color: '#94a3b8', maxRotation: 0, font: { size: 9 } },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const list = document.getElementById('stats-sessions-list');
+            if(!list) return;
+            if(!history.length) {
+                list.innerHTML = '<p class="text-[10px] text-slate-500 italic">Nessuna sessione salvata. Completa un workout e premi Termina.</p>';
+                return;
+            }
+            list.innerHTML = history.slice(0, 20).map(s => {
+                const d = new Date(s.endedAt || s.startedAt);
+                const nEx = (s.exercises || []).length;
+                return `
+                <div class="glass-card p-3 rounded-xl border border-slate-800 flex justify-between items-center gap-2">
+                    <div class="min-w-0">
+                        <p class="text-xs font-black text-orange-400 uppercase truncate">${s.gruppo}</p>
+                        <p class="text-[9px] text-slate-500">${d.toLocaleDateString('it-IT')} · ${nEx} esercizi</p>
+                    </div>
+                    <p class="text-sm font-black text-emerald-400 shrink-0">${s.durationMin ?? '-'} min</p>
+                </div>`;
+            }).join('');
         }
         
         async function loadWeightStats() {
@@ -1764,10 +2169,26 @@
         
         function loadStatsChart(exId) {
             if(!exId) return;
+            // Unisce cronologia esercizio + snapshot dalle sessioni salvate
             const history = getWorkoutHistory();
-            const records = history[exId] || [];
+            let records = [...(history[exId] || [])];
+            const sessions = getSessionsStore().history || [];
+            sessions.forEach(s => {
+                (s.exercises || []).forEach(ex => {
+                    if(String(ex.exId) !== String(exId)) return;
+                    const already = records.some(r => r.sessionId === s.id);
+                    if(already) return;
+                    records.push({
+                        date: s.endedAt || s.startedAt,
+                        sessionId: s.id,
+                        peso: ex.maxPeso || 0,
+                        reps: ex.maxReps || 0,
+                        serie: ex.serie || 3
+                    });
+                });
+            });
+            records.sort((a, b) => new Date(a.date) - new Date(b.date));
             
-            // Calcola statistiche
             const pesos = records.map(r => r.peso).filter(p => p > 0);
             const reps = records.map(r => r.reps).filter(r => r > 0);
             
@@ -1775,11 +2196,13 @@
             document.getElementById('stat-max-reps').innerText = reps.length > 0 ? Math.max(...reps) : '-';
             document.getElementById('stat-sessions').innerText = records.length;
             
-            // Crea grafico
             const ctx = document.getElementById('statsChart').getContext('2d');
             if(statsChart) statsChart.destroy();
             
-            const labels = records.map((r, i) => '#' + (i + 1));
+            const labels = records.map((r, i) => {
+                if(!r.date) return '#' + (i + 1);
+                return new Date(r.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+            });
             const pesoData = records.map(r => r.peso);
             const repsData = records.map(r => r.reps);
             
@@ -1859,23 +2282,38 @@
         }
 
         function showGroupSelection() {
+            document.getElementById('workout-hub').classList.add('hidden');
             document.getElementById('select-group').classList.remove('hidden');
             document.getElementById('workout-list').classList.add('hidden');
         }
 
         function selectWorkoutGroup(gruppo) {
+            startWorkoutSession(gruppo);
+            document.getElementById('workout-hub').classList.add('hidden');
             document.getElementById('select-group').classList.add('hidden');
             document.getElementById('workout-list').classList.remove('hidden');
             document.getElementById('current-group-title').textContent = gruppo;
+            updateSessionTimerLabel();
             loadWorkout(gruppo);
         }
 
         function backToGroupSelection() {
             document.getElementById('workout-list').classList.add('hidden');
             document.getElementById('select-group').classList.remove('hidden');
+            document.getElementById('workout-hub').classList.add('hidden');
         }
 
-        function resetAllSets() { if(confirm("Resettare la sessione?")) { saveSessionState({}); loadWorkout(document.getElementById('current-group-title').textContent || 'all'); } }
+        function resetAllSets() {
+            if(confirm("Resettare i set completati di questa sessione?")) {
+                saveSessionState({});
+                const store = getSessionsStore();
+                if(store.active) {
+                    store.active.completedSets = {};
+                    saveSessionsStore(store);
+                }
+                loadWorkout(document.getElementById('current-group-title').textContent || 'all');
+            }
+        }
 
         function startTimer(timeStr) {
             clearInterval(timerInterval);
@@ -2011,6 +2449,10 @@
                 initApp();
                 // Inserisce le superserie se mancano (non tocca le schede esistenti)
                 setTimeout(() => ensureSuperserieWorkouts(false), 800);
+                // HealthKit / Watch bridge (attivo solo in build Capacitor iOS)
+                if (window.NativeWorkout) {
+                    NativeWorkout.init().then((ok) => console.log('NativeWorkout:', ok ? 'ready' : 'web-only'));
+                }
                 console.log('App initialized successfully');
             } catch(err) {
                 console.error('Fatal error on load:', err);
