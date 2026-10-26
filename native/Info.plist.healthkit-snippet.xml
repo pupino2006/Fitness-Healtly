@@ -1,0 +1,9 @@
+<!-- Aggiungi queste chiavi nei Info.plist di iPhone e Watch -->
+<key>NSHealthShareUsageDescription</key>
+<string>LR Training Pro usa Salute per leggere frequenza cardiaca e calorie durante l'allenamento.</string>
+<key>NSHealthUpdateUsageDescription</key>
+<string>LR Training Pro salva le sessioni di allenamento, le calorie e i dati workout in Salute.</string>
+<key>UIBackgroundModes</key>
+<array>
+  <string>processing</string>
+</array>

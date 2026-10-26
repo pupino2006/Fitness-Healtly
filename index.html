@@ -355,6 +355,7 @@
                 <button onclick="finishWorkoutSession()" class="w-full py-3 bg-emerald-600/90 text-white text-xs font-black uppercase rounded-xl active:scale-95 transition-all">
                     Termina e salva sessione
                 </button>
+                <div id="native-metrics-bar" class="hidden glass-card px-4 py-2 rounded-xl border border-red-500/20 flex justify-between text-[10px] font-black uppercase tracking-wide"></div>
                 <div id="workout-exercises" class="space-y-4 pb-32"></div>
             </div>
         </div>
@@ -519,6 +520,7 @@
         <button onclick="showSection('settings')" id="nav-settings" class="p-3 text-slate-500 transition-all"><i class="fas fa-cog text-xl"></i></button>
     </nav>
 
+    <script src="js/native-bridge.js"></script>
     <script>
         const SB_URL = "https://vnzrewcbnoqbqvzckome.supabase.co";
         const SB_KEY = "sb_publishable_Sq9txbu-PmKdbxETSx2cjw_WqWEFBPO";
@@ -1517,6 +1519,9 @@
                 startTimer(recVal);
                 saveWorkoutHistory(exId);
                 updateSessionTimerLabel();
+                // Recupero anche sull'Apple Watch
+                const name = document.querySelector(`#serie-${exId}`)?.closest('.glass-card')?.querySelector('h3')?.textContent || '';
+                if (window.NativeWorkout) NativeWorkout.startRecovery(parseInt(recVal) || 60, name);
             }
 
             saveSessionState(state);
@@ -1525,6 +1530,8 @@
                 store.active.completedSets = state;
                 saveSessionsStore(store);
             }
+            // Aggiorna UI Watch con set completati
+            syncActiveSessionToWatch();
         }
         
         function autoSaveExDataNew(exId, serieNum) {
@@ -1872,6 +1879,25 @@
             saveSessionsStore(store);
             // Reset set del giorno per la nuova sessione
             saveSessionState({});
+
+            // HealthKit + Watch (no-op su browser)
+            if (window.NativeWorkout) {
+                NativeWorkout.start(store.active.id, gruppo).then(() => {
+                    // sync dopo che il DOM esercizi è pronto
+                    setTimeout(syncActiveSessionToWatch, 800);
+                });
+            }
+        }
+
+        function syncActiveSessionToWatch() {
+            const store = getSessionsStore();
+            if (!store.active || !window.NativeWorkout) return;
+            const payload = NativeWorkout.buildWatchPayload(
+                store.active.gruppo,
+                store.active.id,
+                store.active.startedAt
+            );
+            NativeWorkout.syncSession(payload);
         }
 
         function resumeActiveSession() {
@@ -1892,6 +1918,7 @@
             document.getElementById('current-group-title').textContent = store.active.gruppo;
             updateSessionTimerLabel();
             loadWorkout(store.active.gruppo);
+            setTimeout(syncActiveSessionToWatch, 800);
         }
 
         function discardActiveSession() {
@@ -1900,6 +1927,7 @@
             store.active = null;
             saveSessionsStore(store);
             saveSessionState({});
+            if (window.NativeWorkout) NativeWorkout.end();
             showWorkoutHub();
         }
 
@@ -1916,14 +1944,14 @@
             el.textContent = `In corso · ${mins} min`;
         }
 
-        function finishWorkoutSession() {
+        async function finishWorkoutSession(skipConfirm) {
             const store = getSessionsStore();
             if(!store.active) {
                 alert('Nessuna sessione attiva.');
                 showWorkoutHub();
                 return;
             }
-            if(!confirm('Terminare e salvare questa sessione nello storico?')) return;
+            if(!skipConfirm && !confirm('Terminare e salvare questa sessione nello storico?')) return;
 
             // Snapshot di tutti gli esercizi visibili
             const cards = [...document.querySelectorAll('#workout-exercises .glass-card')];
@@ -1938,6 +1966,19 @@
                 saveWorkoutHistory(exId);
             });
 
+            // Chiudi HealthKit / Watch e recupera calorie
+            let healthExtras = {};
+            if (window.NativeWorkout) {
+                const metrics = await NativeWorkout.end();
+                if (metrics) {
+                    healthExtras = {
+                        activeCalories: metrics.activeCalories,
+                        averageHeartRate: metrics.averageHeartRate,
+                        healthKitDuration: metrics.durationSeconds
+                    };
+                }
+            }
+
             const endedAt = new Date().toISOString();
             const durationMin = Math.max(1, Math.round((new Date(endedAt) - new Date(store.active.startedAt)) / 60000));
             const session = {
@@ -1946,14 +1987,18 @@
                 startedAt: store.active.startedAt,
                 endedAt,
                 durationMin,
-                exercises
+                exercises,
+                ...healthExtras
             };
             store.history = [session, ...(store.history || [])].slice(0, 100);
             store.active = null;
             saveSessionsStore(store);
             saveSessionState({});
             stopTimer();
-            alert(`Sessione salvata!\n${session.gruppo} · ${durationMin} min · ${exercises.length} esercizi`);
+            const kcalLine = healthExtras.activeCalories != null
+                ? `\n${Math.round(healthExtras.activeCalories)} kcal · FC media ${healthExtras.averageHeartRate != null ? Math.round(healthExtras.averageHeartRate) : '-'} bpm`
+                : '';
+            alert(`Sessione salvata!\n${session.gruppo} · ${durationMin} min · ${exercises.length} esercizi${kcalLine}`);
             showWorkoutHub();
         }
         
@@ -2404,6 +2449,10 @@
                 initApp();
                 // Inserisce le superserie se mancano (non tocca le schede esistenti)
                 setTimeout(() => ensureSuperserieWorkouts(false), 800);
+                // HealthKit / Watch bridge (attivo solo in build Capacitor iOS)
+                if (window.NativeWorkout) {
+                    NativeWorkout.init().then((ok) => console.log('NativeWorkout:', ok ? 'ready' : 'web-only'));
+                }
                 console.log('App initialized successfully');
             } catch(err) {
                 console.error('Fatal error on load:', err);
