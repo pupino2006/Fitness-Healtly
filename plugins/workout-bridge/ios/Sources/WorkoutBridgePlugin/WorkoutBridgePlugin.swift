@@ -37,7 +37,7 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         session.activate()
     }
 
-    @objc func requestPermissions(_ call: CAPPluginCall) {
+    @objc public override func requestPermissions(_ call: CAPPluginCall) {
         guard HKHealthStore.isHealthDataAvailable() else {
             call.resolve(["granted": false])
             return
@@ -69,7 +69,7 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         }
     }
 
-    @objc func startNativeWorkout(_ call: CAPPluginCall) {
+    @objc public func startNativeWorkout(_ call: CAPPluginCall) {
         let sessionId = call.getString("sessionId") ?? UUID().uuidString
         let gruppo = call.getString("gruppo") ?? "Workout"
         let config = HKWorkoutConfiguration()
@@ -107,7 +107,7 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         }
     }
 
-    @objc func endNativeWorkout(_ call: CAPPluginCall) {
+    @objc public func endNativeWorkout(_ call: CAPPluginCall) {
         guard let builder = workoutBuilder, let start = workoutStart else {
             call.resolve([
                 "ok": false,
@@ -157,7 +157,7 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         }
     }
 
-    @objc func getLiveMetrics(_ call: CAPPluginCall) {
+    @objc public func getLiveMetrics(_ call: CAPPluginCall) {
         let elapsed: Int
         if let start = workoutStart {
             elapsed = Int(Date().timeIntervalSince(start))
@@ -172,7 +172,7 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         ])
     }
 
-    @objc func syncSessionToWatch(_ call: CAPPluginCall) {
+    @objc public func syncSessionToWatch(_ call: CAPPluginCall) {
         guard let session = call.getObject("session") else {
             call.reject("session required")
             return
@@ -183,7 +183,7 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         call.resolve(["ok": true])
     }
 
-    @objc func startWatchRecovery(_ call: CAPPluginCall) {
+    @objc public func startWatchRecovery(_ call: CAPPluginCall) {
         let seconds = call.getInt("seconds") ?? 60
         let name = call.getString("exerciseName") ?? ""
         sendToWatch([
@@ -194,12 +194,12 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         call.resolve(["ok": true])
     }
 
-    @objc func stopWatchRecovery(_ call: CAPPluginCall) {
+    @objc public func stopWatchRecovery(_ call: CAPPluginCall) {
         sendToWatch(["type": "stopRecovery"])
         call.resolve(["ok": true])
     }
 
-    @objc func isNativeAvailable(_ call: CAPPluginCall) {
+    @objc public func isNativeAvailable(_ call: CAPPluginCall) {
         var reachable = false
         if WCSession.isSupported() {
             reachable = WCSession.default.isReachable

@@ -1,11 +1,17 @@
 import Foundation
 
 struct WatchExerciseSet: Identifiable, Codable, Hashable {
-    var id: Int { set }
-    var set: Int
+    var setNumber: Int
     var reps: Int
     var peso: Double
     var done: Bool
+
+    var id: Int { setNumber }
+
+    enum CodingKeys: String, CodingKey {
+        case setNumber = "set"
+        case reps, peso, done
+    }
 }
 
 struct WatchExercise: Identifiable, Codable, Hashable {
@@ -17,7 +23,7 @@ struct WatchExercise: Identifiable, Codable, Hashable {
     var id: String { exId }
 
     var nextSetNumber: Int? {
-        sets.first(where: { !$0.done })?.set
+        sets.first(where: { !$0.done })?.setNumber
     }
 }
 
