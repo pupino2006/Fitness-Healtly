@@ -112,12 +112,21 @@ Finché usi solo browser (senza app nativa), le kcal sono **stimate** dal peso c
 
 ---
 
-## Oggi su questo Mac
+## Blocco tipico: icona grigia / installazione a metà sul Watch
 
-Stato attuale del repo:
+Sintomo: sull’app Watch dell’iPhone premi **Installa**, parte, ma resta un’icona senza sfondo e non risulta installata.
 
-- ✅ progetto `ios/` generato  
-- ✅ CocoaPods ok (`FitnessWorkoutBridge` incluso)  
-- ❌ **Xcode.app assente** → non si può ancora fare Run su device/Watch  
+Causa più frequente (watchOS 9+): **Modalità sviluppatore spenta** sul Watch.  
+Con account Personal Team Xcode deve anche aver visto il Watch (UDID nel profilo).
 
-Prossimo passo tuo: installare **Xcode** (App Store o developer.apple.com), poi i comandi della sezione 1.
+### Cosa fare sul Watch (obbligatorio)
+
+1. Watch sbloccato, vicino all’iPhone, Bluetooth ON.  
+2. Sul Mac: Xcode aperto col progetto (così il Watch compare in Window → Devices).  
+3. Sul Watch: **Impostazioni → Privacy e sicurezza → Modalità sviluppatore → ON**.  
+4. Riavvia il Watch, conferma di nuovo **Attiva**.  
+5. Se compare un avviso “fidati dello sviluppatore”, autorizza.  
+6. Poi sull’iPhone: app **Watch → LR Training → Installa**,  
+   oppure in Xcode schema **FitnessHealthyWatch** → destinazione **Apple Watch di Luca** → ▶ Run.
+
+> Su SE (A2352 / watchOS 10.6.x) senza Modalità sviluppatore l’installazione **non può** completarsi.

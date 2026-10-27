@@ -22,6 +22,7 @@
 		99CD2D3E69D3287CD2B9F405 /* WatchWorkoutHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F90D04B15205A4CE60D47FD /* WatchWorkoutHealth.swift */; };
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
 		D24046AFCFEE957DFC34F6CD /* FitnessHealthyWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBF6973F700C35122FC443AA /* FitnessHealthyWatchApp.swift */; };
+		F13D186FB5BD2D9AECE9DBEF /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99CD09D817A5CDEF9F685F56 /* SceneDelegate.swift */; };
 		F965E8DC601F4652A9683589 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9C5559BA9F0157D2C206386E /* Foundation.framework */; };
 /* End PBXBuildFile section */
 
@@ -65,6 +66,7 @@
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
+		99CD09D817A5CDEF9F685F56 /* SceneDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		9C5559BA9F0157D2C206386E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		9F1B9F22D177CE3DA9C7F373 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1B2C3D41E5F678901234567 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
@@ -136,6 +138,7 @@
 				A1B2C3D41E5F678901234567 /* App.entitlements */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
+				99CD09D817A5CDEF9F685F56 /* SceneDelegate.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -315,6 +318,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				F13D186FB5BD2D9AECE9DBEF /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

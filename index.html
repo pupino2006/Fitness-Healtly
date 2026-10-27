@@ -273,6 +273,16 @@
                     </div>
                 </button>
 
+                <button onclick="showSchedeEditSelection()" class="w-full p-5 rounded-[2rem] glass-card border-l-[6px] border-blue-500 shadow-xl flex items-center gap-4 active:scale-95 transition-all">
+                    <div class="w-14 h-14 rounded-2xl bg-blue-500/15 flex items-center justify-center text-blue-400">
+                        <i class="fas fa-sliders text-2xl"></i>
+                    </div>
+                    <div class="text-left">
+                        <h3 class="text-base font-black uppercase tracking-tight">Allenamenti</h3>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase">Sistema pesi, reps e serie</p>
+                    </div>
+                </button>
+
                 <div class="glass-card p-4 rounded-2xl border border-slate-800">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-xs font-black uppercase text-slate-300">Ultime sessioni</h3>
@@ -289,8 +299,8 @@
                 <div class="flex gap-2 items-center mb-2">
                     <button onclick="showWorkoutHub()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-400 active:scale-90"><i class="fas fa-arrow-left text-sm"></i></button>
                     <div>
-                        <h2 class="text-sm font-black uppercase text-orange-500">Scegli la scheda</h2>
-                        <p class="text-[9px] text-slate-400">Poi parte la sessione</p>
+                        <h2 id="select-group-title" class="text-sm font-black uppercase text-orange-500">Scegli la scheda</h2>
+                        <p id="select-group-sub" class="text-[9px] text-slate-400">Poi parte la sessione</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
@@ -413,6 +423,18 @@
 
                 <!-- DOM nascosto per snapshot compatibilità / sync Watch -->
                 <div id="workout-exercises" class="hidden"></div>
+            </div>
+
+            <!-- Editor schede (pesi / reps) senza avviare sessione -->
+            <div id="scheda-edit" class="hidden space-y-3 pb-28">
+                <div class="flex gap-2 items-center">
+                    <button onclick="backFromSchedaEdit()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-400 active:scale-90"><i class="fas fa-arrow-left text-sm"></i></button>
+                    <div class="min-w-0 flex-1">
+                        <h2 id="scheda-edit-title" class="text-sm font-black uppercase text-blue-400 truncate">Allenamenti</h2>
+                        <p class="text-[9px] text-slate-500">Modifica pesi e reps · salvataggio automatico</p>
+                    </div>
+                </div>
+                <div id="scheda-edit-list" class="space-y-3"></div>
             </div>
 
             <!-- Menu sessione -->
@@ -1767,11 +1789,142 @@
             }
         }
 
+        let schedaEditMode = false;
+        const PESO_OPTS = [0,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200];
+
         function showWorkoutHub() {
+            schedaEditMode = false;
             document.getElementById('workout-hub').classList.remove('hidden');
             document.getElementById('select-group').classList.add('hidden');
             document.getElementById('workout-list').classList.add('hidden');
+            document.getElementById('scheda-edit')?.classList.add('hidden');
+            const t = document.getElementById('select-group-title');
+            const s = document.getElementById('select-group-sub');
+            if (t) t.textContent = 'Scegli la scheda';
+            if (s) s.textContent = 'Poi parte la sessione';
+            if (t) { t.classList.remove('text-blue-400'); t.classList.add('text-orange-500'); }
             renderWorkoutHub();
+        }
+
+        function showSchedeEditSelection() {
+            schedaEditMode = true;
+            document.getElementById('workout-hub').classList.add('hidden');
+            document.getElementById('workout-list').classList.add('hidden');
+            document.getElementById('scheda-edit')?.classList.add('hidden');
+            document.getElementById('select-group').classList.remove('hidden');
+            const t = document.getElementById('select-group-title');
+            const s = document.getElementById('select-group-sub');
+            if (t) {
+                t.textContent = 'Allenamenti';
+                t.classList.remove('text-orange-500');
+                t.classList.add('text-blue-400');
+            }
+            if (s) s.textContent = 'Scegli la scheda da modificare';
+        }
+
+        function backFromSchedaEdit() {
+            document.getElementById('scheda-edit')?.classList.add('hidden');
+            showSchedeEditSelection();
+        }
+
+        async function openSchedaEditor(gruppo) {
+            if (!_supabase) {
+                alert('Connessione non disponibile.');
+                return;
+            }
+            let q = _supabase.from('workout').select('*').order('id');
+            if (gruppo !== 'all') q = q.eq('gruppo_lavoro', gruppo);
+            const { data } = await q;
+            if (!data || !data.length) {
+                alert('Nessun esercizio trovato per questa scheda.');
+                return;
+            }
+            schedaEditMode = true;
+            document.getElementById('select-group').classList.add('hidden');
+            document.getElementById('workout-hub').classList.add('hidden');
+            document.getElementById('workout-list').classList.add('hidden');
+            document.getElementById('scheda-edit').classList.remove('hidden');
+            document.getElementById('scheda-edit-title').textContent = gruppo === 'all' ? 'Tutta la scheda' : gruppo;
+            renderSchedaEditor(data);
+        }
+
+        function renderSchedaEditor(rows) {
+            const savedExData = getExData();
+            const list = document.getElementById('scheda-edit-list');
+            list.innerHTML = rows.map(ex => {
+                const exId = String(ex.id);
+                const saved = savedExData[exId] || {};
+                const numSerie = parseInt(saved.serie) || parseInt(ex.serie) || 3;
+                const defaultReps = parseInt(ex.reps || ex.note_rep) || 10;
+                const dbPeso = parseFloat(String(ex.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
+                let seriesHtml = '';
+                for (let i = 1; i <= numSerie; i++) {
+                    const sd = saved[i] || {};
+                    const repsVal = parseInt(sd.reps) || defaultReps;
+                    const pesoVal = parseFloat(sd.peso);
+                    const peso = Number.isFinite(pesoVal) ? pesoVal : (i === 1 ? dbPeso : 0);
+                    const repsOpts = Array.from({ length: 16 }, (_, k) => k + 1).map(n =>
+                        `<option value="${n}" ${n === repsVal ? 'selected' : ''}>${n}</option>`
+                    ).join('');
+                    const pesoOpts = PESO_OPTS.map(n =>
+                        `<option value="${n}" ${n == peso ? 'selected' : ''}>${n || '—'}</option>`
+                    ).join('');
+                    seriesHtml += `
+                    <div class="grid grid-cols-[28px_1fr_1fr] gap-2 items-center">
+                        <span class="text-[10px] font-black text-slate-500 text-center">${i}</span>
+                        <select class="bg-slate-900/80 rounded-xl py-2 px-2 text-center text-sm font-black text-white outline-none border border-slate-700"
+                            onchange="saveSchedaEditField('${exId}', ${i}, 'reps', this.value, ${numSerie})">${repsOpts}</select>
+                        <select class="bg-slate-900/80 rounded-xl py-2 px-2 text-center text-sm font-black text-orange-400 outline-none border border-slate-700"
+                            onchange="saveSchedaEditField('${exId}', ${i}, 'peso', this.value, ${numSerie})">${pesoOpts}</select>
+                    </div>`;
+                }
+                const serieOpts = [1,2,3,4,5,6].map(n =>
+                    `<option value="${n}" ${n === numSerie ? 'selected' : ''}>${n} serie</option>`
+                ).join('');
+                return `
+                <div class="glass-card rounded-2xl p-4 border border-slate-800 space-y-3" id="scheda-ex-${exId}">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <h3 class="text-sm font-black uppercase text-slate-100 leading-tight">${ex.esercizi || 'Esercizio'}</h3>
+                            <p class="text-[9px] text-slate-500 mt-0.5">${ex.gruppi_muscolari || ex.note || ''}</p>
+                        </div>
+                        <select class="bg-slate-900 rounded-lg text-[10px] font-black text-blue-300 px-2 py-1 border border-slate-700 outline-none shrink-0"
+                            onchange="changeSchedaEditSerieCount('${exId}', this.value)">${serieOpts}</select>
+                    </div>
+                    <div class="grid grid-cols-[28px_1fr_1fr] gap-2 text-[8px] font-black uppercase text-slate-600 px-0.5">
+                        <span class="text-center">#</span><span class="text-center">Reps</span><span class="text-center">Kg</span>
+                    </div>
+                    <div class="space-y-2" id="scheda-series-${exId}">${seriesHtml}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function saveSchedaEditField(exId, serieNum, field, value, numSerie) {
+            const data = getExData();
+            if (!data[exId] || typeof data[exId] !== 'object') data[exId] = {};
+            data[exId].serie = numSerie || data[exId].serie || 3;
+            if (!data[exId][serieNum]) data[exId][serieNum] = { reps: '10', peso: '', rec: '90', note: '' };
+            data[exId][serieNum][field] = String(value);
+            saveExData(data);
+            // Sync leggero su Supabase (prima serie come riferimento)
+            if (_supabase && serieNum === 1) {
+                const payload = {};
+                if (field === 'reps') payload.note_rep = String(value);
+                if (field === 'peso') payload.avanzamento_pesi = String(value);
+                if (Object.keys(payload).length) {
+                    _supabase.from('workout').update(payload).eq('id', exId).then(() => {});
+                }
+            }
+        }
+
+        async function changeSchedaEditSerieCount(exId, newCount) {
+            const n = parseInt(newCount) || 3;
+            const data = getExData();
+            if (!data[exId]) data[exId] = {};
+            data[exId].serie = n;
+            saveExData(data);
+            const gruppo = document.getElementById('scheda-edit-title').textContent;
+            await openSchedaEditor(gruppo === 'Tutta la scheda' ? 'all' : gruppo);
         }
 
         function renderWorkoutHub() {
@@ -2745,12 +2898,26 @@
         }
 
         function showGroupSelection() {
+            schedaEditMode = false;
             document.getElementById('workout-hub').classList.add('hidden');
             document.getElementById('select-group').classList.remove('hidden');
             document.getElementById('workout-list').classList.add('hidden');
+            document.getElementById('scheda-edit')?.classList.add('hidden');
+            const t = document.getElementById('select-group-title');
+            const s = document.getElementById('select-group-sub');
+            if (t) {
+                t.textContent = 'Scegli la scheda';
+                t.classList.remove('text-blue-400');
+                t.classList.add('text-orange-500');
+            }
+            if (s) s.textContent = 'Poi parte la sessione';
         }
 
         function selectWorkoutGroup(gruppo) {
+            if (schedaEditMode) {
+                openSchedaEditor(gruppo);
+                return;
+            }
             startWorkoutSession(gruppo);
             document.getElementById('workout-hub').classList.add('hidden');
             document.getElementById('select-group').classList.add('hidden');
