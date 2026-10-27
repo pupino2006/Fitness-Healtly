@@ -43,6 +43,9 @@ export interface WorkoutBridgePlugin {
   /** Invia lo stato sessione all'Apple Watch (esercizi, set, recupero). */
   syncSessionToWatch(options: { session: WorkoutSessionPayload }): Promise<{ ok: boolean }>;
 
+  /** Invia l'elenco schede disponibili all'Apple Watch. */
+  syncGroupsToWatch(options: { groups: string[] }): Promise<{ ok: boolean; count?: number }>;
+
   /** Avvia timer recupero sul Watch (+ haptic). */
   startWatchRecovery(options: { seconds: number; exerciseName?: string }): Promise<{ ok: boolean }>;
 
@@ -55,10 +58,13 @@ export interface WorkoutBridgePlugin {
   addListener(
     eventName: 'watchEvent',
     listenerFunc: (event: {
-      type: 'setComplete' | 'setUndo' | 'nextExercise' | 'prevExercise' | 'finishSession' | 'recoveryDone';
+      type: 'setComplete' | 'setUndo' | 'nextExercise' | 'prevExercise' | 'finishSession' | 'recoveryDone' | 'startWorkoutFromWatch' | 'metrics';
       exId?: string;
       setNum?: number;
       seconds?: number;
+      gruppo?: string;
+      heartRate?: number;
+      activeCalories?: number;
     }) => void
   ): Promise<{ remove: () => void }>;
 }

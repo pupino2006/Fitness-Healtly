@@ -1,5 +1,4 @@
 import SwiftUI
-import HealthKit
 
 @main
 struct FitnessHealthyWatchApp: App {

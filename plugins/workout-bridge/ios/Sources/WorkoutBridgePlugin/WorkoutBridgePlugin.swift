@@ -13,6 +13,7 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         CAPPluginMethod(name: "endNativeWorkout", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getLiveMetrics", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "syncSessionToWatch", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "syncGroupsToWatch", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startWatchRecovery", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "stopWatchRecovery", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "isNativeAvailable", returnType: CAPPluginReturnPromise)
@@ -181,6 +182,15 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         payload["type"] = "sessionSync"
         sendToWatch(payload)
         call.resolve(["ok": true])
+    }
+
+    @objc public func syncGroupsToWatch(_ call: CAPPluginCall) {
+        let groups = call.getArray("groups", String.self) ?? []
+        sendToWatch([
+            "type": "availableGroups",
+            "groups": groups
+        ])
+        call.resolve(["ok": true, "count": groups.count])
     }
 
     @objc public func startWatchRecovery(_ call: CAPPluginCall) {

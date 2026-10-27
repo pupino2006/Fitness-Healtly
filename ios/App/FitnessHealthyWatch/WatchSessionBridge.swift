@@ -11,6 +11,13 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
     @Published var isRecovering: Bool = false
     @Published var phoneReachable: Bool = false
     @Published var lastMessage: String = ""
+    @Published var availableGroups: [String] = [
+        "Spinte 1", "Gambe 1", "Tirata 1",
+        "SS Gambe/Dorso 1", "SS Petto/Spalle 1",
+        "Spalle/Petto", "Gambe 2", "Schiena 2",
+        "SS Gambe/Dorso 2", "SS Petto/Spalle 2"
+    ]
+    @Published var pendingStart: String? = nil
 
     private var recoveryTimer: Timer?
 
@@ -69,7 +76,21 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
         sendToPhone(["type": "finishSession"])
         WatchWorkoutHealth.shared.endWorkout()
         session = nil
+        pendingStart = nil
         stopRecovery()
+    }
+
+    func requestStartWorkout(_ gruppo: String) {
+        pendingStart = gruppo
+        lastMessage = "Avvio \(gruppo)…"
+        sendToPhone([
+            "type": "startWorkoutFromWatch",
+            "gruppo": gruppo
+        ])
+        // Parte comunque HealthKit in attesa del sync scheda dall'iPhone
+        if !WatchWorkoutHealth.shared.isActive {
+            WatchWorkoutHealth.shared.startWorkout()
+        }
     }
 
     func startRecovery(seconds: Int) {
@@ -130,6 +151,11 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
             case "nativeWorkoutEnded":
                 WatchWorkoutHealth.shared.endWorkout()
                 self.session = nil
+                self.pendingStart = nil
+            case "availableGroups":
+                if let groups = message["groups"] as? [String], !groups.isEmpty {
+                    self.availableGroups = groups
+                }
             default:
                 break
             }
@@ -148,6 +174,7 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
             let data = try JSONSerialization.data(withJSONObject: raw, options: [])
             let decoded = try JSONDecoder().decode(WatchSession.self, from: data)
             self.session = decoded
+            self.pendingStart = nil
             if !WatchWorkoutHealth.shared.isActive {
                 WatchWorkoutHealth.shared.startWorkout()
             }
@@ -184,6 +211,7 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
                 exercises: exercises,
                 currentExerciseIndex: idx
             )
+            self.pendingStart = nil
             if !WatchWorkoutHealth.shared.isActive {
                 WatchWorkoutHealth.shared.startWorkout()
             }

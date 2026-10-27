@@ -1,6 +1,7 @@
 import Foundation
 import HealthKit
 import Combine
+import WatchConnectivity
 
 final class WatchWorkoutHealth: NSObject, ObservableObject {
     static let shared = WatchWorkoutHealth()
@@ -13,21 +14,28 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
     private let store = HKHealthStore()
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
+    private var metricsTimer: Timer?
 
     func requestAuth() {
         guard HKHealthStore.isHealthDataAvailable() else { return }
-        let types: Set<HKSampleType> = [
+        let share: Set<HKSampleType> = [
+            HKObjectType.workoutType(),
+            HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
+        ]
+        let read: Set<HKObjectType> = [
             HKObjectType.workoutType(),
             HKQuantityType.quantityType(forIdentifier: .heartRate)!,
             HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
         ]
-        store.requestAuthorization(toShare: types, read: types) { ok, _ in
+        store.requestAuthorization(toShare: share, read: read) { ok, _ in
             DispatchQueue.main.async { self.authOk = ok }
         }
     }
 
     func startWorkout() {
         guard session == nil else { return }
+        requestAuth()
+
         let config = HKWorkoutConfiguration()
         config.activityType = .traditionalStrengthTraining
         config.locationType = .indoor
@@ -46,13 +54,17 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
             let start = Date()
             s.startActivity(with: start)
             b.beginCollection(withStart: start) { _, _ in }
-            DispatchQueue.main.async { self.isActive = true }
+            DispatchQueue.main.async {
+                self.isActive = true
+                self.startMetricsPush()
+            }
         } catch {
             print("Watch HK start error", error.localizedDescription)
         }
     }
 
     func endWorkout() {
+        stopMetricsPush()
         session?.end()
         builder?.endCollection(withEnd: Date()) { [weak self] _, _ in
             self?.builder?.finishWorkout { _, _ in
@@ -60,8 +72,39 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
                     self?.isActive = false
                     self?.session = nil
                     self?.builder = nil
+                    self?.heartRate = nil
+                    self?.activeCalories = 0
                 }
             }
+        }
+    }
+
+    private func startMetricsPush() {
+        stopMetricsPush()
+        metricsTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
+            self?.pushMetricsToPhone()
+        }
+    }
+
+    private func stopMetricsPush() {
+        metricsTimer?.invalidate()
+        metricsTimer = nil
+    }
+
+    private func pushMetricsToPhone() {
+        guard WCSession.isSupported() else { return }
+        let s = WCSession.default
+        var payload: [String: Any] = [
+            "type": "metrics",
+            "activeCalories": activeCalories
+        ]
+        if let hr = heartRate { payload["heartRate"] = hr }
+        if s.isReachable {
+            s.sendMessage(payload, replyHandler: nil) { _ in
+                s.transferUserInfo(payload)
+            }
+        } else {
+            s.transferUserInfo(payload)
         }
     }
 }
@@ -69,7 +112,10 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
 extension WatchWorkoutHealth: HKWorkoutSessionDelegate {
     func workoutSession(_ workoutSession: HKWorkoutSession, didChangeTo toState: HKWorkoutSessionState, from fromState: HKWorkoutSessionState, date: Date) {}
     func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
-        DispatchQueue.main.async { self.isActive = false }
+        DispatchQueue.main.async {
+            self.isActive = false
+            self.stopMetricsPush()
+        }
     }
 }
 
@@ -90,6 +136,7 @@ extension WatchWorkoutHealth: HKLiveWorkoutBuilderDelegate {
                 default:
                     break
                 }
+                self.pushMetricsToPhone()
             }
         }
     }
