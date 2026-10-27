@@ -23,6 +23,10 @@ export class WorkoutBridgeWeb extends WebPlugin implements WorkoutBridgePlugin {
     return { ok: false };
   }
 
+  async syncGroupsToWatch(_options: { groups: string[] }) {
+    return { ok: false, count: 0 };
+  }
+
   async startWatchRecovery() {
     return { ok: false };
   }

@@ -21,7 +21,7 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Serve per FC e calorie durante l'allenamento.</string>
+	<string>Serve per frequenza cardiaca e calorie durante l'allenamento.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Serve per salvare il workout in Salute.</string>
 	<key>WKApplication</key>

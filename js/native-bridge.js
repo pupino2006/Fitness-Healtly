@@ -93,6 +93,20 @@
       } catch (_) {}
     },
 
+    async syncGroupsToWatch(groups) {
+      const p = this.plugin();
+      if (!p || !this.available) return;
+      try {
+        if (typeof p.syncGroupsToWatch === 'function') {
+          await p.syncGroupsToWatch({ groups: groups || [] });
+        } else if (typeof p.syncSessionToWatch === 'function') {
+          // fallback: reuse generic send via session sync shape not ideal — plugin method preferred
+        }
+      } catch (e) {
+        console.warn('NativeWorkout.syncGroupsToWatch', e);
+      }
+    },
+
     buildWatchPayload(gruppo, sessionId, startedAt) {
       const cards = [...document.querySelectorAll('#workout-exercises .glass-card')];
       const exercises = [];
@@ -169,6 +183,14 @@
     _onWatchEvent(ev) {
       if (!ev || !ev.type) return;
       console.log('Watch event', ev);
+
+      if (ev.type === 'startWorkoutFromWatch') {
+        const gruppo = ev.gruppo || ev.group || '';
+        if (typeof startWorkoutFromWatch === 'function') {
+          startWorkoutFromWatch(gruppo);
+        }
+        return;
+      }
 
       if (ev.type === 'metrics') {
         this._renderMetrics({

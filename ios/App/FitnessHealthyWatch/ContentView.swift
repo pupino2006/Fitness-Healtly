@@ -27,15 +27,35 @@ struct IdleView: View {
                 Text("LR Training")
                     .font(.headline)
                     .foregroundStyle(.orange)
-                Text("Avvia un workout dal iPhone.\nQui completi serie e recuperi.")
+
+                Label(bridge.phoneReachable ? "iPhone collegato" : "Apri l'app iPhone", systemImage: bridge.phoneReachable ? "iphone" : "iphone.slash")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Label(bridge.phoneReachable ? "iPhone collegato" : "In attesa iPhone", systemImage: bridge.phoneReachable ? "iphone" : "iphone.slash")
+
+                Label(health.authOk ? "Salute OK" : "Autorizza Salute", systemImage: health.authOk ? "heart.fill" : "heart")
                     .font(.caption2)
-                if health.isActive {
-                    Label("HK attivo · \(Int(health.activeCalories)) kcal", systemImage: "flame.fill")
+                    .foregroundStyle(health.authOk ? .green : .secondary)
+                    .onTapGesture { health.requestAuth() }
+
+                if let pending = bridge.pendingStart {
+                    Text("Avvio \(pending)…")
                         .font(.caption2)
                         .foregroundStyle(.orange)
+                }
+
+                Text("Avvia scheda")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+
+                ForEach(bridge.availableGroups, id: \.self) { group in
+                    Button {
+                        bridge.requestStartWorkout(group)
+                    } label: {
+                        Text(group)
+                            .font(.caption2.weight(.bold))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .tint(.orange)
                 }
             }
             .padding(.horizontal, 4)

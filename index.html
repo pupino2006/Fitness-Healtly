@@ -614,6 +614,15 @@
                 <div id="superserie-status" class="text-[10px] text-slate-400 italic"></div>
             </div>
 
+            <div class="glass-card p-4 rounded-2xl border border-red-500/20 space-y-3">
+                <h4 class="text-sm font-black uppercase text-red-400">Dati allenamento</h4>
+                <p class="text-[9px] text-slate-500">Cancella sessioni salvate (non tocca i pesi/reps delle schede).</p>
+                <button onclick="clearWorkoutSessions(true)" class="block w-full py-3 bg-red-600/80 text-white text-center text-xs font-black uppercase rounded-xl active:scale-95 transition-all">
+                    Svuota sessioni
+                </button>
+                <div id="clear-sessions-status" class="text-[10px] text-slate-400 italic"></div>
+            </div>
+
             <!-- Info -->
             <div class="glass-card p-4 rounded-2xl border border-slate-800">
                 <h4 class="text-[10px] font-black uppercase text-slate-500 mb-2">ℹ️ Informazioni</h4>
@@ -1740,6 +1749,44 @@
         const saveSessionsStore = (store) => localStorage.setItem('workout_sessions_v1', JSON.stringify(store));
         const getWorkoutHistory = () => JSON.parse(localStorage.getItem('workout_history_v1') || '{}');
         const saveWorkoutHistoryData = (data) => localStorage.setItem('workout_history_v1', JSON.stringify(data));
+
+        const WATCH_GROUPS = [
+            'Spinte 1', 'Gambe 1', 'Tirata 1',
+            'SS Gambe/Dorso 1', 'SS Petto/Spalle 1',
+            'Spalle/Petto', 'Gambe 2', 'Schiena 2',
+            'SS Gambe/Dorso 2', 'SS Petto/Spalle 2'
+        ];
+
+        function clearWorkoutSessions(askConfirm) {
+            if (askConfirm && !confirm('Cancellare tutte le sessioni (attiva + storico)? I pesi/reps delle schede restano.')) return;
+            localStorage.removeItem('workout_sessions_v1');
+            localStorage.removeItem('workout_session_v4');
+            if (window.liveWorkout) {
+                try { stopLiveClock(); } catch (_) {}
+                liveWorkout = null;
+                window.liveWorkout = null;
+            }
+            const status = document.getElementById('clear-sessions-status');
+            if (status) status.textContent = 'Sessioni svuotate.';
+            try { showWorkoutHub(); } catch (_) {}
+            try { renderWorkoutHub(); } catch (_) {}
+        }
+
+        function startWorkoutFromWatch(gruppo) {
+            const g = (gruppo || '').trim();
+            if (!g) return;
+            showSection('workout');
+            // Se c'è già una sessione, la scarta per partire da Watch
+            const store = getSessionsStore();
+            if (store.active) {
+                store.active = null;
+                saveSessionsStore(store);
+                saveSessionState({});
+                liveWorkout = null;
+                window.liveWorkout = null;
+            }
+            selectWorkoutGroup(g);
+        }
 
         function collectExerciseSnapshot(exId, name) {
             const serieVal = parseInt(document.getElementById('serie-' + exId)?.value) || 3;
@@ -3081,8 +3128,18 @@
                 // Inserisce le superserie se mancano (non tocca le schede esistenti)
                 setTimeout(() => ensureSuperserieWorkouts(false), 800);
                 // HealthKit / Watch bridge (attivo solo in build Capacitor iOS)
+                // Svuota sessioni una tantum (richiesta utente)
+                if (localStorage.getItem('wipe_sessions_20261027') !== '1') {
+                    clearWorkoutSessions(false);
+                    localStorage.setItem('wipe_sessions_20261027', '1');
+                }
                 if (window.NativeWorkout) {
-                    NativeWorkout.init().then((ok) => console.log('NativeWorkout:', ok ? 'ready' : 'web-only'));
+                    NativeWorkout.init().then((ok) => {
+                        console.log('NativeWorkout:', ok ? 'ready' : 'web-only');
+                        if (ok && typeof NativeWorkout.syncGroupsToWatch === 'function') {
+                            NativeWorkout.syncGroupsToWatch(WATCH_GROUPS);
+                        }
+                    });
                 }
                 console.log('App initialized successfully');
             } catch(err) {
