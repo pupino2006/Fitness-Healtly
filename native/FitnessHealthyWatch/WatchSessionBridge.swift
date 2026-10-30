@@ -27,6 +27,7 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
     private let sessionKey = "fh.watch.session.v1"
     private let revisionKey = "fh.watch.revision.v1"
     private let dirtyKey = "fh.watch.weightsDirty.v1"
+    private let finishedIdKey = "fh.watch.lastFinishedId.v1"
 
     var groups: [String] {
         if !plans.isEmpty { return plans.map(\.gruppo) }
@@ -191,6 +192,7 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
         )
         summary = built
         lastFinishedId = sess.id
+        defaults.set(sess.id, forKey: finishedIdKey)
         session = nil
         stopRecovery()
         clearPersistedSession()
@@ -243,6 +245,7 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
     private func loadPersisted() {
         localRevision = defaults.integer(forKey: revisionKey)
         weightsDirty = defaults.bool(forKey: dirtyKey)
+        lastFinishedId = defaults.string(forKey: finishedIdKey)
         if let data = defaults.data(forKey: plansKey),
            let saved = try? JSONDecoder().decode([WatchPlan].self, from: data) {
             plans = saved
@@ -368,7 +371,11 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
                     WatchWorkoutHealth.shared.startWorkout()
                 }
             case "nativeWorkoutEnded":
-                if self.session != nil {
+                if let id = self.session?.id {
+                    // Phone ended (or cancelled) this session; remember id so a stale
+                    // sessionSync application context cannot resurrect it on relaunch.
+                    self.lastFinishedId = id
+                    self.defaults.set(id, forKey: self.finishedIdKey)
                     WatchWorkoutHealth.shared.endWorkout()
                     self.session = nil
                     self.clearPersistedSession()
@@ -425,10 +432,11 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
                         guard let localSet = localEx.sets.first(where: { $0.setNumber == n }) else { continue }
                         copy.exercises[i].sets[j].peso = localSet.peso
                         copy.exercises[i].sets[j].reps = localSet.reps
-                        copy.exercises[i].sets[j].peso2 = localSet.peso2
-                        copy.exercises[i].sets[j].reps2 = localSet.reps2
-                        copy.exercises[i].sets[j].peso3 = localSet.peso3
-                        copy.exercises[i].sets[j].reps3 = localSet.reps3
+                        // Keep phone multi-part defaults when older Watch sets never had them.
+                        copy.exercises[i].sets[j].peso2 = localSet.peso2 ?? copy.exercises[i].sets[j].peso2
+                        copy.exercises[i].sets[j].reps2 = localSet.reps2 ?? copy.exercises[i].sets[j].reps2
+                        copy.exercises[i].sets[j].peso3 = localSet.peso3 ?? copy.exercises[i].sets[j].peso3
+                        copy.exercises[i].sets[j].reps3 = localSet.reps3 ?? copy.exercises[i].sets[j].reps3
                         copy.exercises[i].sets[j].done = false
                     }
                 }
