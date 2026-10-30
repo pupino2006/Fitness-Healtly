@@ -27,6 +27,10 @@ export class WorkoutBridgeWeb extends WebPlugin implements WorkoutBridgePlugin {
     return { ok: false, count: 0 };
   }
 
+  async syncPlansToWatch(_options: { plans: unknown[]; phoneEdited?: boolean }) {
+    return { ok: false, count: 0 };
+  }
+
   async startWatchRecovery() {
     return { ok: false };
   }

@@ -99,11 +99,21 @@
       try {
         if (typeof p.syncGroupsToWatch === 'function') {
           await p.syncGroupsToWatch({ groups: groups || [] });
-        } else if (typeof p.syncSessionToWatch === 'function') {
-          // fallback: reuse generic send via session sync shape not ideal — plugin method preferred
         }
       } catch (e) {
         console.warn('NativeWorkout.syncGroupsToWatch', e);
+      }
+    },
+
+    async syncPlans(plans, phoneEdited) {
+      const p = this.plugin();
+      if (!p || !this.available) return;
+      try {
+        if (typeof p.syncPlansToWatch === 'function') {
+          await p.syncPlansToWatch({ plans: plans || [], phoneEdited: !!phoneEdited });
+        }
+      } catch (e) {
+        console.warn('NativeWorkout.syncPlans', e);
       }
     },
 
@@ -184,6 +194,16 @@
       if (!ev || !ev.type) return;
       console.log('Watch event', ev);
 
+      if (ev.type === 'watchSessionState' || (ev.type === 'startWorkoutFromWatch' && ev.exercises)) {
+        if (typeof adoptWatchSession === 'function') adoptWatchSession(ev);
+        return;
+      }
+
+      if (ev.type === 'watchWorkoutFinished') {
+        if (typeof saveFinishedFromWatch === 'function') saveFinishedFromWatch(ev);
+        return;
+      }
+
       if (ev.type === 'startWorkoutFromWatch') {
         const gruppo = ev.gruppo || ev.group || '';
         if (typeof startWorkoutFromWatch === 'function') {
@@ -204,7 +224,7 @@
 
       if (ev.type === 'setComplete') {
         if (typeof completeLiveSet === 'function' && global.liveWorkout) {
-          completeLiveSet();
+          completeLiveSet({ fromWatch: true });
         }
         return;
       }
@@ -221,7 +241,7 @@
       }
 
       if (ev.type === 'nextExercise' && typeof nextLiveExercise === 'function') {
-        nextLiveExercise(false);
+        nextLiveExercise(false, { fromWatch: true });
         return;
       }
       if (ev.type === 'prevExercise' && global.liveWorkout) {
@@ -230,9 +250,10 @@
         return;
       }
 
-      if (ev.type === 'finishSession' && typeof finishWorkoutSession === 'function') {
-        // Forza salvataggio senza secondo confirm se già chiesto dal Watch
-        if (confirm('Il Watch ha chiesto di terminare. Salvare la sessione?')) {
+      if (ev.type === 'finishSession') {
+        if (typeof saveFinishedFromWatch === 'function' && ev.exercises) {
+          saveFinishedFromWatch(ev);
+        } else if (typeof finishWorkoutSession === 'function') {
           finishWorkoutSession(true);
         }
         return;

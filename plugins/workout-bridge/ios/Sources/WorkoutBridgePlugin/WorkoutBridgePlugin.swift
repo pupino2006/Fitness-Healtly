@@ -14,6 +14,7 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         CAPPluginMethod(name: "getLiveMetrics", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "syncSessionToWatch", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "syncGroupsToWatch", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "syncPlansToWatch", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startWatchRecovery", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "stopWatchRecovery", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "isNativeAvailable", returnType: CAPPluginReturnPromise)
@@ -193,6 +194,18 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         call.resolve(["ok": true, "count": groups.count])
     }
 
+    @objc public func syncPlansToWatch(_ call: CAPPluginCall) {
+        let plans = call.options["plans"] ?? []
+        let phoneEdited = call.getBool("phoneEdited") ?? false
+        sendToWatch([
+            "type": "plansSync",
+            "plans": plans,
+            "phoneEdited": phoneEdited
+        ])
+        let count = (plans as? [Any])?.count ?? 0
+        call.resolve(["ok": true, "count": count])
+    }
+
     @objc public func startWatchRecovery(_ call: CAPPluginCall) {
         let seconds = call.getInt("seconds") ?? 60
         let name = call.getString("exerciseName") ?? ""
@@ -278,12 +291,20 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
     private func sendToWatch(_ payload: [String: Any]) {
         guard WCSession.isSupported() else { return }
         let session = WCSession.default
+        let type = payload["type"] as? String ?? ""
+        let durable = type == "plansSync" || type == "sessionSync" || type == "availableGroups"
+        if durable {
+            session.transferUserInfo(payload)
+            try? session.updateApplicationContext(payload)
+        }
         if session.isReachable {
             session.sendMessage(payload, replyHandler: nil) { error in
                 print("WC sendMessage error:", error.localizedDescription)
-                session.transferUserInfo(payload)
+                if !durable {
+                    session.transferUserInfo(payload)
+                }
             }
-        } else {
+        } else if !durable {
             session.transferUserInfo(payload)
             try? session.updateApplicationContext(payload)
         }

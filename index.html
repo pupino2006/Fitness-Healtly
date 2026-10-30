@@ -416,6 +416,8 @@
                     </div>
                 </div>
 
+                <div id="live-upcoming" class="space-y-2"></div>
+
                 <div class="grid grid-cols-2 gap-2 pb-28">
                     <button onclick="requestEndLiveWorkout()" class="py-3 bg-emerald-600 text-white text-xs font-black uppercase rounded-xl active:scale-95">Termina</button>
                     <button onclick="cancelLiveWorkout()" class="py-3 bg-red-600/20 text-red-400 text-xs font-black uppercase rounded-xl border border-red-500/30 active:scale-95">Annulla</button>
@@ -452,6 +454,11 @@
             <div id="live-summary-overlay" class="hidden fixed inset-0 z-[950] bg-[#0b0f1a] flex flex-col p-5 overflow-y-auto">
                 <p class="text-[10px] font-black uppercase text-emerald-400 tracking-widest mb-1">Allenamento completato</p>
                 <h2 id="summary-gruppo" class="text-2xl font-black uppercase text-white mb-4">—</h2>
+                <div class="glass-card rounded-2xl p-4 text-center mb-3 border border-orange-500/40">
+                    <p class="text-[8px] text-slate-500 font-black uppercase">Volume totale</p>
+                    <p id="summary-volume" class="text-3xl font-black text-orange-400">—</p>
+                    <p class="text-[8px] text-slate-500">kg sollevati · ripetizioni × peso</p>
+                </div>
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <div class="glass-card rounded-2xl p-4 text-center">
                         <p class="text-[8px] text-slate-500 font-black uppercase">Durata</p>
@@ -636,6 +643,17 @@
             <div class="pb-20"></div>
         </div>
     </main>
+
+    <div id="session-detail-overlay" class="hidden fixed inset-0 z-[960] bg-[#0b0f1a] flex flex-col">
+        <div class="flex items-center gap-3 px-4 pt-10 pb-3">
+            <button onclick="closeSessionDetail()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-300 active:scale-90"><i class="fas fa-arrow-left text-sm"></i></button>
+            <div class="min-w-0">
+                <p class="text-[10px] font-black uppercase text-emerald-400 tracking-widest">Allenamento concluso</p>
+                <h2 id="detail-title" class="text-lg font-black uppercase text-white truncate">—</h2>
+            </div>
+        </div>
+        <div id="detail-body" class="flex-1 overflow-y-auto px-4 pb-28 space-y-3"></div>
+    </div>
 
     <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md glass-card rounded-[2rem] p-2 flex justify-around items-center z-50 shadow-2xl border border-white/10">
         <button onclick="showSection('home')" id="nav-home" class="p-3 text-orange-500 transition-all"><i class="fas fa-home text-xl"></i></button>
@@ -1851,6 +1869,7 @@
             if (s) s.textContent = 'Poi parte la sessione';
             if (t) { t.classList.remove('text-blue-400'); t.classList.add('text-orange-500'); }
             renderWorkoutHub();
+            schedulePlansSync(false);
         }
 
         function showSchedeEditSelection() {
@@ -1953,6 +1972,7 @@
             if (!data[exId][serieNum]) data[exId][serieNum] = { reps: '10', peso: '', rec: '90', note: '' };
             data[exId][serieNum][field] = String(value);
             saveExData(data);
+            schedulePlansSync(true);
             // Sync leggero su Supabase (prima serie come riferimento)
             if (_supabase && serieNum === 1) {
                 const payload = {};
@@ -1993,36 +2013,113 @@
                 list.innerHTML = '<p class="text-[10px] text-slate-500 italic">Nessuna sessione ancora. Premi Inizia Workout.</p>';
                 return;
             }
-            list.innerHTML = history.slice(0, 12).map(s => {
-                const d = new Date(s.endedAt || s.startedAt);
-                const mins = s.durationMin != null ? s.durationMin + ' min' : '-';
-                const kcal = s.activeCalories != null ? Math.round(s.activeCalories) + ' kcal' : '';
-                const setsDone = (s.exercises || []).reduce((acc, ex) => acc + (ex.sets?.filter(x => x.peso > 0 || x.reps > 0).length || 0), 0);
-                return `
-                <button onclick="viewSessionDetail('${s.id}')" class="w-full text-left p-3 rounded-xl bg-slate-800/60 border border-slate-700/80 active:scale-[0.98] transition-all">
-                    <div class="flex justify-between items-start gap-2">
-                        <div class="min-w-0">
-                            <p class="text-xs font-black text-orange-400 uppercase truncate">${s.gruppo}</p>
-                            <p class="text-[9px] text-slate-500">${d.toLocaleDateString('it-IT')} · ${d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</p>
-                        </div>
-                        <div class="text-right shrink-0">
-                            <p class="text-[10px] font-black text-emerald-400">${mins}</p>
-                            <p class="text-[8px] text-slate-500">${kcal || (setsDone + " set")}</p>
-                        </div>
+            list.innerHTML = history.slice(0, 12).map(s => sessionCardHtml(s)).join('');
+        }
+
+        function escHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (c) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function formatVolumeKg(kg) {
+            const n = Math.round(Number(kg) || 0);
+            return n.toLocaleString('it-IT') + ' kg';
+        }
+
+        function computeVolumeKg(exercises) {
+            return (exercises || []).reduce((acc, ex) => {
+                return acc + (ex.sets || []).reduce((sum, set) => {
+                    if (set.done === false) return sum;
+                    const reps = Number(set.reps) || 0;
+                    const peso = Number(set.peso) || 0;
+                    if (set.done === true || (peso > 0 && reps > 0)) return sum + reps * peso;
+                    return sum;
+                }, 0);
+            }, 0);
+        }
+
+        function sessionVolumeKg(session) {
+            if (session?.totalVolumeKg != null && !Number.isNaN(Number(session.totalVolumeKg))) {
+                return Number(session.totalVolumeKg);
+            }
+            return computeVolumeKg(session?.exercises);
+        }
+
+        function sessionCardHtml(s) {
+            const d = new Date(s.endedAt || s.startedAt);
+            const mins = s.durationMin != null ? s.durationMin + ' min' : '-';
+            const vol = formatVolumeKg(sessionVolumeKg(s));
+            return `
+            <button onclick="viewSessionDetail('${escHtml(s.id)}')" class="w-full text-left p-3 rounded-xl bg-slate-800/60 border border-slate-700/80 active:scale-[0.98] transition-all">
+                <div class="flex justify-between items-start gap-2">
+                    <div class="min-w-0">
+                        <p class="text-xs font-black text-orange-400 uppercase truncate">${escHtml(s.gruppo)}</p>
+                        <p class="text-[9px] text-slate-500">${d.toLocaleDateString('it-IT')} · ${d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
-                </button>`;
+                    <div class="text-right shrink-0">
+                        <p class="text-[10px] font-black text-emerald-400">${mins}</p>
+                        <p class="text-[8px] text-orange-300">${vol}</p>
+                    </div>
+                </div>
+            </button>`;
+        }
+
+        function exerciseDetailHtml(ex) {
+            const sets = (ex.sets || []).map(set => {
+                const done = set.done === false ? '' : '✓';
+                const note = set.note ? `<span class="text-slate-500"> · ${escHtml(set.note)}</span>` : '';
+                return `<p class="text-[11px] text-slate-200">Serie ${set.set} · ${set.reps || 0} × ${set.peso || 0} kg <span class="text-emerald-400">${done}</span>${note}</p>`;
             }).join('');
+            const rec = ex.recSec != null ? `<p class="text-[9px] text-blue-300 mt-1">Recupero ${ex.recSec}s</p>` : '';
+            const vol = formatVolumeKg(computeVolumeKg([ex]));
+            return `
+            <div class="glass-card p-3 rounded-xl border border-slate-800">
+                <div class="flex justify-between gap-2 items-start">
+                    <p class="text-xs font-black text-orange-400 uppercase">${escHtml(ex.name)}</p>
+                    <p class="text-[9px] font-black text-slate-400 shrink-0">${vol}</p>
+                </div>
+                <div class="mt-2 space-y-0.5">${sets || '<p class="text-[10px] text-slate-500">Nessuna serie</p>'}</div>
+                ${rec}
+            </div>`;
+        }
+
+        function closeSessionDetail() {
+            document.getElementById('session-detail-overlay')?.classList.add('hidden');
         }
 
         function viewSessionDetail(sessionId) {
             const store = getSessionsStore();
             const s = (store.history || []).find(x => x.id === sessionId);
-            if(!s) return;
-            const lines = (s.exercises || []).map(ex => {
-                const best = ex.maxPeso ? `${ex.maxPeso}kg` : '-';
-                return `• ${ex.name}: max ${best} / ${ex.maxReps || '-'} reps`;
-            }).join('\n');
-            alert(`${s.gruppo}\n${new Date(s.endedAt || s.startedAt).toLocaleString('it-IT')}\nDurata: ${s.durationMin ?? '-'} min\n\n${lines || 'Nessun dato serie'}`);
+            if (!s) return;
+            const when = new Date(s.endedAt || s.startedAt);
+            const vol = sessionVolumeKg(s);
+            document.getElementById('detail-title').textContent = s.gruppo || 'Workout';
+            document.getElementById('detail-body').innerHTML = `
+                <p class="text-[10px] text-slate-500">${when.toLocaleString('it-IT')}</p>
+                <div class="glass-card rounded-2xl p-4 text-center border border-orange-500/40">
+                    <p class="text-[8px] text-slate-500 font-black uppercase">Volume totale</p>
+                    <p class="text-3xl font-black text-orange-400">${formatVolumeKg(vol)}</p>
+                    <p class="text-[8px] text-slate-500">kg sollevati · ripetizioni × peso</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="glass-card rounded-xl p-3 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Durata</p>
+                        <p class="text-sm font-black">${s.durationMin ?? '—'} min</p>
+                    </div>
+                    <div class="glass-card rounded-xl p-3 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Kcal</p>
+                        <p class="text-sm font-black text-orange-400">${s.activeCalories != null ? Math.round(s.activeCalories) : '—'}</p>
+                    </div>
+                    <div class="glass-card rounded-xl p-3 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">FC</p>
+                        <p class="text-sm font-black text-red-400">${s.averageHeartRate != null ? Math.round(s.averageHeartRate) : '—'}</p>
+                    </div>
+                </div>
+                <p class="text-[10px] font-black uppercase text-slate-500">Esercizi</p>
+                ${(s.exercises || []).map(exerciseDetailHtml).join('') || '<p class="text-[10px] text-slate-500">Nessun dato serie</p>'}
+            `;
+            document.getElementById('session-detail-overlay').classList.remove('hidden');
         }
 
         // ===== LIVE WORKOUT (stile Apple Fitness) =====
@@ -2030,6 +2127,8 @@
         window.liveWorkout = null;
         let liveTickTimer = null;
         let pendingSummary = null;
+        let phoneRevision = 0;
+        let plansSyncTimer = null;
         // Proxy: codice usa liveWorkout, bridge legge window.liveWorkout
         var liveWorkout = null;
 
@@ -2163,31 +2262,230 @@
             }
         }
 
+        function parseRecSeconds(raw) {
+            const r = String(raw || '90');
+            if (r.includes(':')) {
+                const [a, b] = r.split(':');
+                return (parseInt(a) || 0) * 60 + (parseInt(b) || 0);
+            }
+            return parseInt(r) || 90;
+        }
+
         function syncActiveSessionToWatch() {
             const store = getSessionsStore();
-            if (!store.active || !window.NativeWorkout) return;
-            // Usa payload da liveWorkout se disponibile
-            if (liveWorkout) {
-                NativeWorkout.syncSession({
-                    id: store.active.id,
-                    gruppo: store.active.gruppo,
-                    startedAt: store.active.startedAt,
-                    currentExerciseIndex: liveWorkout.exIndex,
-                    exercises: liveWorkout.exercises.map(ex => ({
+            if (!store.active || !window.NativeWorkout || !liveWorkout) return;
+            phoneRevision += 1;
+            NativeWorkout.syncSession({
+                id: store.active.id,
+                gruppo: store.active.gruppo,
+                startedAt: store.active.startedAt,
+                currentExerciseIndex: liveWorkout.exIndex,
+                revision: phoneRevision,
+                exercises: liveWorkout.exercises.map(ex => ({
+                    exId: String(ex.id),
+                    name: ex.name,
+                    note: ex.note || '',
+                    recSec: ex.recSec || 90,
+                    currentSet: (ex.sets.find(s => !s.done)?.set) || ex.sets.length,
+                    sets: ex.sets.map(s => ({ set: s.set, reps: s.reps, peso: s.peso, done: !!s.done, note: s.note || '' }))
+                }))
+            });
+        }
+
+        function schedulePlansSync(phoneEdited) {
+            if (plansSyncTimer) clearTimeout(plansSyncTimer);
+            plansSyncTimer = setTimeout(() => {
+                plansSyncTimer = null;
+                syncPlansToWatch(!!phoneEdited);
+            }, 1000);
+        }
+
+        async function syncPlansToWatch(phoneEdited) {
+            try {
+                if (!_supabase || !window.NativeWorkout?.syncPlans) return;
+                const { data } = await _supabase.from('workout').select('*').order('id');
+                if (!data?.length) return;
+                const saved = getExData();
+                const map = new Map();
+                data.forEach(ex => {
+                    const gruppo = ex.gruppo_lavoro || 'Altro';
+                    if (!map.has(gruppo)) map.set(gruppo, []);
+                    const savedData = saved[ex.id] || {};
+                    const serieVal = parseInt(savedData.serie) || parseInt(ex.serie) || 3;
+                    const defaultReps = parseInt(ex.reps || ex.note_rep) || 10;
+                    const dbPeso = parseFloat(String(ex.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
+                    const sets = [];
+                    for (let i = 1; i <= serieVal; i++) {
+                        const serieData = savedData[i] || {};
+                        sets.push({
+                            set: i,
+                            reps: parseInt(serieData.reps) || defaultReps,
+                            peso: parseFloat(serieData.peso) || (i === 1 ? dbPeso : 0) || 0,
+                            done: false
+                        });
+                    }
+                    map.get(gruppo).push({
                         exId: String(ex.id),
-                        name: ex.name,
-                        currentSet: (ex.sets.find(s => !s.done)?.set) || ex.sets.length,
-                        sets: ex.sets.map(s => ({ set: s.set, reps: s.reps, peso: s.peso, done: !!s.done }))
-                    }))
+                        name: ex.esercizi || 'Esercizio',
+                        note: ex.note || '',
+                        recSec: parseRecSeconds(ex.recupero),
+                        currentSet: 1,
+                        sets
+                    });
                 });
-                return;
+                const plans = WATCH_GROUPS
+                    .filter(g => map.has(g))
+                    .map(g => ({ gruppo: g, exercises: map.get(g) }));
+                map.forEach((exercises, gruppo) => {
+                    if (!WATCH_GROUPS.includes(gruppo)) plans.push({ gruppo, exercises });
+                });
+                await NativeWorkout.syncPlans(plans, phoneEdited);
+            } catch (e) {
+                console.warn('syncPlansToWatch', e);
             }
-            const payload = NativeWorkout.buildWatchPayload(
-                store.active.gruppo,
-                store.active.id,
-                store.active.startedAt
-            );
-            NativeWorkout.syncSession(payload);
+        }
+
+        function showLiveWorkoutScreen(gruppo) {
+            document.querySelectorAll('main > div').forEach(d => d.classList.add('hidden'));
+            document.getElementById('workout-section')?.classList.remove('hidden');
+            document.querySelectorAll('nav button').forEach(b => b.className = 'p-3 text-slate-500 transition-all');
+            const navBtn = document.getElementById('nav-workout');
+            if (navBtn) navBtn.className = 'p-3 text-orange-500 transition-all scale-110';
+            document.getElementById('workout-hub')?.classList.add('hidden');
+            document.getElementById('select-group')?.classList.add('hidden');
+            document.getElementById('scheda-edit')?.classList.add('hidden');
+            document.getElementById('workout-list')?.classList.remove('hidden');
+            const title = document.getElementById('current-group-title');
+            if (title) title.textContent = gruppo || '';
+            try { requestWakeLock(); } catch (_) {}
+        }
+
+        function adoptWatchSession(ev) {
+            if (!ev || !ev.exercises) return;
+            const rev = Number(ev.revision) || 0;
+            if (liveWorkout && ev.id && liveWorkout.id === ev.id && rev && rev < phoneRevision) return;
+            if (rev) phoneRevision = Math.max(phoneRevision, rev);
+
+            const exercises = (ev.exercises || []).map(ex => ({
+                id: String(ex.exId || ex.id),
+                name: ex.name || 'Esercizio',
+                note: ex.note || '',
+                recSec: ex.recSec || 90,
+                sets: (ex.sets || []).map(s => ({
+                    set: s.set,
+                    reps: s.reps,
+                    peso: s.peso,
+                    note: s.note || '',
+                    done: !!s.done
+                }))
+            }));
+
+            const store = getSessionsStore();
+            const completedSets = {};
+            exercises.forEach(ex => {
+                completedSets[ex.id] = ex.sets.filter(s => s.done).map(s => s.set);
+            });
+            store.active = {
+                id: ev.id,
+                gruppo: ev.gruppo,
+                startedAt: ev.startedAt || new Date().toISOString(),
+                completedSets,
+                paused: false,
+                accumulatedSec: store.active?.id === ev.id ? (store.active.accumulatedSec || 0) : 0
+            };
+            saveSessionsStore(store);
+
+            const keepClock = liveWorkout && liveWorkout.id === ev.id;
+            liveWorkout = {
+                id: ev.id,
+                gruppo: ev.gruppo,
+                exercises,
+                exIndex: ev.currentExerciseIndex || 0,
+                paused: keepClock ? !!liveWorkout.paused : false,
+                accumulatedSec: keepClock ? (liveWorkout.accumulatedSec || 0) : 0,
+                activeAccumulatedSec: keepClock ? (liveWorkout.activeAccumulatedSec || 0) : 0,
+                segmentStartedAt: keepClock ? liveWorkout.segmentStartedAt : Date.now(),
+                inRecovery: keepClock ? !!liveWorkout.inRecovery : false,
+                heartRate: keepClock ? liveWorkout.heartRate : null,
+                nativeActiveKcal: keepClock ? liveWorkout.nativeActiveKcal : null,
+                nativeTotalKcal: keepClock ? liveWorkout.nativeTotalKcal : null,
+                activeCalories: keepClock ? liveWorkout.activeCalories : 0,
+                totalCalories: keepClock ? liveWorkout.totalCalories : 0
+            };
+            window.liveWorkout = liveWorkout;
+            const onWorkout = document.getElementById('workout-section') && !document.getElementById('workout-section').classList.contains('hidden');
+            if (onWorkout) showLiveWorkoutScreen(ev.gruppo);
+            if (!liveTickTimer) startLiveClock();
+            renderLiveStep();
+            refreshLiveMetricsUI();
+            rebuildHiddenWorkoutDom();
+            persistLiveSetToStorage();
+        }
+
+        function saveFinishedFromWatch(ev) {
+            if (!ev?.id) return;
+            const store = getSessionsStore();
+            const exercises = (ev.exercises || []).map(ex => ({
+                exId: String(ex.exId || ex.id || ''),
+                name: ex.name || 'Esercizio',
+                recSec: ex.recSec || 0,
+                sets: (ex.sets || []).map(s => ({
+                    set: s.set,
+                    reps: s.reps,
+                    peso: s.peso,
+                    note: s.note || '',
+                    done: s.done !== false
+                })),
+                maxPeso: Math.max(0, ...(ex.sets || []).map(s => Number(s.peso) || 0)),
+                maxReps: Math.max(0, ...(ex.sets || []).map(s => Number(s.reps) || 0)),
+                serie: (ex.sets || []).length
+            }));
+            if (!(store.history || []).some(s => s.id === ev.id)) {
+                const durationSec = Number(ev.durationSec) || 0;
+                const record = {
+                    id: ev.id,
+                    gruppo: ev.gruppo || 'Workout',
+                    startedAt: ev.startedAt,
+                    endedAt: ev.endedAt || new Date().toISOString(),
+                    durationMin: Math.max(1, Math.round(durationSec / 60) || 1),
+                    durationSec,
+                    activeCalories: ev.activeCalories != null ? Math.round(Number(ev.activeCalories)) : null,
+                    averageHeartRate: ev.averageHeartRate != null ? Number(ev.averageHeartRate) : null,
+                    totalVolumeKg: ev.totalVolumeKg != null ? Number(ev.totalVolumeKg) : computeVolumeKg(exercises),
+                    exercises
+                };
+                exercises.forEach(ex => {
+                    const history = getWorkoutHistory();
+                    if (!history[ex.exId]) history[ex.exId] = [];
+                    history[ex.exId].push({
+                        date: record.endedAt,
+                        sessionId: record.id,
+                        peso: ex.maxPeso,
+                        reps: ex.maxReps,
+                        serie: ex.serie,
+                        sets: ex.sets
+                    });
+                    if (history[ex.exId].length > 80) history[ex.exId] = history[ex.exId].slice(-80);
+                    saveWorkoutHistoryData(history);
+                });
+                store.history = [record, ...(store.history || [])].slice(0, 100);
+            }
+            store.active = null;
+            saveSessionsStore(store);
+            saveSessionState({});
+            if (!liveWorkout || liveWorkout.id === ev.id) {
+                try { stopLiveClock(); } catch (_) {}
+                try { stopTimer(); } catch (_) {}
+                liveWorkout = null;
+                window.liveWorkout = null;
+                pendingSummary = null;
+                document.getElementById('live-summary-overlay')?.classList.add('hidden');
+            }
+            if (window.NativeWorkout?.end) NativeWorkout.end();
+            const listOpen = document.getElementById('workout-list') && !document.getElementById('workout-list').classList.contains('hidden');
+            try { renderWorkoutHub(); } catch (_) {}
+            if (listOpen) showWorkoutHub();
+            schedulePlansSync(false);
         }
 
         function resumeActiveSession() {
@@ -2249,21 +2547,17 @@
                     id: String(ex.id),
                     name: ex.esercizi,
                     note: ex.note || '',
-                    recSec: (() => {
-                        const r = String(ex.recupero || '90');
-                        if (r.includes(':')) {
-                            const [a,b] = r.split(':');
-                            return (parseInt(a)||0)*60 + (parseInt(b)||0);
-                        }
-                        return parseInt(r) || 90;
-                    })(),
+                    recSec: parseRecSeconds(ex.recupero),
                     sets
                 };
             });
 
-            // Riprendi dal primo esercizio/set incompleto
+            // Riprendi dal primo esercizio/set incompleto, oppure dall'indice salvato (anche se arrivato dal Watch)
             let exIndex = exercises.findIndex(ex => ex.sets.some(s => !s.done));
             if (exIndex < 0) exIndex = 0;
+            if (Number.isInteger(store.active?.exIndex)) {
+                exIndex = Math.max(0, Math.min(Math.max(exercises.length - 1, 0), store.active.exIndex));
+            }
 
             liveWorkout = {
                 id: store.active?.id,
@@ -2325,6 +2619,7 @@
                 document.getElementById('btn-complete-set').textContent = 'Termina allenamento';
                 document.getElementById('btn-complete-set').onclick = () => requestEndLiveWorkout();
                 document.getElementById('live-set-dots').innerHTML = '';
+                renderUpcomingExercises();
                 return;
             }
 
@@ -2347,18 +2642,46 @@
 
             // selects
             fillLiveSelects(set || ex.sets[ex.sets.length - 1]);
+            renderUpcomingExercises();
+        }
+
+        function renderUpcomingExercises() {
+            const box = document.getElementById('live-upcoming');
+            if (!box) return;
+            if (!liveWorkout) {
+                box.innerHTML = '';
+                return;
+            }
+            const next = liveWorkout.exercises.slice(liveWorkout.exIndex + 1);
+            if (!next.length) {
+                box.innerHTML = '';
+                return;
+            }
+            box.innerHTML = `
+                <p class="text-[9px] font-black uppercase text-slate-500 px-1">Prossimi esercizi</p>
+                ${next.map((ex, i) => {
+                    const set = ex.sets.find(s => !s.done) || ex.sets[0];
+                    const target = set ? `${set.reps} × ${set.peso || 0} kg` : '';
+                    return `<div class="glass-card rounded-2xl p-3 border border-slate-800">
+                        <p class="text-[10px] font-black text-slate-200 uppercase">${i + 1}. ${escHtml(ex.name)}</p>
+                        <p class="text-[9px] text-slate-500">${ex.sets.length} serie${target ? ' · ' + target : ''}${ex.recSec ? ' · rec ' + ex.recSec + 's' : ''}</p>
+                    </div>`;
+                }).join('')}`;
         }
 
         function fillLiveSelects(set) {
             const repsEl = document.getElementById('live-reps');
             const pesoEl = document.getElementById('live-peso');
             if (!set || !repsEl || !pesoEl) return;
-            repsEl.innerHTML = Array.from({length: 16}, (_, i) => i + 1).map(n =>
+            repsEl.innerHTML = Array.from({length: 30}, (_, i) => i + 1).map(n =>
                 `<option value="${n}" ${n == set.reps ? 'selected' : ''}>${n}</option>`
             ).join('');
             const pesos = [0,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200];
+            const currentPeso = Number(set.peso) || 0;
+            if (!pesos.some(n => n == currentPeso)) pesos.push(currentPeso);
+            pesos.sort((a, b) => a - b);
             pesoEl.innerHTML = pesos.map(n =>
-                `<option value="${n}" ${n == set.peso ? 'selected' : ''}>${n || '—'}</option>`
+                `<option value="${n}" ${n == currentPeso ? 'selected' : ''}>${n || '—'}</option>`
             ).join('');
         }
 
@@ -2391,11 +2714,12 @@
                 store.active.completedSets = state;
                 store.active.paused = !!liveWorkout.paused;
                 store.active.accumulatedSec = liveWorkout.accumulatedSec;
+                store.active.exIndex = liveWorkout.exIndex;
                 saveSessionsStore(store);
             }
         }
 
-        function completeLiveSet() {
+        function completeLiveSet(opts) {
             if (!liveWorkout || liveWorkout.paused) {
                 if (liveWorkout?.paused) alert('Riprendi l\'allenamento per continuare.');
                 return;
@@ -2434,7 +2758,7 @@
             }
 
             renderLiveStep();
-            syncActiveSessionToWatch();
+            if (!opts?.fromWatch) syncActiveSessionToWatch();
             refreshLiveMetricsUI();
         }
 
@@ -2447,7 +2771,7 @@
             refreshLiveMetricsUI();
         }
 
-        function nextLiveExercise(forceSkip) {
+        function nextLiveExercise(forceSkip, opts) {
             if (!liveWorkout) return;
             if (forceSkip) {
                 const ex = currentLiveExercise();
@@ -2461,7 +2785,8 @@
             document.getElementById('btn-complete-set').onclick = () => completeLiveSet();
             document.getElementById('btn-complete-set').textContent = 'Completa serie';
             renderLiveStep();
-            syncActiveSessionToWatch();
+            persistLiveSetToStorage();
+            if (!opts?.fromWatch) syncActiveSessionToWatch();
         }
 
         function togglePauseLiveWorkout() {
@@ -2559,11 +2884,13 @@
             const exercises = (liveWorkout?.exercises || []).map(ex => ({
                 exId: ex.id,
                 name: ex.name,
-                sets: ex.sets.map(s => ({ set: s.set, reps: s.reps, peso: s.peso, note: s.note || '' })),
+                sets: ex.sets.map(s => ({ set: s.set, reps: s.reps, peso: s.peso, note: s.note || '', done: !!s.done })),
                 maxPeso: Math.max(0, ...ex.sets.map(s => s.peso || 0)),
                 maxReps: Math.max(0, ...ex.sets.map(s => s.reps || 0)),
-                serie: ex.sets.length
+                serie: ex.sets.length,
+                recSec: ex.recSec || 0
             }));
+            const totalVolumeKg = computeVolumeKg(exercises);
 
             pendingSummary = {
                 id: getSessionsStore().active?.id || liveWorkout?.id,
@@ -2575,6 +2902,7 @@
                 activeCalories: liveWorkout?.activeCalories ?? null,
                 totalCalories: liveWorkout?.totalCalories ?? null,
                 averageHeartRate: liveWorkout?.heartRate ?? healthExtras.averageHeartRate ?? null,
+                totalVolumeKg,
                 exercises,
                 ...healthExtras
             };
@@ -2585,13 +2913,9 @@
             document.getElementById('summary-kcal-total').textContent = pendingSummary.totalCalories ?? '—';
             document.getElementById('summary-hr').textContent =
                 pendingSummary.averageHeartRate != null ? Math.round(pendingSummary.averageHeartRate) : '—';
-            document.getElementById('summary-exercises').innerHTML = exercises.map(ex => {
-                const done = ex.sets.filter(s => s.peso || s.reps).length;
-                return `<div class="glass-card p-3 rounded-xl border border-slate-800">
-                    <p class="text-xs font-black text-orange-400 uppercase">${ex.name}</p>
-                    <p class="text-[9px] text-slate-500">${done} serie · max ${ex.maxPeso || '-'} kg</p>
-                </div>`;
-            }).join('');
+            const volumeEl = document.getElementById('summary-volume');
+            if (volumeEl) volumeEl.textContent = formatVolumeKg(totalVolumeKg);
+            document.getElementById('summary-exercises').innerHTML = exercises.map(exerciseDetailHtml).join('');
 
             document.getElementById('live-summary-overlay').classList.remove('hidden');
             stopLiveClock();
@@ -2768,18 +3092,7 @@
                 list.innerHTML = '<p class="text-[10px] text-slate-500 italic">Nessuna sessione salvata. Completa un workout e premi Termina.</p>';
                 return;
             }
-            list.innerHTML = history.slice(0, 20).map(s => {
-                const d = new Date(s.endedAt || s.startedAt);
-                const nEx = (s.exercises || []).length;
-                return `
-                <div class="glass-card p-3 rounded-xl border border-slate-800 flex justify-between items-center gap-2">
-                    <div class="min-w-0">
-                        <p class="text-xs font-black text-orange-400 uppercase truncate">${s.gruppo}</p>
-                        <p class="text-[9px] text-slate-500">${d.toLocaleDateString('it-IT')} · ${nEx} esercizi</p>
-                    </div>
-                    <p class="text-sm font-black text-emerald-400 shrink-0">${s.durationMin ?? '-'} min</p>
-                </div>`;
-            }).join('');
+            list.innerHTML = history.slice(0, 20).map(s => sessionCardHtml(s)).join('');
         }
         
         async function loadWeightStats() {
@@ -3139,6 +3452,7 @@
                         if (ok && typeof NativeWorkout.syncGroupsToWatch === 'function') {
                             NativeWorkout.syncGroupsToWatch(WATCH_GROUPS);
                         }
+                        if (ok) setTimeout(() => schedulePlansSync(false), 1600);
                     });
                 }
                 console.log('App initialized successfully');

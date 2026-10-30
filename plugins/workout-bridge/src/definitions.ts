@@ -46,6 +46,9 @@ export interface WorkoutBridgePlugin {
   /** Invia l'elenco schede disponibili all'Apple Watch. */
   syncGroupsToWatch(options: { groups: string[] }): Promise<{ ok: boolean; count?: number }>;
 
+  /** Copia sul Watch esercizi, serie, pesi e recupero, così parte anche col telefono bloccato. */
+  syncPlansToWatch(options: { plans: unknown[]; phoneEdited?: boolean }): Promise<{ ok: boolean; count?: number }>;
+
   /** Avvia timer recupero sul Watch (+ haptic). */
   startWatchRecovery(options: { seconds: number; exerciseName?: string }): Promise<{ ok: boolean }>;
 
