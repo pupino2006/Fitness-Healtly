@@ -2986,13 +2986,13 @@
                 return;
             }
             if (!confirm('Annullare l\'allenamento? Non verrà salvato.')) return;
+            const store = getSessionsStore();
+            const endSessionId = liveWorkout?.id || store.active?.id;
             stopLiveClock();
             stopTimer();
             liveWorkout = null;
             pendingSummary = null;
             document.getElementById('live-summary-overlay')?.classList.add('hidden');
-            const store = getSessionsStore();
-            const endSessionId = liveWorkout?.id || store.active?.id;
             store.active = null;
             saveSessionsStore(store);
             saveSessionState({});

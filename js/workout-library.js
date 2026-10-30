@@ -528,12 +528,16 @@
     if (!data[exId]) data[exId] = {};
     data[exId].serie = data[exId].serie || 3;
     const serie = parseInt(data[exId].serie, 10) || 3;
-    // Snapshot current programmed loads so Ripristina can bring them back with the name.
-    const previousLoads = { serie: data[exId].serie };
-    for (let i = 1; i <= serie; i++) {
-      if (data[exId][i]) previousLoads[i] = Object.assign({}, data[exId][i]);
-    }
     const map = getExOverrides();
+    const existing = map[String(exId)];
+    // Keep the first snapshot across alt→alt swaps so Ripristina restores the real original loads.
+    let previousLoads = existing?.previousLoads || null;
+    if (!previousLoads) {
+      previousLoads = { serie: data[exId].serie };
+      for (let i = 1; i <= serie; i++) {
+        if (data[exId][i]) previousLoads[i] = Object.assign({}, data[exId][i]);
+      }
+    }
     map[String(exId)] = {
       id: chosen.id,
       name: chosen.name,
