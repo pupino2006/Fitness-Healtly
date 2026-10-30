@@ -371,9 +371,12 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
                     WatchWorkoutHealth.shared.startWorkout()
                 }
             case "nativeWorkoutEnded":
+                // Only stop the session the phone meant to end — a delayed finish replay
+                // must not wipe a newer Watch-only workout.
                 if let id = self.session?.id {
-                    // Phone ended (or cancelled) this session; remember id so a stale
-                    // sessionSync application context cannot resurrect it on relaunch.
+                    if let endedId = message["sessionId"] as? String, !endedId.isEmpty, endedId != id {
+                        break
+                    }
                     self.lastFinishedId = id
                     self.defaults.set(id, forKey: self.finishedIdKey)
                     WatchWorkoutHealth.shared.endWorkout()

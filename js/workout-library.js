@@ -523,6 +523,16 @@
     const list = alternativesFor(originalName);
     const chosen = list.find((a) => a.id === altId);
     if (!chosen) return;
+    let data = {};
+    try { data = JSON.parse(localStorage.getItem('ex_data_v1') || '{}'); } catch (_) { data = {}; }
+    if (!data[exId]) data[exId] = {};
+    data[exId].serie = data[exId].serie || 3;
+    const serie = parseInt(data[exId].serie, 10) || 3;
+    // Snapshot current programmed loads so Ripristina can bring them back with the name.
+    const previousLoads = { serie: data[exId].serie };
+    for (let i = 1; i <= serie; i++) {
+      if (data[exId][i]) previousLoads[i] = Object.assign({}, data[exId][i]);
+    }
     const map = getExOverrides();
     map[String(exId)] = {
       id: chosen.id,
@@ -531,14 +541,10 @@
       peso: chosen.peso,
       from: chosen.from,
       note: chosen.note ? `Alt. da ${chosen.from}: ${chosen.note}` : `Alternativa da ${chosen.from}`,
-      originalName: originalName
+      originalName: originalName,
+      previousLoads
     };
     saveExOverrides(map);
-    let data = {};
-    try { data = JSON.parse(localStorage.getItem('ex_data_v1') || '{}'); } catch (_) { data = {}; }
-    if (!data[exId]) data[exId] = {};
-    data[exId].serie = data[exId].serie || 3;
-    const serie = parseInt(data[exId].serie, 10) || 3;
     for (let i = 1; i <= serie; i++) {
       data[exId][i] = Object.assign({}, data[exId][i] || {}, {
         reps: String(chosen.reps),
@@ -559,6 +565,17 @@
     const prev = map[String(exId)];
     delete map[String(exId)];
     saveExOverrides(map);
+    if (prev?.previousLoads) {
+      let data = {};
+      try { data = JSON.parse(localStorage.getItem('ex_data_v1') || '{}'); } catch (_) { data = {}; }
+      const restored = { serie: prev.previousLoads.serie || (data[exId] && data[exId].serie) || 3 };
+      Object.keys(prev.previousLoads).forEach((key) => {
+        if (key === 'serie') return;
+        restored[key] = Object.assign({}, prev.previousLoads[key]);
+      });
+      data[exId] = restored;
+      localStorage.setItem('ex_data_v1', JSON.stringify(data));
+    }
     if (typeof global.schedulePlansSync === 'function') global.schedulePlansSync(true);
     const title = document.getElementById('scheda-edit-title');
     const gruppo = title?.dataset?.gruppo || title?.textContent;

@@ -53,12 +53,13 @@
       }
     },
 
-    async end() {
+    async end(sessionId) {
       const p = this.plugin();
       this._stopMetricsPolling();
       if (!p || !this.available) return null;
       try {
-        return await p.endNativeWorkout();
+        const opts = sessionId ? { sessionId: String(sessionId) } : {};
+        return await p.endNativeWorkout(opts);
       } catch (e) {
         console.warn('NativeWorkout.end', e);
         return null;

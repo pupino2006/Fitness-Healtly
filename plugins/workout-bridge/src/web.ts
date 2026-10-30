@@ -11,7 +11,7 @@ export class WorkoutBridgeWeb extends WebPlugin implements WorkoutBridgePlugin {
     return { ok: false };
   }
 
-  async endNativeWorkout() {
+  async endNativeWorkout(_options?: { sessionId?: string }) {
     return { ok: false, activeCalories: null, averageHeartRate: null, durationSeconds: 0 };
   }
 

@@ -30,7 +30,7 @@ export interface WorkoutBridgePlugin {
   }): Promise<{ ok: boolean }>;
 
   /** Termina sessione HealthKit e restituisce metriche finali. */
-  endNativeWorkout(): Promise<{
+  endNativeWorkout(options?: { sessionId?: string }): Promise<{
     ok: boolean;
     activeCalories: number | null;
     averageHeartRate: number | null;

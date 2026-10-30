@@ -2537,9 +2537,10 @@
             if (!ev?.id) return;
             const store = getSessionsStore();
             const alreadySaved = (store.history || []).some(s => s.id === ev.id);
-            const matchesActive = !store.active || store.active.id === ev.id;
-            const matchesLive = !liveWorkout || liveWorkout.id === ev.id;
-            // Delayed duplicate finish (sendMessage + transferUserInfo) must not wipe a newer session.
+            // Strict id match only — an idle phone must not treat "no session" as a match,
+            // or a delayed finish replay would NativeWorkout.end() and kill a newer Watch-only workout.
+            const matchesActive = store.active?.id === ev.id;
+            const matchesLive = liveWorkout?.id === ev.id;
             if (alreadySaved && !matchesActive && !matchesLive) {
                 schedulePlansSync(false);
                 return;
@@ -2608,7 +2609,11 @@
                 pendingSummary = null;
                 document.getElementById('live-summary-overlay')?.classList.add('hidden');
             }
-            if ((matchesActive || matchesLive) && window.NativeWorkout?.end) NativeWorkout.end();
+            // Only end native/Watch when this finish matches a phone-side session we still hold.
+            // Never end on duplicate idle replays (Watch already finished that id).
+            if (!alreadySaved && (matchesActive || matchesLive) && window.NativeWorkout?.end) {
+                NativeWorkout.end(ev.id);
+            }
             const listOpen = document.getElementById('workout-list') && !document.getElementById('workout-list').classList.contains('hidden');
             try { renderWorkoutHub(); } catch (_) {}
             if (listOpen) showWorkoutHub();
@@ -2987,10 +2992,11 @@
             pendingSummary = null;
             document.getElementById('live-summary-overlay')?.classList.add('hidden');
             const store = getSessionsStore();
+            const endSessionId = liveWorkout?.id || store.active?.id;
             store.active = null;
             saveSessionsStore(store);
             saveSessionState({});
-            if (window.NativeWorkout) NativeWorkout.end();
+            if (window.NativeWorkout) NativeWorkout.end(endSessionId);
             showWorkoutHub();
         }
 
@@ -3008,7 +3014,8 @@
 
             let healthExtras = {};
             if (window.NativeWorkout) {
-                const metrics = await NativeWorkout.end();
+                const endSessionId = liveWorkout?.id || getSessionsStore().active?.id;
+                const metrics = await NativeWorkout.end(endSessionId);
                 if (metrics?.ok) {
                     healthExtras = {
                         activeCalories: metrics.activeCalories,

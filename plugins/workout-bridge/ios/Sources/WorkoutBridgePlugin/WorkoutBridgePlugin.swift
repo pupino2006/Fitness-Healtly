@@ -23,6 +23,7 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
     private let healthStore = HKHealthStore()
     private var workoutBuilder: HKWorkoutBuilder?
     private var workoutStart: Date?
+    private var currentSessionId: String?
     private var heartRateQuery: HKAnchoredObjectQuery?
     private var latestHeartRate: Double?
     private var caloriesQuery: HKStatisticsQuery?
@@ -80,6 +81,7 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
 
         let start = Date()
         self.workoutStart = start
+        self.currentSessionId = sessionId
         self.latestCalories = 0
         self.latestHeartRate = nil
 
@@ -110,14 +112,18 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
     }
 
     @objc public func endNativeWorkout(_ call: CAPPluginCall) {
+        let endedSessionId = call.getString("sessionId") ?? currentSessionId
         guard let builder = workoutBuilder, let start = workoutStart else {
             // Phone may have adopted a Watch-owned session without starting HealthKit locally.
-            // Still tell the Watch to stop so it does not keep recording after the phone ends.
-            sendToWatch([
+            // Still tell the Watch to stop that specific session (id-scoped).
+            var payload: [String: Any] = [
                 "type": "nativeWorkoutEnded",
                 "durationSeconds": 0,
                 "activeCalories": NSNull()
-            ])
+            ]
+            if let endedSessionId { payload["sessionId"] = endedSessionId }
+            sendToWatch(payload)
+            currentSessionId = nil
             call.resolve([
                 "ok": false,
                 "activeCalories": NSNull(),
@@ -146,14 +152,17 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
                     let kcal = workout?.totalEnergyBurned?.doubleValue(for: .kilocalorie())
                         ?? self.latestCalories
 
-                    self.sendToWatch([
+                    var payload: [String: Any] = [
                         "type": "nativeWorkoutEnded",
                         "durationSeconds": duration,
                         "activeCalories": kcal
-                    ])
+                    ]
+                    if let endedSessionId { payload["sessionId"] = endedSessionId }
+                    self.sendToWatch(payload)
 
                     self.workoutBuilder = nil
                     self.workoutStart = nil
+                    self.currentSessionId = nil
 
                     call.resolve([
                         "ok": true,
