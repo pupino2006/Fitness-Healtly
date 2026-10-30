@@ -160,6 +160,10 @@
             </svg>
             <div id="timer-display" class="text-7xl font-black font-mono tracking-tighter text-white">00:00</div>
         </div>
+        <div id="timer-next-wrap" class="mt-2 mb-8 px-6 text-center max-w-sm">
+            <p class="text-[10px] font-black uppercase tracking-widest text-white/70">Prossimo</p>
+            <p id="timer-next" class="text-sm font-black uppercase leading-snug text-white"></p>
+        </div>
         <button onclick="stopTimer()" class="bg-white/20 border border-white/30 px-12 py-4 rounded-2xl font-black uppercase transition-all">Salta</button>
     </div>
 
@@ -1520,8 +1524,8 @@
                 showWorkoutHub();
                 return;
             }
-            // Modalità guidata stile Fitness
-            initLiveWorkoutFromData(gruppo, data);
+            const rows = typeof applyExerciseOverrides === 'function' ? applyExerciseOverrides(data) : data;
+            initLiveWorkoutFromData(gruppo, rows);
             setTimeout(syncActiveSessionToWatch, 500);
         }
 
@@ -1955,20 +1959,26 @@
             const title = document.getElementById('scheda-edit-title');
             title.dataset.gruppo = gruppo;
             title.textContent = gruppo === 'all' ? 'Tutta la scheda' : gruppo;
-            renderSchedaEditor(data);
+            const rows = typeof applyExerciseOverrides === 'function' ? applyExerciseOverrides(data) : data;
+            renderSchedaEditor(rows);
         }
 
         function renderSchedaEditor(rows) {
             const savedExData = getExData();
             const list = document.getElementById('scheda-edit-list');
             list.innerHTML = rows.map(ex => {
-                const exId = String(ex.id);
+                const applied = typeof applyExerciseOverride === 'function' ? applyExerciseOverride(ex) : ex;
+                const exId = String(applied.id);
                 const saved = savedExData[exId] || {};
-                const numSerie = parseInt(saved.serie) || parseInt(ex.serie) || 3;
-                const defaultReps = parseInt(ex.reps || ex.note_rep) || 10;
-                const dbPeso = parseFloat(String(ex.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
+                const numSerie = parseInt(saved.serie) || parseInt(applied.serie) || 3;
+                const defaultReps = parseInt(applied.reps || applied.note_rep) || 10;
+                const dbPeso = parseFloat(String(applied.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
                 const seriesHtml = typeof schedaSeriesBlock === 'function'
-                    ? schedaSeriesBlock(ex, saved, numSerie, defaultReps, dbPeso)
+                    ? schedaSeriesBlock(applied, saved, numSerie, defaultReps, dbPeso)
+                    : '';
+                const altsHtml = typeof alternativesBlockHtml === 'function' ? alternativesBlockHtml(applied) : '';
+                const altBadge = applied._altFrom
+                    ? `<p class="text-[8px] text-amber-300 mt-0.5">Alternativa da ${escHtml(applied._altFrom)}</p>`
                     : '';
                 const serieOpts = [1,2,3,4,5,6].map(n =>
                     `<option value="${n}" ${n === numSerie ? 'selected' : ''}>${n} serie</option>`
@@ -1977,8 +1987,9 @@
                 <div class="glass-card rounded-2xl p-4 border border-slate-800 space-y-3" id="scheda-ex-${exId}">
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0">
-                            <h3 class="text-sm font-black uppercase text-slate-100 leading-tight">${ex.esercizi || 'Esercizio'}</h3>
-                            <p class="text-[9px] text-slate-500 mt-0.5">${ex.gruppi_muscolari || ex.note || ''}</p>
+                            <h3 class="text-sm font-black uppercase text-slate-100 leading-tight">${escHtml(applied.esercizi || 'Esercizio')}</h3>
+                            <p class="text-[9px] text-slate-500 mt-0.5">${escHtml(applied.gruppi_muscolari || applied.note || '')}</p>
+                            ${altBadge}
                         </div>
                         <select class="bg-slate-900 rounded-lg text-[10px] font-black text-blue-300 px-2 py-1 border border-slate-700 outline-none shrink-0"
                             onchange="changeSchedaEditSerieCount('${exId}', this.value)">${serieOpts}</select>
@@ -1987,6 +1998,7 @@
                         <span class="text-center">#</span><span class="text-center">Reps</span><span class="text-center">Kg</span>
                     </div>
                     <div class="space-y-2" id="scheda-series-${exId}">${seriesHtml}</div>
+                    ${altsHtml}
                 </div>`;
             }).join('');
         }
@@ -2359,11 +2371,12 @@
                 data.forEach(ex => {
                     const gruppo = ex.gruppo_lavoro || 'Altro';
                     if (!map.has(gruppo)) map.set(gruppo, []);
-                    const savedData = saved[ex.id] || {};
-                    const serieVal = parseInt(savedData.serie) || parseInt(ex.serie) || 3;
-                    const defaultReps = parseInt(ex.reps || ex.note_rep) || 10;
-                    const dbPeso = parseFloat(String(ex.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
-                    const sides = typeof exerciseSides === 'function' ? exerciseSides(ex.esercizi) : [];
+                    const applied = typeof applyExerciseOverride === 'function' ? applyExerciseOverride(ex) : ex;
+                    const savedData = saved[applied.id] || {};
+                    const serieVal = parseInt(savedData.serie) || parseInt(applied.serie) || 3;
+                    const defaultReps = parseInt(applied.reps || applied.note_rep) || 10;
+                    const dbPeso = parseFloat(String(applied.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
+                    const sides = typeof exerciseSides === 'function' ? exerciseSides(applied.esercizi) : [];
                     const sets = [];
                     for (let i = 1; i <= serieVal; i++) {
                         const serieData = savedData[i] || {};
@@ -2378,10 +2391,10 @@
                         }, false));
                     }
                     map.get(gruppo).push({
-                        exId: String(ex.id),
-                        name: ex.esercizi || 'Esercizio',
-                        note: ex.note || '',
-                        recSec: parseRecSeconds(ex.recupero),
+                        exId: String(applied.id),
+                        name: applied.esercizi || 'Esercizio',
+                        note: applied.note || '',
+                        recSec: parseRecSeconds(applied.recupero),
                         currentSet: 1,
                         partNames: sides.length > 1 ? sides : undefined,
                         sets
@@ -3443,6 +3456,18 @@
             }
         }
 
+        function nextRecoveryLabel() {
+            if (!liveWorkout) return '';
+            const ex = currentLiveExercise();
+            if (!ex) return '';
+            const nextSet = ex.sets.find(s => !s.done);
+            if (nextSet) {
+                return `${ex.name} · serie ${nextSet.set}`;
+            }
+            const nextEx = liveWorkout.exercises[liveWorkout.exIndex + 1];
+            return nextEx ? nextEx.name : 'Fine scheda';
+        }
+
         function startTimer(timeStr) {
             clearInterval(timerInterval);
             let totalSeconds = 60;
@@ -3456,6 +3481,8 @@
             const total = totalSeconds;
             const overlay = document.getElementById('timer-overlay');
             overlay.classList.remove('hidden');
+            const nextEl = document.getElementById('timer-next');
+            if (nextEl) nextEl.textContent = nextRecoveryLabel();
             
             // Attiva Wake Lock quando parte il timer
             requestWakeLock();
@@ -3464,8 +3491,8 @@
                 document.getElementById('timer-display').innerText = Math.floor(totalSeconds/60).toString().padStart(2, '0') + ':' + (totalSeconds%60).toString().padStart(2, '0');
                 document.getElementById('timer-progress').style.strokeDashoffset = 722 - (722 * totalSeconds / total);
                 
-                // Cambia colore: rosso quando <= 10 secondi, verde altrimenti
-                if (totalSeconds <= 10 && totalSeconds >= 0) {
+                // Verde fino a 5 secondi, poi rosso
+                if (totalSeconds <= 5 && totalSeconds >= 0) {
                     overlay.classList.remove('bg-[#10b981]');
                     overlay.classList.add('bg-red-600');
                 } else {

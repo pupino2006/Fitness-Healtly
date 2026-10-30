@@ -11,6 +11,7 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
     @Published var recoverySecondsLeft: Int = 0
     @Published var isRecovering: Bool = false
     @Published var recoveryLabel: String = ""
+    @Published var recoveryNextLabel: String = ""
     @Published var phoneReachable: Bool = false
     @Published var plansReady: Bool = false
     @Published var statusText: String = ""
@@ -94,8 +95,19 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
         let stillOpen = sess.exercises.contains { $0.sets.contains { !$0.done } }
         let rec = ex.recSec ?? 90
         if stillOpen && rec > 0 {
-            startRecovery(seconds: rec, label: ex.name)
+            startRecovery(seconds: rec, label: ex.name, nextLabel: upcomingRecoveryLabel(in: sess))
         }
+    }
+
+    private func upcomingRecoveryLabel(in sess: WatchSession) -> String {
+        if let ex = sess.currentExercise, let nextSet = ex.sets.first(where: { !$0.done }) {
+            return "\(ex.name) · serie \(nextSet.setNumber)"
+        }
+        let nextIdx = sess.currentExerciseIndex + 1
+        if nextIdx < sess.exercises.count {
+            return sess.exercises[nextIdx].name
+        }
+        return "Fine scheda"
     }
 
     func adjustCurrent(repsDelta: Int = 0, pesoDelta: Double = 0, part: Int = 1) {
@@ -194,10 +206,11 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
         summary = nil
     }
 
-    func startRecovery(seconds: Int, label: String = "") {
+    func startRecovery(seconds: Int, label: String = "", nextLabel: String = "") {
         recoveryTimer?.invalidate()
         recoverySecondsLeft = seconds
         recoveryLabel = label
+        recoveryNextLabel = nextLabel.isEmpty ? (session.map { upcomingRecoveryLabel(in: $0) } ?? "") : nextLabel
         isRecovering = true
         recoveryTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] t in
             guard let self = self else { return }
@@ -205,10 +218,11 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
                 t.invalidate()
                 self.isRecovering = false
                 self.recoverySecondsLeft = 0
+                self.recoveryNextLabel = ""
                 WKInterfaceDevice.current().play(.notification)
             } else {
                 self.recoverySecondsLeft -= 1
-                if self.recoverySecondsLeft == 10 || self.recoverySecondsLeft == 3 {
+                if self.recoverySecondsLeft == 5 || self.recoverySecondsLeft == 3 {
                     WKInterfaceDevice.current().play(.click)
                 }
             }
@@ -221,6 +235,7 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
         isRecovering = false
         recoverySecondsLeft = 0
         recoveryLabel = ""
+        recoveryNextLabel = ""
     }
 
     // MARK: - Persistenza locale

@@ -272,25 +272,38 @@ struct StepperRow: View {
 struct RecoveryView: View {
     @EnvironmentObject var bridge: WatchSessionBridge
 
+    private var urgent: Bool { bridge.recoverySecondsLeft <= 5 }
+
     var body: some View {
-        VStack(spacing: 8) {
-            Text("RECUPERO")
-                .font(.caption2)
-                .foregroundStyle(.green)
-            if !bridge.recoveryLabel.isEmpty {
-                Text(bridge.recoveryLabel)
-                    .font(.caption2)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
+        ZStack {
+            (urgent ? Color.red : Color.green)
+                .ignoresSafeArea()
+            VStack(spacing: 6) {
+                Text("RECUPERO")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.85))
+                Text(timeString(bridge.recoverySecondsLeft))
+                    .font(.system(size: 42, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+                if !bridge.recoveryNextLabel.isEmpty {
+                    Text("PROSSIMO")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .padding(.top, 2)
+                    Text(bridge.recoveryNextLabel)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                }
+                Button("Salta") { bridge.stopRecovery() }
+                    .buttonStyle(.bordered)
+                    .tint(.white)
+                    .padding(.top, 4)
             }
-            Text(timeString(bridge.recoverySecondsLeft))
-                .font(.system(size: 40, weight: .black, design: .rounded))
-                .monospacedDigit()
-            Button("Salta") { bridge.stopRecovery() }
-                .buttonStyle(.bordered)
-                .tint(.gray)
+            .padding(.horizontal, 4)
         }
-        .padding(.horizontal, 4)
     }
 
     private func timeString(_ s: Int) -> String {
