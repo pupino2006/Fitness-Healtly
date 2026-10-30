@@ -160,6 +160,10 @@
             </svg>
             <div id="timer-display" class="text-7xl font-black font-mono tracking-tighter text-white">00:00</div>
         </div>
+        <div id="timer-next-wrap" class="mt-2 mb-8 px-6 text-center max-w-sm">
+            <p class="text-[10px] font-black uppercase tracking-widest text-white/70">Prossimo</p>
+            <p id="timer-next" class="text-sm font-black uppercase leading-snug text-white"></p>
+        </div>
         <button onclick="stopTimer()" class="bg-white/20 border border-white/30 px-12 py-4 rounded-2xl font-black uppercase transition-all">Salta</button>
     </div>
 
@@ -283,6 +287,16 @@
                     </div>
                 </button>
 
+                <button onclick="showCustomPlans()" class="w-full p-5 rounded-[2rem] glass-card border-l-[6px] border-amber-400 shadow-xl flex items-center gap-4 active:scale-95 transition-all">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-400/15 flex items-center justify-center text-amber-300">
+                        <i class="fas fa-layer-group text-2xl"></i>
+                    </div>
+                    <div class="text-left">
+                        <h3 class="text-base font-black uppercase tracking-tight">Schede 50 minuti</h3>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase">Pesi pronti · scambiale con le tue</p>
+                    </div>
+                </button>
+
                 <div class="glass-card p-4 rounded-2xl border border-slate-800">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-xs font-black uppercase text-slate-300">Ultime sessioni</h3>
@@ -395,17 +409,9 @@
                         <p id="live-set-progress" class="text-[9px] font-black uppercase text-orange-400">Serie 1/3</p>
                     </div>
                     <h3 id="live-ex-name" class="text-base font-black italic uppercase text-orange-400 leading-tight">—</h3>
+                    <div id="live-demo"></div>
                     <p id="live-ex-note" class="text-[10px] text-slate-400 leading-snug"></p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="bg-slate-900/70 rounded-2xl p-3 text-center">
-                            <p class="text-[8px] text-slate-500 font-black uppercase">Reps</p>
-                            <select id="live-reps" onchange="updateLiveSetField('reps', this.value)" class="w-full bg-transparent text-center text-2xl font-black text-white outline-none"></select>
-                        </div>
-                        <div class="bg-slate-900/70 rounded-2xl p-3 text-center">
-                            <p class="text-[8px] text-slate-500 font-black uppercase">Kg</p>
-                            <select id="live-peso" onchange="updateLiveSetField('peso', this.value)" class="w-full bg-transparent text-center text-2xl font-black text-orange-400 outline-none"></select>
-                        </div>
-                    </div>
+                    <div id="live-load" class="space-y-2"></div>
                     <div id="live-set-dots" class="flex gap-1.5 justify-center flex-wrap"></div>
                     <button onclick="completeLiveSet()" id="btn-complete-set" class="w-full py-4 bg-emerald-600 text-white text-sm font-black uppercase rounded-2xl active:scale-95 transition-all shadow-lg shadow-emerald-900/30">
                         Completa serie
@@ -415,6 +421,8 @@
                         <button onclick="nextLiveExercise(true)" class="py-3 bg-slate-800 text-slate-300 text-[10px] font-black uppercase rounded-xl border border-slate-700 col-span-2">Salta esercizio</button>
                     </div>
                 </div>
+
+                <div id="live-upcoming" class="space-y-2"></div>
 
                 <div class="grid grid-cols-2 gap-2 pb-28">
                     <button onclick="requestEndLiveWorkout()" class="py-3 bg-emerald-600 text-white text-xs font-black uppercase rounded-xl active:scale-95">Termina</button>
@@ -437,6 +445,19 @@
                 <div id="scheda-edit-list" class="space-y-3"></div>
             </div>
 
+            <div id="custom-plans" class="hidden space-y-3 pb-28">
+                <div class="flex gap-2 items-center">
+                    <button onclick="showWorkoutHub()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-300 active:scale-90"><i class="fas fa-arrow-left text-sm"></i></button>
+                    <div>
+                        <h2 class="text-sm font-black uppercase text-amber-300">Schede 50 minuti</h2>
+                        <p class="text-[9px] text-slate-500">Scegline una e mettila al posto di una tua scheda</p>
+                    </div>
+                </div>
+                <div id="custom-plans-list" class="space-y-2"></div>
+            </div>
+
+            <div id="custom-plan-detail" class="hidden space-y-3"></div>
+
             <!-- Menu sessione -->
             <div id="live-menu-overlay" class="hidden fixed inset-0 z-[900] bg-black/70 backdrop-blur-sm flex items-end justify-center p-4" onclick="if(event.target===this)closeLiveWorkoutMenu()">
                 <div class="w-full max-w-md glass-card rounded-3xl p-4 space-y-2 border border-slate-700">
@@ -452,6 +473,11 @@
             <div id="live-summary-overlay" class="hidden fixed inset-0 z-[950] bg-[#0b0f1a] flex flex-col p-5 overflow-y-auto">
                 <p class="text-[10px] font-black uppercase text-emerald-400 tracking-widest mb-1">Allenamento completato</p>
                 <h2 id="summary-gruppo" class="text-2xl font-black uppercase text-white mb-4">—</h2>
+                <div class="glass-card rounded-2xl p-4 text-center mb-3 border border-orange-500/40">
+                    <p class="text-[8px] text-slate-500 font-black uppercase">Volume totale</p>
+                    <p id="summary-volume" class="text-3xl font-black text-orange-400">—</p>
+                    <p class="text-[8px] text-slate-500">kg sollevati · ripetizioni × peso</p>
+                </div>
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <div class="glass-card rounded-2xl p-4 text-center">
                         <p class="text-[8px] text-slate-500 font-black uppercase">Durata</p>
@@ -637,6 +663,17 @@
         </div>
     </main>
 
+    <div id="session-detail-overlay" class="hidden fixed inset-0 z-[960] bg-[#0b0f1a] flex flex-col">
+        <div class="flex items-center gap-3 px-4 pt-10 pb-3">
+            <button onclick="closeSessionDetail()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-300 active:scale-90"><i class="fas fa-arrow-left text-sm"></i></button>
+            <div class="min-w-0">
+                <p class="text-[10px] font-black uppercase text-emerald-400 tracking-widest">Allenamento concluso</p>
+                <h2 id="detail-title" class="text-lg font-black uppercase text-white truncate">—</h2>
+            </div>
+        </div>
+        <div id="detail-body" class="flex-1 overflow-y-auto px-4 pb-28 space-y-3"></div>
+    </div>
+
     <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md glass-card rounded-[2rem] p-2 flex justify-around items-center z-50 shadow-2xl border border-white/10">
         <button onclick="showSection('home')" id="nav-home" class="p-3 text-orange-500 transition-all"><i class="fas fa-home text-xl"></i></button>
         <button onclick="showSection('workout')" id="nav-workout" class="p-3 text-slate-500 transition-all"><i class="fas fa-dumbbell text-xl"></i></button>
@@ -646,6 +683,7 @@
     </nav>
 
     <script src="js/native-bridge.js"></script>
+    <script src="js/workout-library.js"></script>
     <script>
         const SB_URL = "https://vnzrewcbnoqbqvzckome.supabase.co";
         const SB_KEY = "sb_publishable_Sq9txbu-PmKdbxETSx2cjw_WqWEFBPO";
@@ -1471,6 +1509,12 @@
 
         // --- WORKOUT ---
         async function loadWorkout(gruppo) {
+            const swapped = typeof planExercisesForGroup === 'function' ? planExercisesForGroup(gruppo) : null;
+            if (swapped && swapped.length) {
+                initLiveWorkoutFromData(gruppo, swapped);
+                setTimeout(syncActiveSessionToWatch, 500);
+                return;
+            }
             if(!_supabase) return;
             let q = _supabase.from('workout').select('*').order('id');
             if(gruppo !== 'all') q = q.eq('gruppo_lavoro', gruppo);
@@ -1480,8 +1524,8 @@
                 showWorkoutHub();
                 return;
             }
-            // Modalità guidata stile Fitness
-            initLiveWorkoutFromData(gruppo, data);
+            const rows = typeof applyExerciseOverrides === 'function' ? applyExerciseOverrides(data) : data;
+            initLiveWorkoutFromData(gruppo, rows);
             setTimeout(syncActiveSessionToWatch, 500);
         }
 
@@ -1845,12 +1889,15 @@
             document.getElementById('select-group').classList.add('hidden');
             document.getElementById('workout-list').classList.add('hidden');
             document.getElementById('scheda-edit')?.classList.add('hidden');
+            document.getElementById('custom-plans')?.classList.add('hidden');
+            document.getElementById('custom-plan-detail')?.classList.add('hidden');
             const t = document.getElementById('select-group-title');
             const s = document.getElementById('select-group-sub');
             if (t) t.textContent = 'Scegli la scheda';
             if (s) s.textContent = 'Poi parte la sessione';
             if (t) { t.classList.remove('text-blue-400'); t.classList.add('text-orange-500'); }
             renderWorkoutHub();
+            schedulePlansSync(false);
         }
 
         function showSchedeEditSelection() {
@@ -1858,6 +1905,8 @@
             document.getElementById('workout-hub').classList.add('hidden');
             document.getElementById('workout-list').classList.add('hidden');
             document.getElementById('scheda-edit')?.classList.add('hidden');
+            document.getElementById('custom-plans')?.classList.add('hidden');
+            document.getElementById('custom-plan-detail')?.classList.add('hidden');
             document.getElementById('select-group').classList.remove('hidden');
             const t = document.getElementById('select-group-title');
             const s = document.getElementById('select-group-sub');
@@ -1875,6 +1924,22 @@
         }
 
         async function openSchedaEditor(gruppo) {
+            const swapped = gruppo !== 'all' && typeof planExercisesForGroup === 'function' ? planExercisesForGroup(gruppo) : null;
+            if (swapped && swapped.length) {
+                schedaEditMode = true;
+                document.getElementById('select-group').classList.add('hidden');
+                document.getElementById('workout-hub').classList.add('hidden');
+                document.getElementById('workout-list').classList.add('hidden');
+                document.getElementById('custom-plans')?.classList.add('hidden');
+                document.getElementById('custom-plan-detail')?.classList.add('hidden');
+                document.getElementById('scheda-edit').classList.remove('hidden');
+                const plan = typeof activePlanForGroup === 'function' ? activePlanForGroup(gruppo) : null;
+                const title = document.getElementById('scheda-edit-title');
+                title.dataset.gruppo = gruppo;
+                title.textContent = plan ? `${gruppo} · ${plan.name}` : gruppo;
+                renderSchedaEditor(swapped);
+                return;
+            }
             if (!_supabase) {
                 alert('Connessione non disponibile.');
                 return;
@@ -1891,40 +1956,30 @@
             document.getElementById('workout-hub').classList.add('hidden');
             document.getElementById('workout-list').classList.add('hidden');
             document.getElementById('scheda-edit').classList.remove('hidden');
-            document.getElementById('scheda-edit-title').textContent = gruppo === 'all' ? 'Tutta la scheda' : gruppo;
-            renderSchedaEditor(data);
+            const title = document.getElementById('scheda-edit-title');
+            title.dataset.gruppo = gruppo;
+            title.textContent = gruppo === 'all' ? 'Tutta la scheda' : gruppo;
+            const rows = typeof applyExerciseOverrides === 'function' ? applyExerciseOverrides(data) : data;
+            renderSchedaEditor(rows);
         }
 
         function renderSchedaEditor(rows) {
             const savedExData = getExData();
             const list = document.getElementById('scheda-edit-list');
             list.innerHTML = rows.map(ex => {
-                const exId = String(ex.id);
+                const applied = typeof applyExerciseOverride === 'function' ? applyExerciseOverride(ex) : ex;
+                const exId = String(applied.id);
                 const saved = savedExData[exId] || {};
-                const numSerie = parseInt(saved.serie) || parseInt(ex.serie) || 3;
-                const defaultReps = parseInt(ex.reps || ex.note_rep) || 10;
-                const dbPeso = parseFloat(String(ex.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
-                let seriesHtml = '';
-                for (let i = 1; i <= numSerie; i++) {
-                    const sd = saved[i] || {};
-                    const repsVal = parseInt(sd.reps) || defaultReps;
-                    const pesoVal = parseFloat(sd.peso);
-                    const peso = Number.isFinite(pesoVal) ? pesoVal : (i === 1 ? dbPeso : 0);
-                    const repsOpts = Array.from({ length: 16 }, (_, k) => k + 1).map(n =>
-                        `<option value="${n}" ${n === repsVal ? 'selected' : ''}>${n}</option>`
-                    ).join('');
-                    const pesoOpts = PESO_OPTS.map(n =>
-                        `<option value="${n}" ${n == peso ? 'selected' : ''}>${n || '—'}</option>`
-                    ).join('');
-                    seriesHtml += `
-                    <div class="grid grid-cols-[28px_1fr_1fr] gap-2 items-center">
-                        <span class="text-[10px] font-black text-slate-500 text-center">${i}</span>
-                        <select class="bg-slate-900/80 rounded-xl py-2 px-2 text-center text-sm font-black text-white outline-none border border-slate-700"
-                            onchange="saveSchedaEditField('${exId}', ${i}, 'reps', this.value, ${numSerie})">${repsOpts}</select>
-                        <select class="bg-slate-900/80 rounded-xl py-2 px-2 text-center text-sm font-black text-orange-400 outline-none border border-slate-700"
-                            onchange="saveSchedaEditField('${exId}', ${i}, 'peso', this.value, ${numSerie})">${pesoOpts}</select>
-                    </div>`;
-                }
+                const numSerie = parseInt(saved.serie) || parseInt(applied.serie) || 3;
+                const defaultReps = parseInt(applied.reps || applied.note_rep) || 10;
+                const dbPeso = parseFloat(String(applied.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
+                const seriesHtml = typeof schedaSeriesBlock === 'function'
+                    ? schedaSeriesBlock(applied, saved, numSerie, defaultReps, dbPeso)
+                    : '';
+                const altsHtml = typeof alternativesBlockHtml === 'function' ? alternativesBlockHtml(applied) : '';
+                const altBadge = applied._altFrom
+                    ? `<p class="text-[8px] text-amber-300 mt-0.5">Alternativa da ${escHtml(applied._altFrom)}</p>`
+                    : '';
                 const serieOpts = [1,2,3,4,5,6].map(n =>
                     `<option value="${n}" ${n === numSerie ? 'selected' : ''}>${n} serie</option>`
                 ).join('');
@@ -1932,8 +1987,9 @@
                 <div class="glass-card rounded-2xl p-4 border border-slate-800 space-y-3" id="scheda-ex-${exId}">
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0">
-                            <h3 class="text-sm font-black uppercase text-slate-100 leading-tight">${ex.esercizi || 'Esercizio'}</h3>
-                            <p class="text-[9px] text-slate-500 mt-0.5">${ex.gruppi_muscolari || ex.note || ''}</p>
+                            <h3 class="text-sm font-black uppercase text-slate-100 leading-tight">${escHtml(applied.esercizi || 'Esercizio')}</h3>
+                            <p class="text-[9px] text-slate-500 mt-0.5">${escHtml(applied.gruppi_muscolari || applied.note || '')}</p>
+                            ${altBadge}
                         </div>
                         <select class="bg-slate-900 rounded-lg text-[10px] font-black text-blue-300 px-2 py-1 border border-slate-700 outline-none shrink-0"
                             onchange="changeSchedaEditSerieCount('${exId}', this.value)">${serieOpts}</select>
@@ -1942,6 +1998,7 @@
                         <span class="text-center">#</span><span class="text-center">Reps</span><span class="text-center">Kg</span>
                     </div>
                     <div class="space-y-2" id="scheda-series-${exId}">${seriesHtml}</div>
+                    ${altsHtml}
                 </div>`;
             }).join('');
         }
@@ -1953,8 +2010,9 @@
             if (!data[exId][serieNum]) data[exId][serieNum] = { reps: '10', peso: '', rec: '90', note: '' };
             data[exId][serieNum][field] = String(value);
             saveExData(data);
+            schedulePlansSync(true);
             // Sync leggero su Supabase (prima serie come riferimento)
-            if (_supabase && serieNum === 1) {
+            if (_supabase && serieNum === 1 && !String(exId).startsWith('p50_')) {
                 const payload = {};
                 if (field === 'reps') payload.note_rep = String(value);
                 if (field === 'peso') payload.avanzamento_pesi = String(value);
@@ -1970,7 +2028,8 @@
             if (!data[exId]) data[exId] = {};
             data[exId].serie = n;
             saveExData(data);
-            const gruppo = document.getElementById('scheda-edit-title').textContent;
+            const title = document.getElementById('scheda-edit-title');
+            const gruppo = title?.dataset?.gruppo || title.textContent;
             await openSchedaEditor(gruppo === 'Tutta la scheda' ? 'all' : gruppo);
         }
 
@@ -1993,36 +2052,118 @@
                 list.innerHTML = '<p class="text-[10px] text-slate-500 italic">Nessuna sessione ancora. Premi Inizia Workout.</p>';
                 return;
             }
-            list.innerHTML = history.slice(0, 12).map(s => {
-                const d = new Date(s.endedAt || s.startedAt);
-                const mins = s.durationMin != null ? s.durationMin + ' min' : '-';
-                const kcal = s.activeCalories != null ? Math.round(s.activeCalories) + ' kcal' : '';
-                const setsDone = (s.exercises || []).reduce((acc, ex) => acc + (ex.sets?.filter(x => x.peso > 0 || x.reps > 0).length || 0), 0);
-                return `
-                <button onclick="viewSessionDetail('${s.id}')" class="w-full text-left p-3 rounded-xl bg-slate-800/60 border border-slate-700/80 active:scale-[0.98] transition-all">
-                    <div class="flex justify-between items-start gap-2">
-                        <div class="min-w-0">
-                            <p class="text-xs font-black text-orange-400 uppercase truncate">${s.gruppo}</p>
-                            <p class="text-[9px] text-slate-500">${d.toLocaleDateString('it-IT')} · ${d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</p>
-                        </div>
-                        <div class="text-right shrink-0">
-                            <p class="text-[10px] font-black text-emerald-400">${mins}</p>
-                            <p class="text-[8px] text-slate-500">${kcal || (setsDone + " set")}</p>
-                        </div>
+            list.innerHTML = history.slice(0, 12).map(s => sessionCardHtml(s)).join('');
+        }
+
+        function escHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (c) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function formatVolumeKg(kg) {
+            const n = Math.round(Number(kg) || 0);
+            return n.toLocaleString('it-IT') + ' kg';
+        }
+
+        function computeVolumeKg(exercises) {
+            return (exercises || []).reduce((acc, ex) => {
+                return acc + (ex.sets || []).reduce((sum, set) => {
+                    if (set.done === false) return sum;
+                    const lifted = typeof setLiftedKg === 'function'
+                        ? setLiftedKg(set)
+                        : (Number(set.reps) || 0) * (Number(set.peso) || 0);
+                    if (set.done === true || lifted > 0) return sum + lifted;
+                    return sum;
+                }, 0);
+            }, 0);
+        }
+
+        function sessionVolumeKg(session) {
+            if (session?.totalVolumeKg != null && !Number.isNaN(Number(session.totalVolumeKg))) {
+                return Number(session.totalVolumeKg);
+            }
+            return computeVolumeKg(session?.exercises);
+        }
+
+        function sessionCardHtml(s) {
+            const d = new Date(s.endedAt || s.startedAt);
+            const mins = s.durationMin != null ? s.durationMin + ' min' : '-';
+            const vol = formatVolumeKg(sessionVolumeKg(s));
+            return `
+            <button onclick="viewSessionDetail('${escHtml(s.id)}')" class="w-full text-left p-3 rounded-xl bg-slate-800/60 border border-slate-700/80 active:scale-[0.98] transition-all">
+                <div class="flex justify-between items-start gap-2">
+                    <div class="min-w-0">
+                        <p class="text-xs font-black text-orange-400 uppercase truncate">${escHtml(s.gruppo)}</p>
+                        <p class="text-[9px] text-slate-500">${d.toLocaleDateString('it-IT')} · ${d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
-                </button>`;
+                    <div class="text-right shrink-0">
+                        <p class="text-[10px] font-black text-emerald-400">${mins}</p>
+                        <p class="text-[8px] text-orange-300">${vol}</p>
+                    </div>
+                </div>
+            </button>`;
+        }
+
+        function exerciseDetailHtml(ex) {
+            const sets = (ex.sets || []).map(set => {
+                const done = set.done === false ? '' : '✓';
+                const note = set.note ? `<span class="text-slate-500"> · ${escHtml(set.note)}</span>` : '';
+                const extra = [
+                    set.peso2 != null ? `${set.reps2 || 0} × ${set.peso2} kg` : '',
+                    set.peso3 != null ? `${set.reps3 || 0} × ${set.peso3} kg` : ''
+                ].filter(Boolean).map(line => `<span class="text-slate-400"> + ${line}</span>`).join('');
+                return `<p class="text-[11px] text-slate-200">Serie ${set.set} · ${set.reps || 0} × ${set.peso || 0} kg${extra} <span class="text-emerald-400">${done}</span>${note}</p>`;
             }).join('');
+            const rec = ex.recSec != null ? `<p class="text-[9px] text-blue-300 mt-1">Recupero ${ex.recSec}s</p>` : '';
+            const vol = formatVolumeKg(computeVolumeKg([ex]));
+            return `
+            <div class="glass-card p-3 rounded-xl border border-slate-800">
+                <div class="flex justify-between gap-2 items-start">
+                    <p class="text-xs font-black text-orange-400 uppercase">${escHtml(ex.name)}</p>
+                    <p class="text-[9px] font-black text-slate-400 shrink-0">${vol}</p>
+                </div>
+                <div class="mt-2 space-y-0.5">${sets || '<p class="text-[10px] text-slate-500">Nessuna serie</p>'}</div>
+                ${rec}
+            </div>`;
+        }
+
+        function closeSessionDetail() {
+            document.getElementById('session-detail-overlay')?.classList.add('hidden');
         }
 
         function viewSessionDetail(sessionId) {
             const store = getSessionsStore();
             const s = (store.history || []).find(x => x.id === sessionId);
-            if(!s) return;
-            const lines = (s.exercises || []).map(ex => {
-                const best = ex.maxPeso ? `${ex.maxPeso}kg` : '-';
-                return `• ${ex.name}: max ${best} / ${ex.maxReps || '-'} reps`;
-            }).join('\n');
-            alert(`${s.gruppo}\n${new Date(s.endedAt || s.startedAt).toLocaleString('it-IT')}\nDurata: ${s.durationMin ?? '-'} min\n\n${lines || 'Nessun dato serie'}`);
+            if (!s) return;
+            const when = new Date(s.endedAt || s.startedAt);
+            const vol = sessionVolumeKg(s);
+            document.getElementById('detail-title').textContent = s.gruppo || 'Workout';
+            document.getElementById('detail-body').innerHTML = `
+                <p class="text-[10px] text-slate-500">${when.toLocaleString('it-IT')}</p>
+                <div class="glass-card rounded-2xl p-4 text-center border border-orange-500/40">
+                    <p class="text-[8px] text-slate-500 font-black uppercase">Volume totale</p>
+                    <p class="text-3xl font-black text-orange-400">${formatVolumeKg(vol)}</p>
+                    <p class="text-[8px] text-slate-500">kg sollevati · ripetizioni × peso</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="glass-card rounded-xl p-3 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Durata</p>
+                        <p class="text-sm font-black">${s.durationMin ?? '—'} min</p>
+                    </div>
+                    <div class="glass-card rounded-xl p-3 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Kcal</p>
+                        <p class="text-sm font-black text-orange-400">${s.activeCalories != null ? Math.round(s.activeCalories) : '—'}</p>
+                    </div>
+                    <div class="glass-card rounded-xl p-3 text-center">
+                        <p class="text-[8px] text-slate-500 font-black uppercase">FC</p>
+                        <p class="text-sm font-black text-red-400">${s.averageHeartRate != null ? Math.round(s.averageHeartRate) : '—'}</p>
+                    </div>
+                </div>
+                <p class="text-[10px] font-black uppercase text-slate-500">Esercizi</p>
+                ${(s.exercises || []).map(exerciseDetailHtml).join('') || '<p class="text-[10px] text-slate-500">Nessun dato serie</p>'}
+            `;
+            document.getElementById('session-detail-overlay').classList.remove('hidden');
         }
 
         // ===== LIVE WORKOUT (stile Apple Fitness) =====
@@ -2030,6 +2171,8 @@
         window.liveWorkout = null;
         let liveTickTimer = null;
         let pendingSummary = null;
+        let phoneRevision = 0;
+        let plansSyncTimer = null;
         // Proxy: codice usa liveWorkout, bridge legge window.liveWorkout
         var liveWorkout = null;
 
@@ -2163,31 +2306,318 @@
             }
         }
 
+        function parseRecSeconds(raw) {
+            const r = String(raw || '90');
+            if (r.includes(':')) {
+                const [a, b] = r.split(':');
+                return (parseInt(a) || 0) * 60 + (parseInt(b) || 0);
+            }
+            return parseInt(r) || 90;
+        }
+
+        function pesoFromSaved(serieData, dbPeso) {
+            if (serieData && serieData.peso !== undefined && serieData.peso !== '') {
+                return parseFloat(serieData.peso) || 0;
+            }
+            return dbPeso || 0;
+        }
+
+        function shapeWatchSet(s, done) {
+            const row = { set: s.set, reps: Number(s.reps) || 0, peso: Number(s.peso) || 0, done: !!done, note: s.note || '' };
+            if (s.reps2 != null && s.reps2 !== '') row.reps2 = Number(s.reps2) || 0;
+            if (s.peso2 != null && s.peso2 !== '') row.peso2 = Number(s.peso2) || 0;
+            if (s.reps3 != null && s.reps3 !== '') row.reps3 = Number(s.reps3) || 0;
+            if (s.peso3 != null && s.peso3 !== '') row.peso3 = Number(s.peso3) || 0;
+            return row;
+        }
+
         function syncActiveSessionToWatch() {
             const store = getSessionsStore();
-            if (!store.active || !window.NativeWorkout) return;
-            // Usa payload da liveWorkout se disponibile
-            if (liveWorkout) {
-                NativeWorkout.syncSession({
-                    id: store.active.id,
-                    gruppo: store.active.gruppo,
-                    startedAt: store.active.startedAt,
-                    currentExerciseIndex: liveWorkout.exIndex,
-                    exercises: liveWorkout.exercises.map(ex => ({
-                        exId: String(ex.id),
-                        name: ex.name,
-                        currentSet: (ex.sets.find(s => !s.done)?.set) || ex.sets.length,
-                        sets: ex.sets.map(s => ({ set: s.set, reps: s.reps, peso: s.peso, done: !!s.done }))
-                    }))
+            if (!store.active || !window.NativeWorkout || !liveWorkout) return;
+            phoneRevision += 1;
+            NativeWorkout.syncSession({
+                id: store.active.id,
+                gruppo: store.active.gruppo,
+                startedAt: store.active.startedAt,
+                currentExerciseIndex: liveWorkout.exIndex,
+                revision: phoneRevision,
+                exercises: liveWorkout.exercises.map(ex => ({
+                    exId: String(ex.id),
+                    name: ex.name,
+                    note: ex.note || '',
+                    recSec: ex.recSec || 90,
+                    currentSet: (ex.sets.find(s => !s.done)?.set) || ex.sets.length,
+                    partNames: ex.partNames && ex.partNames.length > 1 ? ex.partNames : undefined,
+                    sets: ex.sets.map(s => shapeWatchSet(s, s.done))
+                }))
+            });
+        }
+
+        function schedulePlansSync(phoneEdited) {
+            if (plansSyncTimer) clearTimeout(plansSyncTimer);
+            plansSyncTimer = setTimeout(() => {
+                plansSyncTimer = null;
+                syncPlansToWatch(!!phoneEdited);
+            }, 1000);
+        }
+
+        async function syncPlansToWatch(phoneEdited) {
+            try {
+                if (!_supabase || !window.NativeWorkout?.syncPlans) return;
+                const { data } = await _supabase.from('workout').select('*').order('id');
+                if (!data?.length) return;
+                const saved = getExData();
+                const map = new Map();
+                data.forEach(ex => {
+                    const gruppo = ex.gruppo_lavoro || 'Altro';
+                    if (!map.has(gruppo)) map.set(gruppo, []);
+                    const applied = typeof applyExerciseOverride === 'function' ? applyExerciseOverride(ex) : ex;
+                    const savedData = saved[applied.id] || {};
+                    const serieVal = parseInt(savedData.serie) || parseInt(applied.serie) || 3;
+                    const defaultReps = parseInt(applied.reps || applied.note_rep) || 10;
+                    const dbPeso = parseFloat(String(applied.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
+                    const sides = typeof exerciseSides === 'function' ? exerciseSides(applied.esercizi) : [];
+                    const sets = [];
+                    for (let i = 1; i <= serieVal; i++) {
+                        const serieData = savedData[i] || {};
+                        sets.push(shapeWatchSet({
+                            set: i,
+                            reps: parseInt(serieData.reps) || defaultReps,
+                            peso: pesoFromSaved(serieData, dbPeso),
+                            reps2: sides.length > 1 ? (serieData.reps2 ?? defaultReps) : serieData.reps2,
+                            peso2: sides.length > 1 ? (serieData.peso2 ?? 0) : serieData.peso2,
+                            reps3: sides.length > 2 ? (serieData.reps3 ?? defaultReps) : serieData.reps3,
+                            peso3: sides.length > 2 ? (serieData.peso3 ?? 0) : serieData.peso3
+                        }, false));
+                    }
+                    map.get(gruppo).push({
+                        exId: String(applied.id),
+                        name: applied.esercizi || 'Esercizio',
+                        note: applied.note || '',
+                        recSec: parseRecSeconds(applied.recupero),
+                        currentSet: 1,
+                        partNames: sides.length > 1 ? sides : undefined,
+                        sets
+                    });
                 });
+                const plans = WATCH_GROUPS
+                    .filter(g => map.has(g))
+                    .map(g => ({ gruppo: g, exercises: map.get(g) }));
+                map.forEach((exercises, gruppo) => {
+                    if (!WATCH_GROUPS.includes(gruppo)) plans.push({ gruppo, exercises });
+                });
+                WATCH_GROUPS.forEach(gruppo => {
+                    const rows = typeof planExercisesForGroup === 'function' ? planExercisesForGroup(gruppo) : null;
+                    if (!rows) return;
+                    const saved = getExData();
+                    const exercises = rows.map(ex => {
+                        const savedData = saved[ex.id] || {};
+                        const serieVal = parseInt(savedData.serie) || parseInt(ex.serie) || 3;
+                        const defaultReps = parseInt(ex.note_rep) || 10;
+                        const dbPeso = parseFloat(ex.avanzamento_pesi) || 0;
+                        const sides = typeof exerciseSides === 'function' ? exerciseSides(ex.esercizi) : [];
+                        const sets = [];
+                        for (let i = 1; i <= serieVal; i++) {
+                            const serieData = savedData[i] || {};
+                            sets.push(shapeWatchSet({
+                                set: i,
+                                reps: parseInt(serieData.reps) || defaultReps,
+                                peso: pesoFromSaved(serieData, dbPeso),
+                                reps2: sides.length > 1 ? (serieData.reps2 ?? defaultReps) : serieData.reps2,
+                                peso2: sides.length > 1 ? (serieData.peso2 ?? 0) : serieData.peso2,
+                                reps3: sides.length > 2 ? (serieData.reps3 ?? defaultReps) : serieData.reps3,
+                                peso3: sides.length > 2 ? (serieData.peso3 ?? 0) : serieData.peso3
+                            }, false));
+                        }
+                        return {
+                            exId: String(ex.id),
+                            name: ex.esercizi,
+                            note: ex.note || '',
+                            recSec: parseRecSeconds(ex.recupero),
+                            currentSet: 1,
+                            partNames: sides.length > 1 ? sides : undefined,
+                            sets
+                        };
+                    });
+                    const idx = plans.findIndex(p => p.gruppo === gruppo);
+                    if (idx >= 0) plans[idx] = { gruppo, exercises };
+                    else plans.push({ gruppo, exercises });
+                });
+                await NativeWorkout.syncPlans(plans, phoneEdited);
+            } catch (e) {
+                console.warn('syncPlansToWatch', e);
+            }
+        }
+
+        function showLiveWorkoutScreen(gruppo) {
+            document.querySelectorAll('main > div').forEach(d => d.classList.add('hidden'));
+            document.getElementById('workout-section')?.classList.remove('hidden');
+            document.querySelectorAll('nav button').forEach(b => b.className = 'p-3 text-slate-500 transition-all');
+            const navBtn = document.getElementById('nav-workout');
+            if (navBtn) navBtn.className = 'p-3 text-orange-500 transition-all scale-110';
+            document.getElementById('workout-hub')?.classList.add('hidden');
+            document.getElementById('select-group')?.classList.add('hidden');
+            document.getElementById('scheda-edit')?.classList.add('hidden');
+            document.getElementById('workout-list')?.classList.remove('hidden');
+            const title = document.getElementById('current-group-title');
+            if (title) title.textContent = gruppo || '';
+            try { requestWakeLock(); } catch (_) {}
+        }
+
+        function adoptWatchSession(ev) {
+            if (!ev || !ev.exercises) return;
+            const rev = Number(ev.revision) || 0;
+            if (liveWorkout && ev.id && liveWorkout.id === ev.id && rev && rev < phoneRevision) return;
+            if (rev) phoneRevision = Math.max(phoneRevision, rev);
+
+            const exercises = (ev.exercises || []).map(ex => ({
+                id: String(ex.exId || ex.id),
+                name: ex.name || 'Esercizio',
+                note: ex.note || '',
+                recSec: ex.recSec || 90,
+                partNames: ex.partNames && ex.partNames.length > 1 ? ex.partNames : undefined,
+                sets: (ex.sets || []).map(s => ({
+                    set: s.set,
+                    reps: s.reps,
+                    peso: s.peso,
+                    reps2: s.reps2,
+                    peso2: s.peso2,
+                    reps3: s.reps3,
+                    peso3: s.peso3,
+                    note: s.note || '',
+                    done: !!s.done
+                }))
+            }));
+
+            const store = getSessionsStore();
+            const completedSets = {};
+            exercises.forEach(ex => {
+                completedSets[ex.id] = ex.sets.filter(s => s.done).map(s => s.set);
+            });
+            const startedMs = ev.startedAt ? Date.parse(ev.startedAt) : NaN;
+            const clockAnchor = Number.isFinite(startedMs) ? startedMs : Date.now();
+            store.active = {
+                id: ev.id,
+                gruppo: ev.gruppo,
+                startedAt: ev.startedAt || new Date().toISOString(),
+                completedSets,
+                paused: false,
+                accumulatedSec: store.active?.id === ev.id ? (store.active.accumulatedSec || 0) : 0
+            };
+            saveSessionsStore(store);
+
+            const keepClock = liveWorkout && liveWorkout.id === ev.id;
+            liveWorkout = {
+                id: ev.id,
+                gruppo: ev.gruppo,
+                exercises,
+                exIndex: ev.currentExerciseIndex || 0,
+                paused: keepClock ? !!liveWorkout.paused : false,
+                accumulatedSec: keepClock ? (liveWorkout.accumulatedSec || 0) : 0,
+                activeAccumulatedSec: keepClock ? (liveWorkout.activeAccumulatedSec || 0) : 0,
+                segmentStartedAt: keepClock ? liveWorkout.segmentStartedAt : clockAnchor,
+                inRecovery: keepClock ? !!liveWorkout.inRecovery : false,
+                heartRate: keepClock ? liveWorkout.heartRate : null,
+                nativeActiveKcal: keepClock ? liveWorkout.nativeActiveKcal : null,
+                nativeTotalKcal: keepClock ? liveWorkout.nativeTotalKcal : null,
+                activeCalories: keepClock ? liveWorkout.activeCalories : 0,
+                totalCalories: keepClock ? liveWorkout.totalCalories : 0
+            };
+            window.liveWorkout = liveWorkout;
+            const onWorkout = document.getElementById('workout-section') && !document.getElementById('workout-section').classList.contains('hidden');
+            if (onWorkout) showLiveWorkoutScreen(ev.gruppo);
+            if (!liveTickTimer) startLiveClock();
+            renderLiveStep();
+            refreshLiveMetricsUI();
+            rebuildHiddenWorkoutDom();
+            persistLiveSetToStorage();
+        }
+
+        function saveFinishedFromWatch(ev) {
+            if (!ev?.id) return;
+            const store = getSessionsStore();
+            const alreadySaved = (store.history || []).some(s => s.id === ev.id);
+            // Strict id match only — an idle phone must not treat "no session" as a match,
+            // or a delayed finish replay would NativeWorkout.end() and kill a newer Watch-only workout.
+            const matchesActive = store.active?.id === ev.id;
+            const matchesLive = liveWorkout?.id === ev.id;
+            if (alreadySaved && !matchesActive && !matchesLive) {
+                schedulePlansSync(false);
                 return;
             }
-            const payload = NativeWorkout.buildWatchPayload(
-                store.active.gruppo,
-                store.active.id,
-                store.active.startedAt
-            );
-            NativeWorkout.syncSession(payload);
+            const exercises = (ev.exercises || []).map(ex => ({
+                exId: String(ex.exId || ex.id || ''),
+                name: ex.name || 'Esercizio',
+                recSec: ex.recSec || 0,
+                sets: (ex.sets || []).map(s => ({
+                    set: s.set,
+                    reps: s.reps,
+                    peso: s.peso,
+                    reps2: s.reps2,
+                    peso2: s.peso2,
+                    reps3: s.reps3,
+                    peso3: s.peso3,
+                    note: s.note || '',
+                    done: s.done !== false
+                })),
+                maxPeso: Math.max(0, ...(ex.sets || []).map(s => Number(s.peso) || 0)),
+                maxReps: Math.max(0, ...(ex.sets || []).map(s => Number(s.reps) || 0)),
+                serie: (ex.sets || []).length
+            }));
+            if (!alreadySaved) {
+                const durationSec = Number(ev.durationSec) || 0;
+                const record = {
+                    id: ev.id,
+                    gruppo: ev.gruppo || 'Workout',
+                    startedAt: ev.startedAt,
+                    endedAt: ev.endedAt || new Date().toISOString(),
+                    durationMin: Math.max(1, Math.round(durationSec / 60) || 1),
+                    durationSec,
+                    activeCalories: ev.activeCalories != null ? Math.round(Number(ev.activeCalories)) : null,
+                    averageHeartRate: ev.averageHeartRate != null ? Number(ev.averageHeartRate) : null,
+                    totalVolumeKg: ev.totalVolumeKg != null ? Number(ev.totalVolumeKg) : computeVolumeKg(exercises),
+                    exercises
+                };
+                exercises.forEach(ex => {
+                    const history = getWorkoutHistory();
+                    if (!history[ex.exId]) history[ex.exId] = [];
+                    history[ex.exId].push({
+                        date: record.endedAt,
+                        sessionId: record.id,
+                        peso: ex.maxPeso,
+                        reps: ex.maxReps,
+                        serie: ex.serie,
+                        sets: ex.sets
+                    });
+                    if (history[ex.exId].length > 80) history[ex.exId] = history[ex.exId].slice(-80);
+                    saveWorkoutHistoryData(history);
+                });
+                store.history = [record, ...(store.history || [])].slice(0, 100);
+            }
+            if (matchesActive) {
+                store.active = null;
+                saveSessionsStore(store);
+                saveSessionState({});
+            } else {
+                saveSessionsStore(store);
+            }
+            if (matchesLive) {
+                try { stopLiveClock(); } catch (_) {}
+                try { stopTimer(); } catch (_) {}
+                liveWorkout = null;
+                window.liveWorkout = null;
+                pendingSummary = null;
+                document.getElementById('live-summary-overlay')?.classList.add('hidden');
+            }
+            // Only end native/Watch when this finish matches a phone-side session we still hold.
+            // Never end on duplicate idle replays (Watch already finished that id).
+            if (!alreadySaved && (matchesActive || matchesLive) && window.NativeWorkout?.end) {
+                NativeWorkout.end(ev.id);
+            }
+            const listOpen = document.getElementById('workout-list') && !document.getElementById('workout-list').classList.contains('hidden');
+            try { renderWorkoutHub(); } catch (_) {}
+            if (listOpen) showWorkoutHub();
+            schedulePlansSync(false);
         }
 
         function resumeActiveSession() {
@@ -2234,13 +2664,18 @@
                 const defaultReps = parseInt(ex.reps || ex.note_rep) || 10;
                 const dbPeso = parseFloat(String(ex.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
                 const doneSets = state[ex.id] || [];
+                const sides = typeof exerciseSides === 'function' ? exerciseSides(ex.esercizi) : [ex.esercizi];
                 const sets = [];
                 for (let i = 1; i <= serieVal; i++) {
                     const serieData = savedData[i] || {};
                     sets.push({
                         set: i,
                         reps: parseInt(serieData.reps) || defaultReps,
-                        peso: parseFloat(serieData.peso) || (i === 1 ? dbPeso : 0) || 0,
+                        peso: pesoFromSaved(serieData, dbPeso),
+                        reps2: sides.length > 1 ? (parseInt(serieData.reps2) || defaultReps) : undefined,
+                        peso2: sides.length > 1 ? (parseFloat(serieData.peso2) || 0) : undefined,
+                        reps3: sides.length > 2 ? (parseInt(serieData.reps3) || defaultReps) : undefined,
+                        peso3: sides.length > 2 ? (parseFloat(serieData.peso3) || 0) : undefined,
                         note: serieData.note || (i === 1 ? (ex.note || '') : ''),
                         done: doneSets.includes(i)
                     });
@@ -2249,21 +2684,18 @@
                     id: String(ex.id),
                     name: ex.esercizi,
                     note: ex.note || '',
-                    recSec: (() => {
-                        const r = String(ex.recupero || '90');
-                        if (r.includes(':')) {
-                            const [a,b] = r.split(':');
-                            return (parseInt(a)||0)*60 + (parseInt(b)||0);
-                        }
-                        return parseInt(r) || 90;
-                    })(),
+                    recSec: parseRecSeconds(ex.recupero),
+                    partNames: sides.length > 1 ? sides : undefined,
                     sets
                 };
             });
 
-            // Riprendi dal primo esercizio/set incompleto
+            // Riprendi dal primo esercizio/set incompleto, oppure dall'indice salvato (anche se arrivato dal Watch)
             let exIndex = exercises.findIndex(ex => ex.sets.some(s => !s.done));
             if (exIndex < 0) exIndex = 0;
+            if (Number.isInteger(store.active?.exIndex)) {
+                exIndex = Math.max(0, Math.min(Math.max(exercises.length - 1, 0), store.active.exIndex));
+            }
 
             liveWorkout = {
                 id: store.active?.id,
@@ -2325,6 +2757,11 @@
                 document.getElementById('btn-complete-set').textContent = 'Termina allenamento';
                 document.getElementById('btn-complete-set').onclick = () => requestEndLiveWorkout();
                 document.getElementById('live-set-dots').innerHTML = '';
+                const demo = document.getElementById('live-demo');
+                const load = document.getElementById('live-load');
+                if (demo) demo.innerHTML = '';
+                if (load) load.innerHTML = '';
+                renderUpcomingExercises();
                 return;
             }
 
@@ -2333,9 +2770,13 @@
 
             if (!ex) return;
             const set = currentLiveSet();
-            const doneCount = ex.sets.filter(s => s.done).length;
-            document.getElementById('live-ex-name').textContent = ex.name;
+            const sides = ex.partNames && ex.partNames.length > 1 ? ex.partNames : null;
+            document.getElementById('live-ex-name').textContent = sides ? sides.join(' + ') : ex.name;
             document.getElementById('live-ex-note').textContent = ex.note || '';
+            const demo = document.getElementById('live-demo');
+            if (demo && typeof demoRow === 'function') demo.innerHTML = demoRow(ex.name);
+            const load = document.getElementById('live-load');
+            if (load && typeof loadControlsHtml === 'function') load.innerHTML = loadControlsHtml(ex, set || ex.sets[ex.sets.length - 1]);
             document.getElementById('live-set-progress').textContent = set
                 ? `Serie ${set.set}/${ex.sets.length}`
                 : `Serie ${ex.sets.length}/${ex.sets.length}`;
@@ -2345,20 +2786,52 @@
                 `<span class="w-3 h-3 rounded-full ${s.done ? 'bg-emerald-500' : (set && s.set === set.set ? 'bg-orange-500' : 'bg-slate-700')}"></span>`
             ).join('');
 
-            // selects
-            fillLiveSelects(set || ex.sets[ex.sets.length - 1]);
+            renderUpcomingExercises();
+        }
+
+        function renderUpcomingExercises() {
+            const box = document.getElementById('live-upcoming');
+            if (!box) return;
+            if (!liveWorkout) {
+                box.innerHTML = '';
+                return;
+            }
+            const next = liveWorkout.exercises.slice(liveWorkout.exIndex + 1);
+            if (!next.length) {
+                box.innerHTML = '';
+                return;
+            }
+            box.innerHTML = `
+                <p class="text-[9px] font-black uppercase text-slate-500 px-1">Prossimi esercizi</p>
+                ${next.map((ex, i) => {
+                    const set = ex.sets.find(s => !s.done) || ex.sets[0];
+                    const extra = [
+                        set.peso2 != null ? `${set.reps2 || set.reps} × ${set.peso2 || 0} kg` : '',
+                        set.peso3 != null ? `${set.reps3 || set.reps} × ${set.peso3 || 0} kg` : ''
+                    ].filter(Boolean);
+                    const target = set
+                        ? `${set.reps} × ${set.peso || 0} kg${extra.length ? ' + ' + extra.join(' + ') : ''}`
+                        : '';
+                    return `<div class="glass-card rounded-2xl p-3 border border-slate-800">
+                        <p class="text-[10px] font-black text-slate-200 uppercase">${i + 1}. ${escHtml(ex.name)}</p>
+                        <p class="text-[9px] text-slate-500">${ex.sets.length} serie${target ? ' · ' + target : ''}${ex.recSec ? ' · rec ' + ex.recSec + 's' : ''}</p>
+                    </div>`;
+                }).join('')}`;
         }
 
         function fillLiveSelects(set) {
             const repsEl = document.getElementById('live-reps');
             const pesoEl = document.getElementById('live-peso');
             if (!set || !repsEl || !pesoEl) return;
-            repsEl.innerHTML = Array.from({length: 16}, (_, i) => i + 1).map(n =>
+            repsEl.innerHTML = Array.from({length: 30}, (_, i) => i + 1).map(n =>
                 `<option value="${n}" ${n == set.reps ? 'selected' : ''}>${n}</option>`
             ).join('');
             const pesos = [0,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200];
+            const currentPeso = Number(set.peso) || 0;
+            if (!pesos.some(n => n == currentPeso)) pesos.push(currentPeso);
+            pesos.sort((a, b) => a - b);
             pesoEl.innerHTML = pesos.map(n =>
-                `<option value="${n}" ${n == set.peso ? 'selected' : ''}>${n || '—'}</option>`
+                `<option value="${n}" ${n == currentPeso ? 'selected' : ''}>${n || '—'}</option>`
             ).join('');
         }
 
@@ -2367,6 +2840,10 @@
             if (!set) return;
             if (field === 'reps') set.reps = parseInt(value) || 0;
             if (field === 'peso') set.peso = parseFloat(value) || 0;
+            if (field === 'reps2') set.reps2 = parseInt(value) || 0;
+            if (field === 'peso2') set.peso2 = parseFloat(value) || 0;
+            if (field === 'reps3') set.reps3 = parseInt(value) || 0;
+            if (field === 'peso3') set.peso3 = parseFloat(value) || 0;
             persistLiveSetToStorage();
             rebuildHiddenWorkoutDom();
             syncActiveSessionToWatch();
@@ -2380,7 +2857,16 @@
                 if (!data[ex.id]) data[ex.id] = { serie: ex.sets.length };
                 data[ex.id].serie = ex.sets.length;
                 ex.sets.forEach(s => {
-                    data[ex.id][s.set] = { reps: String(s.reps), peso: String(s.peso || ''), rec: String(ex.recSec), note: s.note || '' };
+                    data[ex.id][s.set] = {
+                        reps: String(s.reps),
+                        peso: String(s.peso || ''),
+                        reps2: s.reps2 != null ? String(s.reps2) : '',
+                        peso2: s.peso2 != null ? String(s.peso2) : '',
+                        reps3: s.reps3 != null ? String(s.reps3) : '',
+                        peso3: s.peso3 != null ? String(s.peso3) : '',
+                        rec: String(ex.recSec),
+                        note: s.note || ''
+                    };
                 });
                 state[ex.id] = ex.sets.filter(s => s.done).map(s => s.set);
             });
@@ -2391,11 +2877,12 @@
                 store.active.completedSets = state;
                 store.active.paused = !!liveWorkout.paused;
                 store.active.accumulatedSec = liveWorkout.accumulatedSec;
+                store.active.exIndex = liveWorkout.exIndex;
                 saveSessionsStore(store);
             }
         }
 
-        function completeLiveSet() {
+        function completeLiveSet(opts) {
             if (!liveWorkout || liveWorkout.paused) {
                 if (liveWorkout?.paused) alert('Riprendi l\'allenamento per continuare.');
                 return;
@@ -2434,7 +2921,7 @@
             }
 
             renderLiveStep();
-            syncActiveSessionToWatch();
+            if (!opts?.fromWatch) syncActiveSessionToWatch();
             refreshLiveMetricsUI();
         }
 
@@ -2447,7 +2934,7 @@
             refreshLiveMetricsUI();
         }
 
-        function nextLiveExercise(forceSkip) {
+        function nextLiveExercise(forceSkip, opts) {
             if (!liveWorkout) return;
             if (forceSkip) {
                 const ex = currentLiveExercise();
@@ -2461,7 +2948,8 @@
             document.getElementById('btn-complete-set').onclick = () => completeLiveSet();
             document.getElementById('btn-complete-set').textContent = 'Completa serie';
             renderLiveStep();
-            syncActiveSessionToWatch();
+            persistLiveSetToStorage();
+            if (!opts?.fromWatch) syncActiveSessionToWatch();
         }
 
         function togglePauseLiveWorkout() {
@@ -2498,16 +2986,17 @@
                 return;
             }
             if (!confirm('Annullare l\'allenamento? Non verrà salvato.')) return;
+            const store = getSessionsStore();
+            const endSessionId = liveWorkout?.id || store.active?.id;
             stopLiveClock();
             stopTimer();
             liveWorkout = null;
             pendingSummary = null;
             document.getElementById('live-summary-overlay')?.classList.add('hidden');
-            const store = getSessionsStore();
             store.active = null;
             saveSessionsStore(store);
             saveSessionState({});
-            if (window.NativeWorkout) NativeWorkout.end();
+            if (window.NativeWorkout) NativeWorkout.end(endSessionId);
             showWorkoutHub();
         }
 
@@ -2525,7 +3014,8 @@
 
             let healthExtras = {};
             if (window.NativeWorkout) {
-                const metrics = await NativeWorkout.end();
+                const endSessionId = liveWorkout?.id || getSessionsStore().active?.id;
+                const metrics = await NativeWorkout.end(endSessionId);
                 if (metrics?.ok) {
                     healthExtras = {
                         activeCalories: metrics.activeCalories,
@@ -2559,11 +3049,17 @@
             const exercises = (liveWorkout?.exercises || []).map(ex => ({
                 exId: ex.id,
                 name: ex.name,
-                sets: ex.sets.map(s => ({ set: s.set, reps: s.reps, peso: s.peso, note: s.note || '' })),
+                sets: ex.sets.map(s => ({
+                    set: s.set, reps: s.reps, peso: s.peso,
+                    reps2: s.reps2, peso2: s.peso2, reps3: s.reps3, peso3: s.peso3,
+                    note: s.note || '', done: !!s.done
+                })),
                 maxPeso: Math.max(0, ...ex.sets.map(s => s.peso || 0)),
                 maxReps: Math.max(0, ...ex.sets.map(s => s.reps || 0)),
-                serie: ex.sets.length
+                serie: ex.sets.length,
+                recSec: ex.recSec || 0
             }));
+            const totalVolumeKg = computeVolumeKg(exercises);
 
             pendingSummary = {
                 id: getSessionsStore().active?.id || liveWorkout?.id,
@@ -2575,6 +3071,7 @@
                 activeCalories: liveWorkout?.activeCalories ?? null,
                 totalCalories: liveWorkout?.totalCalories ?? null,
                 averageHeartRate: liveWorkout?.heartRate ?? healthExtras.averageHeartRate ?? null,
+                totalVolumeKg,
                 exercises,
                 ...healthExtras
             };
@@ -2585,13 +3082,9 @@
             document.getElementById('summary-kcal-total').textContent = pendingSummary.totalCalories ?? '—';
             document.getElementById('summary-hr').textContent =
                 pendingSummary.averageHeartRate != null ? Math.round(pendingSummary.averageHeartRate) : '—';
-            document.getElementById('summary-exercises').innerHTML = exercises.map(ex => {
-                const done = ex.sets.filter(s => s.peso || s.reps).length;
-                return `<div class="glass-card p-3 rounded-xl border border-slate-800">
-                    <p class="text-xs font-black text-orange-400 uppercase">${ex.name}</p>
-                    <p class="text-[9px] text-slate-500">${done} serie · max ${ex.maxPeso || '-'} kg</p>
-                </div>`;
-            }).join('');
+            const volumeEl = document.getElementById('summary-volume');
+            if (volumeEl) volumeEl.textContent = formatVolumeKg(totalVolumeKg);
+            document.getElementById('summary-exercises').innerHTML = exercises.map(exerciseDetailHtml).join('');
 
             document.getElementById('live-summary-overlay').classList.remove('hidden');
             stopLiveClock();
@@ -2768,18 +3261,7 @@
                 list.innerHTML = '<p class="text-[10px] text-slate-500 italic">Nessuna sessione salvata. Completa un workout e premi Termina.</p>';
                 return;
             }
-            list.innerHTML = history.slice(0, 20).map(s => {
-                const d = new Date(s.endedAt || s.startedAt);
-                const nEx = (s.exercises || []).length;
-                return `
-                <div class="glass-card p-3 rounded-xl border border-slate-800 flex justify-between items-center gap-2">
-                    <div class="min-w-0">
-                        <p class="text-xs font-black text-orange-400 uppercase truncate">${s.gruppo}</p>
-                        <p class="text-[9px] text-slate-500">${d.toLocaleDateString('it-IT')} · ${nEx} esercizi</p>
-                    </div>
-                    <p class="text-sm font-black text-emerald-400 shrink-0">${s.durationMin ?? '-'} min</p>
-                </div>`;
-            }).join('');
+            list.innerHTML = history.slice(0, 20).map(s => sessionCardHtml(s)).join('');
         }
         
         async function loadWeightStats() {
@@ -2950,6 +3432,8 @@
             document.getElementById('select-group').classList.remove('hidden');
             document.getElementById('workout-list').classList.add('hidden');
             document.getElementById('scheda-edit')?.classList.add('hidden');
+            document.getElementById('custom-plans')?.classList.add('hidden');
+            document.getElementById('custom-plan-detail')?.classList.add('hidden');
             const t = document.getElementById('select-group-title');
             const s = document.getElementById('select-group-sub');
             if (t) {
@@ -2958,6 +3442,7 @@
                 t.classList.add('text-orange-500');
             }
             if (s) s.textContent = 'Poi parte la sessione';
+            if (typeof refreshGroupSwapLabels === 'function') refreshGroupSwapLabels();
         }
 
         function selectWorkoutGroup(gruppo) {
@@ -2992,6 +3477,18 @@
             }
         }
 
+        function nextRecoveryLabel() {
+            if (!liveWorkout) return '';
+            const ex = currentLiveExercise();
+            if (!ex) return '';
+            const nextSet = ex.sets.find(s => !s.done);
+            if (nextSet) {
+                return `${ex.name} · serie ${nextSet.set}`;
+            }
+            const nextEx = liveWorkout.exercises[liveWorkout.exIndex + 1];
+            return nextEx ? nextEx.name : 'Fine scheda';
+        }
+
         function startTimer(timeStr) {
             clearInterval(timerInterval);
             let totalSeconds = 60;
@@ -3005,6 +3502,8 @@
             const total = totalSeconds;
             const overlay = document.getElementById('timer-overlay');
             overlay.classList.remove('hidden');
+            const nextEl = document.getElementById('timer-next');
+            if (nextEl) nextEl.textContent = nextRecoveryLabel();
             
             // Attiva Wake Lock quando parte il timer
             requestWakeLock();
@@ -3013,8 +3512,8 @@
                 document.getElementById('timer-display').innerText = Math.floor(totalSeconds/60).toString().padStart(2, '0') + ':' + (totalSeconds%60).toString().padStart(2, '0');
                 document.getElementById('timer-progress').style.strokeDashoffset = 722 - (722 * totalSeconds / total);
                 
-                // Cambia colore: rosso quando <= 10 secondi, verde altrimenti
-                if (totalSeconds <= 10 && totalSeconds >= 0) {
+                // Verde fino a 5 secondi, poi rosso
+                if (totalSeconds <= 5 && totalSeconds >= 0) {
                     overlay.classList.remove('bg-[#10b981]');
                     overlay.classList.add('bg-red-600');
                 } else {
@@ -3139,6 +3638,7 @@
                         if (ok && typeof NativeWorkout.syncGroupsToWatch === 'function') {
                             NativeWorkout.syncGroupsToWatch(WATCH_GROUPS);
                         }
+                        if (ok) setTimeout(() => schedulePlansSync(false), 1600);
                     });
                 }
                 console.log('App initialized successfully');

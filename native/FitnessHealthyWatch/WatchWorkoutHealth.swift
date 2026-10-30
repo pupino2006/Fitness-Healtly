@@ -8,13 +8,16 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
 
     @Published var isActive = false
     @Published var heartRate: Double?
+    @Published var averageHeartRate: Double?
     @Published var activeCalories: Double = 0
     @Published var authOk = false
 
     private let store = HKHealthStore()
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
-    private var metricsTimer: Timer?
+    private var hrSum: Double = 0
+    private var hrCount: Int = 0
+    private var lastMetricsPush = Date.distantPast
 
     func requestAuth() {
         guard HKHealthStore.isHealthDataAvailable() else { return }
@@ -35,6 +38,8 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
     func startWorkout() {
         guard session == nil else { return }
         requestAuth()
+        hrSum = 0
+        hrCount = 0
 
         let config = HKWorkoutConfiguration()
         config.activityType = .traditionalStrengthTraining
@@ -44,19 +49,18 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
             let s = try HKWorkoutSession(healthStore: store, configuration: config)
             let b = s.associatedWorkoutBuilder()
             b.dataSource = HKLiveWorkoutDataSource(healthStore: store, workoutConfiguration: config)
-
             s.delegate = self
             b.delegate = self
-
             self.session = s
             self.builder = b
-
             let start = Date()
             s.startActivity(with: start)
             b.beginCollection(withStart: start) { _, _ in }
             DispatchQueue.main.async {
                 self.isActive = true
-                self.startMetricsPush()
+                self.averageHeartRate = nil
+                self.heartRate = nil
+                self.activeCalories = 0
             }
         } catch {
             print("Watch HK start error", error.localizedDescription)
@@ -64,7 +68,6 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
     }
 
     func endWorkout() {
-        stopMetricsPush()
         session?.end()
         builder?.endCollection(withEnd: Date()) { [weak self] _, _ in
             self?.builder?.finishWorkout { _, _ in
@@ -72,49 +75,37 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
                     self?.isActive = false
                     self?.session = nil
                     self?.builder = nil
-                    self?.heartRate = nil
-                    self?.activeCalories = 0
                 }
             }
         }
     }
 
-    private func startMetricsPush() {
-        stopMetricsPush()
-        metricsTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
-            self?.pushMetricsToPhone()
-        }
-    }
-
-    private func stopMetricsPush() {
-        metricsTimer?.invalidate()
-        metricsTimer = nil
-    }
-
+    /// Invia FC/kcal solo se l'iPhone è davvero raggiungibile, e al massimo ogni 8 secondi.
+    /// Con il telefono bloccato non si accoda nulla: i tasti del Watch restano immediati.
     private func pushMetricsToPhone() {
-        guard WCSession.isSupported() else { return }
-        let s = WCSession.default
+        let now = Date()
+        guard now.timeIntervalSince(lastMetricsPush) > 8 else { return }
+        lastMetricsPush = now
         var payload: [String: Any] = [
             "type": "metrics",
             "activeCalories": activeCalories
         ]
         if let hr = heartRate { payload["heartRate"] = hr }
-        if s.isReachable {
-            s.sendMessage(payload, replyHandler: nil) { _ in
-                s.transferUserInfo(payload)
-            }
-        } else {
-            s.transferUserInfo(payload)
+        DispatchQueue.global(qos: .utility).async {
+            guard WCSession.isSupported() else { return }
+            let s = WCSession.default
+            guard s.activationState == .activated, s.isReachable else { return }
+            s.sendMessage(payload, replyHandler: nil, errorHandler: nil)
         }
     }
 }
 
 extension WatchWorkoutHealth: HKWorkoutSessionDelegate {
     func workoutSession(_ workoutSession: HKWorkoutSession, didChangeTo toState: HKWorkoutSessionState, from fromState: HKWorkoutSessionState, date: Date) {}
+
     func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
         DispatchQueue.main.async {
             self.isActive = false
-            self.stopMetricsPush()
         }
     }
 }
@@ -130,9 +121,14 @@ extension WatchWorkoutHealth: HKLiveWorkoutBuilderDelegate {
                 switch qType.identifier {
                 case HKQuantityTypeIdentifier.heartRate.rawValue:
                     let unit = HKUnit.count().unitDivided(by: .minute())
-                    self.heartRate = stats?.mostRecentQuantity()?.doubleValue(for: unit)
+                    if let bpm = stats?.mostRecentQuantity()?.doubleValue(for: unit) {
+                        self.heartRate = bpm
+                        self.hrSum += bpm
+                        self.hrCount += 1
+                        self.averageHeartRate = self.hrSum / Double(self.hrCount)
+                    }
                 case HKQuantityTypeIdentifier.activeEnergyBurned.rawValue:
-                    self.activeCalories = stats?.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? 0
+                    self.activeCalories = stats?.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? self.activeCalories
                 default:
                     break
                 }

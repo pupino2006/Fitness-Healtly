@@ -26,6 +26,12 @@
 	<string>Serve per salvare il workout in Salute.</string>
 	<key>WKApplication</key>
 	<true/>
+	<key>WKRunsIndependentlyOfCompanionApp</key>
+	<true/>
+	<key>WKBackgroundModes</key>
+	<array>
+		<string>workout-processing</string>
+	</array>
 	<key>WKCompanionAppBundleIdentifier</key>
 	<string>com.lucaripa.fitnesshealtly</string>
 </dict>

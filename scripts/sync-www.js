@@ -18,10 +18,12 @@ for (const file of files) {
 
 const jsDir = path.join(www, 'js');
 fs.mkdirSync(jsDir, { recursive: true });
-const bridge = path.join(root, 'js', 'native-bridge.js');
-if (fs.existsSync(bridge)) {
-  fs.copyFileSync(bridge, path.join(jsDir, 'native-bridge.js'));
-  console.log('synced js/native-bridge.js');
+for (const name of ['native-bridge.js', 'workout-library.js']) {
+  const src = path.join(root, 'js', name);
+  if (fs.existsSync(src)) {
+    fs.copyFileSync(src, path.join(jsDir, name));
+    console.log('synced js/' + name);
+  }
 }
 
 console.log('www ready');
