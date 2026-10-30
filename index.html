@@ -2481,6 +2481,8 @@
             exercises.forEach(ex => {
                 completedSets[ex.id] = ex.sets.filter(s => s.done).map(s => s.set);
             });
+            const startedMs = ev.startedAt ? Date.parse(ev.startedAt) : NaN;
+            const clockAnchor = Number.isFinite(startedMs) ? startedMs : Date.now();
             store.active = {
                 id: ev.id,
                 gruppo: ev.gruppo,
@@ -2500,7 +2502,7 @@
                 paused: keepClock ? !!liveWorkout.paused : false,
                 accumulatedSec: keepClock ? (liveWorkout.accumulatedSec || 0) : 0,
                 activeAccumulatedSec: keepClock ? (liveWorkout.activeAccumulatedSec || 0) : 0,
-                segmentStartedAt: keepClock ? liveWorkout.segmentStartedAt : Date.now(),
+                segmentStartedAt: keepClock ? liveWorkout.segmentStartedAt : clockAnchor,
                 inRecovery: keepClock ? !!liveWorkout.inRecovery : false,
                 heartRate: keepClock ? liveWorkout.heartRate : null,
                 nativeActiveKcal: keepClock ? liveWorkout.nativeActiveKcal : null,
@@ -2521,6 +2523,14 @@
         function saveFinishedFromWatch(ev) {
             if (!ev?.id) return;
             const store = getSessionsStore();
+            const alreadySaved = (store.history || []).some(s => s.id === ev.id);
+            const matchesActive = !store.active || store.active.id === ev.id;
+            const matchesLive = !liveWorkout || liveWorkout.id === ev.id;
+            // Delayed duplicate finish (sendMessage + transferUserInfo) must not wipe a newer session.
+            if (alreadySaved && !matchesActive && !matchesLive) {
+                schedulePlansSync(false);
+                return;
+            }
             const exercises = (ev.exercises || []).map(ex => ({
                 exId: String(ex.exId || ex.id || ''),
                 name: ex.name || 'Esercizio',
@@ -2540,7 +2550,7 @@
                 maxReps: Math.max(0, ...(ex.sets || []).map(s => Number(s.reps) || 0)),
                 serie: (ex.sets || []).length
             }));
-            if (!(store.history || []).some(s => s.id === ev.id)) {
+            if (!alreadySaved) {
                 const durationSec = Number(ev.durationSec) || 0;
                 const record = {
                     id: ev.id,
@@ -2570,10 +2580,14 @@
                 });
                 store.history = [record, ...(store.history || [])].slice(0, 100);
             }
-            store.active = null;
-            saveSessionsStore(store);
-            saveSessionState({});
-            if (!liveWorkout || liveWorkout.id === ev.id) {
+            if (matchesActive) {
+                store.active = null;
+                saveSessionsStore(store);
+                saveSessionState({});
+            } else {
+                saveSessionsStore(store);
+            }
+            if (matchesLive) {
                 try { stopLiveClock(); } catch (_) {}
                 try { stopTimer(); } catch (_) {}
                 liveWorkout = null;
@@ -2581,7 +2595,7 @@
                 pendingSummary = null;
                 document.getElementById('live-summary-overlay')?.classList.add('hidden');
             }
-            if (window.NativeWorkout?.end) NativeWorkout.end();
+            if ((matchesActive || matchesLive) && window.NativeWorkout?.end) NativeWorkout.end();
             const listOpen = document.getElementById('workout-list') && !document.getElementById('workout-list').classList.contains('hidden');
             try { renderWorkoutHub(); } catch (_) {}
             if (listOpen) showWorkoutHub();

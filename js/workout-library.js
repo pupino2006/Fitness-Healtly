@@ -157,8 +157,15 @@
 
   function setLiftedKg(set) {
     let total = (Number(set.reps) || 0) * (Number(set.peso) || 0);
-    if (set.reps2 != null || set.peso2 != null) total += (Number(set.reps2) || 0) * (Number(set.peso2) || 0);
-    if (set.reps3 != null || set.peso3 != null) total += (Number(set.reps3) || 0) * (Number(set.peso3) || 0);
+    // Match Watch liftedKg: when secondary kg is set, fall back to primary reps.
+    if (set.peso2 != null && set.peso2 !== '') {
+      const reps2 = set.reps2 != null && set.reps2 !== '' ? Number(set.reps2) : Number(set.reps);
+      total += (Number(reps2) || 0) * (Number(set.peso2) || 0);
+    }
+    if (set.peso3 != null && set.peso3 !== '') {
+      const reps3 = set.reps3 != null && set.reps3 !== '' ? Number(set.reps3) : Number(set.reps);
+      total += (Number(reps3) || 0) * (Number(set.peso3) || 0);
+    }
     return total;
   }
 

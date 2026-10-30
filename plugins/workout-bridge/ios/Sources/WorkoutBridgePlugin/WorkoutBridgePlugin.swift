@@ -111,6 +111,13 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
 
     @objc public func endNativeWorkout(_ call: CAPPluginCall) {
         guard let builder = workoutBuilder, let start = workoutStart else {
+            // Phone may have adopted a Watch-owned session without starting HealthKit locally.
+            // Still tell the Watch to stop so it does not keep recording after the phone ends.
+            sendToWatch([
+                "type": "nativeWorkoutEnded",
+                "durationSeconds": 0,
+                "activeCalories": NSNull()
+            ])
             call.resolve([
                 "ok": false,
                 "activeCalories": NSNull(),
