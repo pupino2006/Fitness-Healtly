@@ -98,15 +98,33 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
         }
     }
 
-    func adjustCurrent(repsDelta: Int = 0, pesoDelta: Double = 0) {
+    func adjustCurrent(repsDelta: Int = 0, pesoDelta: Double = 0, part: Int = 1) {
         guard var sess = session, var ex = sess.currentExercise else { return }
         guard let idx = ex.sets.firstIndex(where: { !$0.done }) ?? ex.sets.indices.last else { return }
-        if repsDelta != 0 {
-            ex.sets[idx].reps = min(40, max(1, ex.sets[idx].reps + repsDelta))
-        }
-        if pesoDelta != 0 {
-            let next = ex.sets[idx].peso + pesoDelta
-            ex.sets[idx].peso = max(0, (next * 2).rounded() / 2)
+        if part == 2 {
+            if repsDelta != 0 {
+                ex.sets[idx].reps2 = min(40, max(1, (ex.sets[idx].reps2 ?? ex.sets[idx].reps) + repsDelta))
+            }
+            if pesoDelta != 0 {
+                let next = (ex.sets[idx].peso2 ?? 0) + pesoDelta
+                ex.sets[idx].peso2 = max(0, (next * 2).rounded() / 2)
+            }
+        } else if part == 3 {
+            if repsDelta != 0 {
+                ex.sets[idx].reps3 = min(40, max(1, (ex.sets[idx].reps3 ?? ex.sets[idx].reps) + repsDelta))
+            }
+            if pesoDelta != 0 {
+                let next = (ex.sets[idx].peso3 ?? 0) + pesoDelta
+                ex.sets[idx].peso3 = max(0, (next * 2).rounded() / 2)
+            }
+        } else {
+            if repsDelta != 0 {
+                ex.sets[idx].reps = min(40, max(1, ex.sets[idx].reps + repsDelta))
+            }
+            if pesoDelta != 0 {
+                let next = ex.sets[idx].peso + pesoDelta
+                ex.sets[idx].peso = max(0, (next * 2).rounded() / 2)
+            }
         }
         sess.exercises[sess.currentExerciseIndex] = ex
         commit(sess)
@@ -271,6 +289,10 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
                 guard let si = plan.exercises[ei].sets.firstIndex(where: { $0.setNumber == set.setNumber }) else { continue }
                 plan.exercises[ei].sets[si].reps = set.reps
                 plan.exercises[ei].sets[si].peso = set.peso
+                plan.exercises[ei].sets[si].reps2 = set.reps2
+                plan.exercises[ei].sets[si].peso2 = set.peso2
+                plan.exercises[ei].sets[si].reps3 = set.reps3
+                plan.exercises[ei].sets[si].peso3 = set.peso3
                 plan.exercises[ei].sets[si].done = false
             }
         }
@@ -388,6 +410,10 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
                         guard let localSet = localEx.sets.first(where: { $0.setNumber == n }) else { continue }
                         copy.exercises[i].sets[j].peso = localSet.peso
                         copy.exercises[i].sets[j].reps = localSet.reps
+                        copy.exercises[i].sets[j].peso2 = localSet.peso2
+                        copy.exercises[i].sets[j].reps2 = localSet.reps2
+                        copy.exercises[i].sets[j].peso3 = localSet.peso3
+                        copy.exercises[i].sets[j].reps3 = localSet.reps3
                         copy.exercises[i].sets[j].done = false
                     }
                 }
@@ -490,6 +516,10 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
                 for set in ex.sets {
                     guard let os = ox.sets.first(where: { $0.setNumber == set.setNumber }) else { return false }
                     if os.reps != set.reps || abs(os.peso - set.peso) > 0.01 { return false }
+                    if (os.reps2 ?? -1) != (set.reps2 ?? -1) { return false }
+                    if abs((os.peso2 ?? 0) - (set.peso2 ?? 0)) > 0.01 { return false }
+                    if (os.reps3 ?? -1) != (set.reps3 ?? -1) { return false }
+                    if abs((os.peso3 ?? 0) - (set.peso3 ?? 0)) > 0.01 { return false }
                 }
             }
         }

@@ -112,16 +112,7 @@ struct ActiveWorkoutView: View {
                     .foregroundStyle(.secondary)
 
                 if let next = pendingSet {
-                    StepperRow(title: "Rep", value: "\(next.reps)") {
-                        bridge.adjustCurrent(repsDelta: -1)
-                    } plus: {
-                        bridge.adjustCurrent(repsDelta: 1)
-                    }
-                    StepperRow(title: "Kg", value: formatKg(next.peso)) {
-                        bridge.adjustCurrent(pesoDelta: -2.5)
-                    } plus: {
-                        bridge.adjustCurrent(pesoDelta: 2.5)
-                    }
+                    partControls(exercise: exercise, set: next)
 
                     Button {
                         bridge.completeCurrentSet()
@@ -167,7 +158,8 @@ struct ActiveWorkoutView: View {
                                 .font(.caption2.weight(.semibold))
                                 .lineLimit(2)
                             if let first = ex.sets.first {
-                                Text("\(ex.sets.count)× \(first.reps) · \(formatKg(first.peso)) kg")
+                                let extra = first.peso2 != nil ? " + \(formatKg(first.peso2 ?? 0))" : ""
+                                Text("\(ex.sets.count)× \(first.reps) · \(formatKg(first.peso))\(extra) kg")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
@@ -214,6 +206,37 @@ struct ActiveWorkoutView: View {
             .padding(.horizontal, 2)
         }
         .navigationTitle("Serie")
+    }
+
+    @ViewBuilder
+    private func partControls(exercise: WatchExercise, set: WatchExerciseSet) -> some View {
+        let names = exercise.partNames ?? []
+        loadRow(title: names.first ?? "Kg", reps: set.reps, peso: set.peso, part: 1)
+        if names.count > 1 {
+            loadRow(title: names[1], reps: set.reps2 ?? set.reps, peso: set.peso2 ?? 0, part: 2)
+        }
+        if names.count > 2 {
+            loadRow(title: names[2], reps: set.reps3 ?? set.reps, peso: set.peso3 ?? 0, part: 3)
+        }
+    }
+
+    private func loadRow(title: String, reps: Int, peso: Double, part: Int) -> some View {
+        let step: Double = peso >= 100 ? 5 : 2.5
+        return VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .lineLimit(2)
+            StepperRow(title: "Rep", value: "\(reps)") {
+                bridge.adjustCurrent(repsDelta: -1, part: part)
+            } plus: {
+                bridge.adjustCurrent(repsDelta: 1, part: part)
+            }
+            StepperRow(title: "Kg", value: formatKg(peso)) {
+                bridge.adjustCurrent(pesoDelta: -step, part: part)
+            } plus: {
+                bridge.adjustCurrent(pesoDelta: step, part: part)
+            }
+        }
     }
 }
 
@@ -313,7 +336,8 @@ struct SummaryView: View {
                             .font(.caption2.weight(.bold))
                             .lineLimit(2)
                         ForEach(ex.sets) { set in
-                            Text("\(set.setNumber)  \(set.reps)×\(formatKg(set.peso)) kg\(set.done ? "  ✓" : "")")
+                            let extra = set.peso2 != nil ? " + \(set.reps2 ?? set.reps)×\(formatKg(set.peso2 ?? 0))" : ""
+                            Text("\(set.setNumber)  \(set.reps)×\(formatKg(set.peso))\(extra) kg\(set.done ? "  ✓" : "")")
                                 .font(.caption2)
                                 .foregroundStyle(set.done ? .primary : .secondary)
                         }

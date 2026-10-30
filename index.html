@@ -283,6 +283,16 @@
                     </div>
                 </button>
 
+                <button onclick="showCustomPlans()" class="w-full p-5 rounded-[2rem] glass-card border-l-[6px] border-amber-400 shadow-xl flex items-center gap-4 active:scale-95 transition-all">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-400/15 flex items-center justify-center text-amber-300">
+                        <i class="fas fa-layer-group text-2xl"></i>
+                    </div>
+                    <div class="text-left">
+                        <h3 class="text-base font-black uppercase tracking-tight">Schede 50 minuti</h3>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase">Pesi pronti · scambiale con le tue</p>
+                    </div>
+                </button>
+
                 <div class="glass-card p-4 rounded-2xl border border-slate-800">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-xs font-black uppercase text-slate-300">Ultime sessioni</h3>
@@ -395,17 +405,9 @@
                         <p id="live-set-progress" class="text-[9px] font-black uppercase text-orange-400">Serie 1/3</p>
                     </div>
                     <h3 id="live-ex-name" class="text-base font-black italic uppercase text-orange-400 leading-tight">—</h3>
+                    <div id="live-demo"></div>
                     <p id="live-ex-note" class="text-[10px] text-slate-400 leading-snug"></p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="bg-slate-900/70 rounded-2xl p-3 text-center">
-                            <p class="text-[8px] text-slate-500 font-black uppercase">Reps</p>
-                            <select id="live-reps" onchange="updateLiveSetField('reps', this.value)" class="w-full bg-transparent text-center text-2xl font-black text-white outline-none"></select>
-                        </div>
-                        <div class="bg-slate-900/70 rounded-2xl p-3 text-center">
-                            <p class="text-[8px] text-slate-500 font-black uppercase">Kg</p>
-                            <select id="live-peso" onchange="updateLiveSetField('peso', this.value)" class="w-full bg-transparent text-center text-2xl font-black text-orange-400 outline-none"></select>
-                        </div>
-                    </div>
+                    <div id="live-load" class="space-y-2"></div>
                     <div id="live-set-dots" class="flex gap-1.5 justify-center flex-wrap"></div>
                     <button onclick="completeLiveSet()" id="btn-complete-set" class="w-full py-4 bg-emerald-600 text-white text-sm font-black uppercase rounded-2xl active:scale-95 transition-all shadow-lg shadow-emerald-900/30">
                         Completa serie
@@ -438,6 +440,19 @@
                 </div>
                 <div id="scheda-edit-list" class="space-y-3"></div>
             </div>
+
+            <div id="custom-plans" class="hidden space-y-3 pb-28">
+                <div class="flex gap-2 items-center">
+                    <button onclick="showWorkoutHub()" class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-slate-300 active:scale-90"><i class="fas fa-arrow-left text-sm"></i></button>
+                    <div>
+                        <h2 class="text-sm font-black uppercase text-amber-300">Schede 50 minuti</h2>
+                        <p class="text-[9px] text-slate-500">Scegline una e mettila al posto di una tua scheda</p>
+                    </div>
+                </div>
+                <div id="custom-plans-list" class="space-y-2"></div>
+            </div>
+
+            <div id="custom-plan-detail" class="hidden space-y-3"></div>
 
             <!-- Menu sessione -->
             <div id="live-menu-overlay" class="hidden fixed inset-0 z-[900] bg-black/70 backdrop-blur-sm flex items-end justify-center p-4" onclick="if(event.target===this)closeLiveWorkoutMenu()">
@@ -664,6 +679,7 @@
     </nav>
 
     <script src="js/native-bridge.js"></script>
+    <script src="js/workout-library.js"></script>
     <script>
         const SB_URL = "https://vnzrewcbnoqbqvzckome.supabase.co";
         const SB_KEY = "sb_publishable_Sq9txbu-PmKdbxETSx2cjw_WqWEFBPO";
@@ -1489,6 +1505,12 @@
 
         // --- WORKOUT ---
         async function loadWorkout(gruppo) {
+            const swapped = typeof planExercisesForGroup === 'function' ? planExercisesForGroup(gruppo) : null;
+            if (swapped && swapped.length) {
+                initLiveWorkoutFromData(gruppo, swapped);
+                setTimeout(syncActiveSessionToWatch, 500);
+                return;
+            }
             if(!_supabase) return;
             let q = _supabase.from('workout').select('*').order('id');
             if(gruppo !== 'all') q = q.eq('gruppo_lavoro', gruppo);
@@ -1863,6 +1885,8 @@
             document.getElementById('select-group').classList.add('hidden');
             document.getElementById('workout-list').classList.add('hidden');
             document.getElementById('scheda-edit')?.classList.add('hidden');
+            document.getElementById('custom-plans')?.classList.add('hidden');
+            document.getElementById('custom-plan-detail')?.classList.add('hidden');
             const t = document.getElementById('select-group-title');
             const s = document.getElementById('select-group-sub');
             if (t) t.textContent = 'Scegli la scheda';
@@ -1877,6 +1901,8 @@
             document.getElementById('workout-hub').classList.add('hidden');
             document.getElementById('workout-list').classList.add('hidden');
             document.getElementById('scheda-edit')?.classList.add('hidden');
+            document.getElementById('custom-plans')?.classList.add('hidden');
+            document.getElementById('custom-plan-detail')?.classList.add('hidden');
             document.getElementById('select-group').classList.remove('hidden');
             const t = document.getElementById('select-group-title');
             const s = document.getElementById('select-group-sub');
@@ -1894,6 +1920,22 @@
         }
 
         async function openSchedaEditor(gruppo) {
+            const swapped = gruppo !== 'all' && typeof planExercisesForGroup === 'function' ? planExercisesForGroup(gruppo) : null;
+            if (swapped && swapped.length) {
+                schedaEditMode = true;
+                document.getElementById('select-group').classList.add('hidden');
+                document.getElementById('workout-hub').classList.add('hidden');
+                document.getElementById('workout-list').classList.add('hidden');
+                document.getElementById('custom-plans')?.classList.add('hidden');
+                document.getElementById('custom-plan-detail')?.classList.add('hidden');
+                document.getElementById('scheda-edit').classList.remove('hidden');
+                const plan = typeof activePlanForGroup === 'function' ? activePlanForGroup(gruppo) : null;
+                const title = document.getElementById('scheda-edit-title');
+                title.dataset.gruppo = gruppo;
+                title.textContent = plan ? `${gruppo} · ${plan.name}` : gruppo;
+                renderSchedaEditor(swapped);
+                return;
+            }
             if (!_supabase) {
                 alert('Connessione non disponibile.');
                 return;
@@ -1910,7 +1952,9 @@
             document.getElementById('workout-hub').classList.add('hidden');
             document.getElementById('workout-list').classList.add('hidden');
             document.getElementById('scheda-edit').classList.remove('hidden');
-            document.getElementById('scheda-edit-title').textContent = gruppo === 'all' ? 'Tutta la scheda' : gruppo;
+            const title = document.getElementById('scheda-edit-title');
+            title.dataset.gruppo = gruppo;
+            title.textContent = gruppo === 'all' ? 'Tutta la scheda' : gruppo;
             renderSchedaEditor(data);
         }
 
@@ -1923,27 +1967,9 @@
                 const numSerie = parseInt(saved.serie) || parseInt(ex.serie) || 3;
                 const defaultReps = parseInt(ex.reps || ex.note_rep) || 10;
                 const dbPeso = parseFloat(String(ex.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
-                let seriesHtml = '';
-                for (let i = 1; i <= numSerie; i++) {
-                    const sd = saved[i] || {};
-                    const repsVal = parseInt(sd.reps) || defaultReps;
-                    const pesoVal = parseFloat(sd.peso);
-                    const peso = Number.isFinite(pesoVal) ? pesoVal : (i === 1 ? dbPeso : 0);
-                    const repsOpts = Array.from({ length: 16 }, (_, k) => k + 1).map(n =>
-                        `<option value="${n}" ${n === repsVal ? 'selected' : ''}>${n}</option>`
-                    ).join('');
-                    const pesoOpts = PESO_OPTS.map(n =>
-                        `<option value="${n}" ${n == peso ? 'selected' : ''}>${n || '—'}</option>`
-                    ).join('');
-                    seriesHtml += `
-                    <div class="grid grid-cols-[28px_1fr_1fr] gap-2 items-center">
-                        <span class="text-[10px] font-black text-slate-500 text-center">${i}</span>
-                        <select class="bg-slate-900/80 rounded-xl py-2 px-2 text-center text-sm font-black text-white outline-none border border-slate-700"
-                            onchange="saveSchedaEditField('${exId}', ${i}, 'reps', this.value, ${numSerie})">${repsOpts}</select>
-                        <select class="bg-slate-900/80 rounded-xl py-2 px-2 text-center text-sm font-black text-orange-400 outline-none border border-slate-700"
-                            onchange="saveSchedaEditField('${exId}', ${i}, 'peso', this.value, ${numSerie})">${pesoOpts}</select>
-                    </div>`;
-                }
+                const seriesHtml = typeof schedaSeriesBlock === 'function'
+                    ? schedaSeriesBlock(ex, saved, numSerie, defaultReps, dbPeso)
+                    : '';
                 const serieOpts = [1,2,3,4,5,6].map(n =>
                     `<option value="${n}" ${n === numSerie ? 'selected' : ''}>${n} serie</option>`
                 ).join('');
@@ -1974,7 +2000,7 @@
             saveExData(data);
             schedulePlansSync(true);
             // Sync leggero su Supabase (prima serie come riferimento)
-            if (_supabase && serieNum === 1) {
+            if (_supabase && serieNum === 1 && !String(exId).startsWith('p50_')) {
                 const payload = {};
                 if (field === 'reps') payload.note_rep = String(value);
                 if (field === 'peso') payload.avanzamento_pesi = String(value);
@@ -1990,7 +2016,8 @@
             if (!data[exId]) data[exId] = {};
             data[exId].serie = n;
             saveExData(data);
-            const gruppo = document.getElementById('scheda-edit-title').textContent;
+            const title = document.getElementById('scheda-edit-title');
+            const gruppo = title?.dataset?.gruppo || title.textContent;
             await openSchedaEditor(gruppo === 'Tutta la scheda' ? 'all' : gruppo);
         }
 
@@ -2031,9 +2058,10 @@
             return (exercises || []).reduce((acc, ex) => {
                 return acc + (ex.sets || []).reduce((sum, set) => {
                     if (set.done === false) return sum;
-                    const reps = Number(set.reps) || 0;
-                    const peso = Number(set.peso) || 0;
-                    if (set.done === true || (peso > 0 && reps > 0)) return sum + reps * peso;
+                    const lifted = typeof setLiftedKg === 'function'
+                        ? setLiftedKg(set)
+                        : (Number(set.reps) || 0) * (Number(set.peso) || 0);
+                    if (set.done === true || lifted > 0) return sum + lifted;
                     return sum;
                 }, 0);
             }, 0);
@@ -2069,7 +2097,11 @@
             const sets = (ex.sets || []).map(set => {
                 const done = set.done === false ? '' : '✓';
                 const note = set.note ? `<span class="text-slate-500"> · ${escHtml(set.note)}</span>` : '';
-                return `<p class="text-[11px] text-slate-200">Serie ${set.set} · ${set.reps || 0} × ${set.peso || 0} kg <span class="text-emerald-400">${done}</span>${note}</p>`;
+                const extra = [
+                    set.peso2 != null ? `${set.reps2 || 0} × ${set.peso2} kg` : '',
+                    set.peso3 != null ? `${set.reps3 || 0} × ${set.peso3} kg` : ''
+                ].filter(Boolean).map(line => `<span class="text-slate-400"> + ${line}</span>`).join('');
+                return `<p class="text-[11px] text-slate-200">Serie ${set.set} · ${set.reps || 0} × ${set.peso || 0} kg${extra} <span class="text-emerald-400">${done}</span>${note}</p>`;
             }).join('');
             const rec = ex.recSec != null ? `<p class="text-[9px] text-blue-300 mt-1">Recupero ${ex.recSec}s</p>` : '';
             const vol = formatVolumeKg(computeVolumeKg([ex]));
@@ -2271,6 +2303,22 @@
             return parseInt(r) || 90;
         }
 
+        function pesoFromSaved(serieData, dbPeso) {
+            if (serieData && serieData.peso !== undefined && serieData.peso !== '') {
+                return parseFloat(serieData.peso) || 0;
+            }
+            return dbPeso || 0;
+        }
+
+        function shapeWatchSet(s, done) {
+            const row = { set: s.set, reps: Number(s.reps) || 0, peso: Number(s.peso) || 0, done: !!done, note: s.note || '' };
+            if (s.reps2 != null && s.reps2 !== '') row.reps2 = Number(s.reps2) || 0;
+            if (s.peso2 != null && s.peso2 !== '') row.peso2 = Number(s.peso2) || 0;
+            if (s.reps3 != null && s.reps3 !== '') row.reps3 = Number(s.reps3) || 0;
+            if (s.peso3 != null && s.peso3 !== '') row.peso3 = Number(s.peso3) || 0;
+            return row;
+        }
+
         function syncActiveSessionToWatch() {
             const store = getSessionsStore();
             if (!store.active || !window.NativeWorkout || !liveWorkout) return;
@@ -2287,7 +2335,8 @@
                     note: ex.note || '',
                     recSec: ex.recSec || 90,
                     currentSet: (ex.sets.find(s => !s.done)?.set) || ex.sets.length,
-                    sets: ex.sets.map(s => ({ set: s.set, reps: s.reps, peso: s.peso, done: !!s.done, note: s.note || '' }))
+                    partNames: ex.partNames && ex.partNames.length > 1 ? ex.partNames : undefined,
+                    sets: ex.sets.map(s => shapeWatchSet(s, s.done))
                 }))
             });
         }
@@ -2314,15 +2363,19 @@
                     const serieVal = parseInt(savedData.serie) || parseInt(ex.serie) || 3;
                     const defaultReps = parseInt(ex.reps || ex.note_rep) || 10;
                     const dbPeso = parseFloat(String(ex.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
+                    const sides = typeof exerciseSides === 'function' ? exerciseSides(ex.esercizi) : [];
                     const sets = [];
                     for (let i = 1; i <= serieVal; i++) {
                         const serieData = savedData[i] || {};
-                        sets.push({
+                        sets.push(shapeWatchSet({
                             set: i,
                             reps: parseInt(serieData.reps) || defaultReps,
-                            peso: parseFloat(serieData.peso) || (i === 1 ? dbPeso : 0) || 0,
-                            done: false
-                        });
+                            peso: pesoFromSaved(serieData, dbPeso),
+                            reps2: sides.length > 1 ? (serieData.reps2 ?? defaultReps) : serieData.reps2,
+                            peso2: sides.length > 1 ? (serieData.peso2 ?? 0) : serieData.peso2,
+                            reps3: sides.length > 2 ? (serieData.reps3 ?? defaultReps) : serieData.reps3,
+                            peso3: sides.length > 2 ? (serieData.peso3 ?? 0) : serieData.peso3
+                        }, false));
                     }
                     map.get(gruppo).push({
                         exId: String(ex.id),
@@ -2330,6 +2383,7 @@
                         note: ex.note || '',
                         recSec: parseRecSeconds(ex.recupero),
                         currentSet: 1,
+                        partNames: sides.length > 1 ? sides : undefined,
                         sets
                     });
                 });
@@ -2338,6 +2392,43 @@
                     .map(g => ({ gruppo: g, exercises: map.get(g) }));
                 map.forEach((exercises, gruppo) => {
                     if (!WATCH_GROUPS.includes(gruppo)) plans.push({ gruppo, exercises });
+                });
+                WATCH_GROUPS.forEach(gruppo => {
+                    const rows = typeof planExercisesForGroup === 'function' ? planExercisesForGroup(gruppo) : null;
+                    if (!rows) return;
+                    const saved = getExData();
+                    const exercises = rows.map(ex => {
+                        const savedData = saved[ex.id] || {};
+                        const serieVal = parseInt(savedData.serie) || parseInt(ex.serie) || 3;
+                        const defaultReps = parseInt(ex.note_rep) || 10;
+                        const dbPeso = parseFloat(ex.avanzamento_pesi) || 0;
+                        const sides = typeof exerciseSides === 'function' ? exerciseSides(ex.esercizi) : [];
+                        const sets = [];
+                        for (let i = 1; i <= serieVal; i++) {
+                            const serieData = savedData[i] || {};
+                            sets.push(shapeWatchSet({
+                                set: i,
+                                reps: parseInt(serieData.reps) || defaultReps,
+                                peso: pesoFromSaved(serieData, dbPeso),
+                                reps2: sides.length > 1 ? (serieData.reps2 ?? defaultReps) : serieData.reps2,
+                                peso2: sides.length > 1 ? (serieData.peso2 ?? 0) : serieData.peso2,
+                                reps3: sides.length > 2 ? (serieData.reps3 ?? defaultReps) : serieData.reps3,
+                                peso3: sides.length > 2 ? (serieData.peso3 ?? 0) : serieData.peso3
+                            }, false));
+                        }
+                        return {
+                            exId: String(ex.id),
+                            name: ex.esercizi,
+                            note: ex.note || '',
+                            recSec: parseRecSeconds(ex.recupero),
+                            currentSet: 1,
+                            partNames: sides.length > 1 ? sides : undefined,
+                            sets
+                        };
+                    });
+                    const idx = plans.findIndex(p => p.gruppo === gruppo);
+                    if (idx >= 0) plans[idx] = { gruppo, exercises };
+                    else plans.push({ gruppo, exercises });
                 });
                 await NativeWorkout.syncPlans(plans, phoneEdited);
             } catch (e) {
@@ -2371,10 +2462,15 @@
                 name: ex.name || 'Esercizio',
                 note: ex.note || '',
                 recSec: ex.recSec || 90,
+                partNames: ex.partNames && ex.partNames.length > 1 ? ex.partNames : undefined,
                 sets: (ex.sets || []).map(s => ({
                     set: s.set,
                     reps: s.reps,
                     peso: s.peso,
+                    reps2: s.reps2,
+                    peso2: s.peso2,
+                    reps3: s.reps3,
+                    peso3: s.peso3,
                     note: s.note || '',
                     done: !!s.done
                 }))
@@ -2433,6 +2529,10 @@
                     set: s.set,
                     reps: s.reps,
                     peso: s.peso,
+                    reps2: s.reps2,
+                    peso2: s.peso2,
+                    reps3: s.reps3,
+                    peso3: s.peso3,
                     note: s.note || '',
                     done: s.done !== false
                 })),
@@ -2532,13 +2632,18 @@
                 const defaultReps = parseInt(ex.reps || ex.note_rep) || 10;
                 const dbPeso = parseFloat(String(ex.avanzamento_pesi || '').replace(/[^\d.]/g, '')) || 0;
                 const doneSets = state[ex.id] || [];
+                const sides = typeof exerciseSides === 'function' ? exerciseSides(ex.esercizi) : [ex.esercizi];
                 const sets = [];
                 for (let i = 1; i <= serieVal; i++) {
                     const serieData = savedData[i] || {};
                     sets.push({
                         set: i,
                         reps: parseInt(serieData.reps) || defaultReps,
-                        peso: parseFloat(serieData.peso) || (i === 1 ? dbPeso : 0) || 0,
+                        peso: pesoFromSaved(serieData, dbPeso),
+                        reps2: sides.length > 1 ? (parseInt(serieData.reps2) || defaultReps) : undefined,
+                        peso2: sides.length > 1 ? (parseFloat(serieData.peso2) || 0) : undefined,
+                        reps3: sides.length > 2 ? (parseInt(serieData.reps3) || defaultReps) : undefined,
+                        peso3: sides.length > 2 ? (parseFloat(serieData.peso3) || 0) : undefined,
                         note: serieData.note || (i === 1 ? (ex.note || '') : ''),
                         done: doneSets.includes(i)
                     });
@@ -2548,6 +2653,7 @@
                     name: ex.esercizi,
                     note: ex.note || '',
                     recSec: parseRecSeconds(ex.recupero),
+                    partNames: sides.length > 1 ? sides : undefined,
                     sets
                 };
             });
@@ -2619,6 +2725,10 @@
                 document.getElementById('btn-complete-set').textContent = 'Termina allenamento';
                 document.getElementById('btn-complete-set').onclick = () => requestEndLiveWorkout();
                 document.getElementById('live-set-dots').innerHTML = '';
+                const demo = document.getElementById('live-demo');
+                const load = document.getElementById('live-load');
+                if (demo) demo.innerHTML = '';
+                if (load) load.innerHTML = '';
                 renderUpcomingExercises();
                 return;
             }
@@ -2628,9 +2738,13 @@
 
             if (!ex) return;
             const set = currentLiveSet();
-            const doneCount = ex.sets.filter(s => s.done).length;
-            document.getElementById('live-ex-name').textContent = ex.name;
+            const sides = ex.partNames && ex.partNames.length > 1 ? ex.partNames : null;
+            document.getElementById('live-ex-name').textContent = sides ? sides.join(' + ') : ex.name;
             document.getElementById('live-ex-note').textContent = ex.note || '';
+            const demo = document.getElementById('live-demo');
+            if (demo && typeof demoRow === 'function') demo.innerHTML = demoRow(ex.name);
+            const load = document.getElementById('live-load');
+            if (load && typeof loadControlsHtml === 'function') load.innerHTML = loadControlsHtml(ex, set || ex.sets[ex.sets.length - 1]);
             document.getElementById('live-set-progress').textContent = set
                 ? `Serie ${set.set}/${ex.sets.length}`
                 : `Serie ${ex.sets.length}/${ex.sets.length}`;
@@ -2640,8 +2754,6 @@
                 `<span class="w-3 h-3 rounded-full ${s.done ? 'bg-emerald-500' : (set && s.set === set.set ? 'bg-orange-500' : 'bg-slate-700')}"></span>`
             ).join('');
 
-            // selects
-            fillLiveSelects(set || ex.sets[ex.sets.length - 1]);
             renderUpcomingExercises();
         }
 
@@ -2661,7 +2773,13 @@
                 <p class="text-[9px] font-black uppercase text-slate-500 px-1">Prossimi esercizi</p>
                 ${next.map((ex, i) => {
                     const set = ex.sets.find(s => !s.done) || ex.sets[0];
-                    const target = set ? `${set.reps} × ${set.peso || 0} kg` : '';
+                    const extra = [
+                        set.peso2 != null ? `${set.reps2 || set.reps} × ${set.peso2 || 0} kg` : '',
+                        set.peso3 != null ? `${set.reps3 || set.reps} × ${set.peso3 || 0} kg` : ''
+                    ].filter(Boolean);
+                    const target = set
+                        ? `${set.reps} × ${set.peso || 0} kg${extra.length ? ' + ' + extra.join(' + ') : ''}`
+                        : '';
                     return `<div class="glass-card rounded-2xl p-3 border border-slate-800">
                         <p class="text-[10px] font-black text-slate-200 uppercase">${i + 1}. ${escHtml(ex.name)}</p>
                         <p class="text-[9px] text-slate-500">${ex.sets.length} serie${target ? ' · ' + target : ''}${ex.recSec ? ' · rec ' + ex.recSec + 's' : ''}</p>
@@ -2690,6 +2808,10 @@
             if (!set) return;
             if (field === 'reps') set.reps = parseInt(value) || 0;
             if (field === 'peso') set.peso = parseFloat(value) || 0;
+            if (field === 'reps2') set.reps2 = parseInt(value) || 0;
+            if (field === 'peso2') set.peso2 = parseFloat(value) || 0;
+            if (field === 'reps3') set.reps3 = parseInt(value) || 0;
+            if (field === 'peso3') set.peso3 = parseFloat(value) || 0;
             persistLiveSetToStorage();
             rebuildHiddenWorkoutDom();
             syncActiveSessionToWatch();
@@ -2703,7 +2825,16 @@
                 if (!data[ex.id]) data[ex.id] = { serie: ex.sets.length };
                 data[ex.id].serie = ex.sets.length;
                 ex.sets.forEach(s => {
-                    data[ex.id][s.set] = { reps: String(s.reps), peso: String(s.peso || ''), rec: String(ex.recSec), note: s.note || '' };
+                    data[ex.id][s.set] = {
+                        reps: String(s.reps),
+                        peso: String(s.peso || ''),
+                        reps2: s.reps2 != null ? String(s.reps2) : '',
+                        peso2: s.peso2 != null ? String(s.peso2) : '',
+                        reps3: s.reps3 != null ? String(s.reps3) : '',
+                        peso3: s.peso3 != null ? String(s.peso3) : '',
+                        rec: String(ex.recSec),
+                        note: s.note || ''
+                    };
                 });
                 state[ex.id] = ex.sets.filter(s => s.done).map(s => s.set);
             });
@@ -2884,7 +3015,11 @@
             const exercises = (liveWorkout?.exercises || []).map(ex => ({
                 exId: ex.id,
                 name: ex.name,
-                sets: ex.sets.map(s => ({ set: s.set, reps: s.reps, peso: s.peso, note: s.note || '', done: !!s.done })),
+                sets: ex.sets.map(s => ({
+                    set: s.set, reps: s.reps, peso: s.peso,
+                    reps2: s.reps2, peso2: s.peso2, reps3: s.reps3, peso3: s.peso3,
+                    note: s.note || '', done: !!s.done
+                })),
                 maxPeso: Math.max(0, ...ex.sets.map(s => s.peso || 0)),
                 maxReps: Math.max(0, ...ex.sets.map(s => s.reps || 0)),
                 serie: ex.sets.length,
@@ -3263,6 +3398,8 @@
             document.getElementById('select-group').classList.remove('hidden');
             document.getElementById('workout-list').classList.add('hidden');
             document.getElementById('scheda-edit')?.classList.add('hidden');
+            document.getElementById('custom-plans')?.classList.add('hidden');
+            document.getElementById('custom-plan-detail')?.classList.add('hidden');
             const t = document.getElementById('select-group-title');
             const s = document.getElementById('select-group-sub');
             if (t) {
@@ -3271,6 +3408,7 @@
                 t.classList.add('text-orange-500');
             }
             if (s) s.textContent = 'Poi parte la sessione';
+            if (typeof refreshGroupSwapLabels === 'function') refreshGroupSwapLabels();
         }
 
         function selectWorkoutGroup(gruppo) {
