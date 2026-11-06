@@ -1,6 +1,6 @@
 /**
- * Demo stick-figure, split superserie, schede 50 min e alternative
- * pronte da mettere al posto di un singolo esercizio.
+ * Demo esercizi (foto a due fotogrammi), split superserie,
+ * schede 50 min e alternative pronte da sostituire.
  */
 (function (global) {
   const HEAVY = [220, 240, 280, 320, 360, 400];
@@ -22,187 +22,80 @@
     }[c]));
   }
 
-  /* ---------- Stick-figure demos (due pose astratte) ---------- */
+  /* ---------- Demo fotografiche (2 frame, pubbliche) ---------- */
 
-  function stickKind(name) {
-    const t = String(name || '');
-    if (/pullover/i.test(t)) return 'pullover';
-    if (/hip\s*thrust|thrust/i.test(t)) return 'hipthrust';
-    if (/hyperextension|iperestension/i.test(t)) return 'backext';
-    if (/rumen|stacco/i.test(t)) return 'rdl';
-    if (/wall\s*sit/i.test(t)) return 'wallsit';
-    if (/affond|lunge|piston|step-?up/i.test(t)) return 'lunge';
-    if (/leg\s*curl|femoral|lug\s*curl/i.test(t)) return 'legcurl';
-    if (/leg\s*extension|extension/i.test(t) && /leg|gamba|quad/i.test(t)) return 'legext';
-    if (/leg\s*press|pressa/i.test(t)) return 'legpress';
-    if (/polpacc|calf/i.test(t)) return 'calf';
-    if (/squat|accosciat|goblet/i.test(t)) return 'squat';
-    if (/chest\s*press/i.test(t)) return 'chestpress';
-    if (/croci|fly|peck/i.test(t)) return 'fly';
-    if (/inclinat/i.test(t)) return 'incline';
-    if (/panca\s*stretta|close.?grip/i.test(t)) return 'closebench';
-    if (/panca|bench/i.test(t)) return 'bench';
-    if (/flession|push-?up/i.test(t)) return 'pushup';
-    if (/push\s*down|pushdown|french/i.test(t)) return 'pushdown';
-    if (/hammer/i.test(t)) return 'hammer';
-    if (/curl|bicip/i.test(t)) return 'curl';
-    if (/scrollat|shrug/i.test(t)) return 'shrug';
-    if (/posteriori|rear|face\s*pull|tirate posteriori/i.test(t)) return 'rear';
-    if (/frontali/i.test(t)) return 'front';
-    if (/laterali/i.test(t)) return 'lateral';
-    if (/lento|overhead|military|verticale/i.test(t)) return 'ohp';
-    if (/lat|pulldown|pull\s*down/i.test(t)) return 'lat';
-    if (/rematore|pulley|row|australian/i.test(t)) return 'row';
-    if (/addominal|crunch|abs/i.test(t)) return 'crunch';
-    return 'generic';
-  }
+  const DEMO_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
 
-  function stickPair(kind) {
-    const stroke = '#fb923c';
-    const soft = '#64748b';
-    const head = (cx, cy) => `<circle cx="${cx}" cy="${cy}" r="5" fill="none" stroke="${stroke}" stroke-width="2"/>`;
-    const line = (a, b, c, d, col) => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${col || stroke}" stroke-width="2.4" stroke-linecap="round"/>`;
-    const bar = (x1, y1, x2, y2) => line(x1, y1, x2, y2, soft);
+  // Ordine: regole più specifiche prima. Solo ID verificati (0.jpg + 1.jpg).
+  const DEMO_RULES = [
+    [/pullover/i, 'Straight-Arm_Dumbbell_Pullover'],
+    [/hyperextension|iperestension/i, 'Hyperextensions_Back_Extensions'],
+    [/hip\s*thrust|thrust/i, 'Barbell_Hip_Thrust'],
+    [/rumen|stacco/i, 'Romanian_Deadlift'],
+    [/wall\s*sit/i, 'Bodyweight_Squat'],
+    [/affond|lunge|piston|step-?up|bulgarian/i, 'Dumbbell_Lunges'],
+    [/leg\s*curl|femoral|lug\s*curl/i, 'Seated_Leg_Curl'],
+    [/leg\s*extension/i, 'Leg_Extensions'],
+    [/leg\s*press|pressa/i, 'Leg_Press'],
+    [/polpacc|calf/i, 'Standing_Calf_Raises'],
+    [/goblet/i, 'Goblet_Squat'],
+    [/hack|accosciat/i, 'Smith_Machine_Squat'],
+    [/squat/i, 'Barbell_Squat'],
+    [/chest\s*press/i, 'Machine_Bench_Press'],
+    [/croci.*macchina|peck|butterfly/i, 'Butterfly'],
+    [/croci|fly/i, 'Cable_Crossover'],
+    [/inclinat/i, 'Incline_Dumbbell_Press'],
+    [/panca\s*stretta|close.?grip/i, 'Close-Grip_Barbell_Bench_Press'],
+    [/panca|bench|multipower.*petto|distensioni/i, 'Dumbbell_Bench_Press'],
+    [/flession|push-?up/i, 'Pushups'],
+    [/push\s*down|pushdown|french/i, 'Triceps_Pushdown'],
+    [/hammer/i, 'Hammer_Curls'],
+    [/curl|bicip/i, 'Barbell_Curl'],
+    [/scrollat|shrug/i, 'Dumbbell_Shrug'],
+    [/face\s*pull/i, 'Face_Pull'],
+    [/posteriori|rear|tirate posteriori|deltoidi posteriori/i, 'Cable_Rear_Delt_Fly'],
+    [/frontali/i, 'Front_Dumbbell_Raise'],
+    [/laterali/i, 'Side_Lateral_Raise'],
+    [/lento|overhead|military|verticale/i, 'Dumbbell_Shoulder_Press'],
+    [/lat.*triangolo|presa triangolo|close.?grip.*lat/i, 'Close-Grip_Front_Lat_Pulldown'],
+    [/lat|pulldown|pull\s*down|trazioni/i, 'Wide-Grip_Lat_Pulldown'],
+    [/rematore.*manubri|unilaterale/i, 'One-Arm_Dumbbell_Row'],
+    [/rematore|pulley|row|australian/i, 'Seated_Cable_Rows'],
+    [/addominal|crunch|abs/i, 'Crunches']
+  ];
 
-    const poses = {
-      squat: [
-        head(40, 18) + line(40, 23, 40, 48) + line(40, 32, 26, 42) + line(40, 32, 54, 42) + line(40, 48, 28, 72) + line(40, 48, 52, 72) + line(28, 72, 24, 88) + line(52, 72, 56, 88) + bar(22, 90, 58, 90),
-        head(40, 28) + line(40, 33, 40, 52) + line(40, 40, 24, 48) + line(40, 40, 56, 48) + line(40, 52, 26, 68) + line(40, 52, 54, 68) + line(26, 68, 22, 86) + line(54, 68, 58, 86) + bar(20, 90, 60, 90)
-      ],
-      lunge: [
-        head(36, 16) + line(36, 21, 36, 46) + line(36, 30, 24, 40) + line(36, 30, 50, 38) + line(36, 46, 24, 78) + line(36, 46, 56, 70) + line(24, 78, 20, 90) + line(56, 70, 62, 90),
-        head(38, 18) + line(38, 23, 38, 48) + line(38, 32, 26, 42) + line(38, 32, 52, 40) + line(38, 48, 28, 80) + line(38, 48, 58, 68) + line(28, 80, 22, 90) + line(58, 68, 66, 88)
-      ],
-      legpress: [
-        head(22, 30) + line(22, 35, 34, 48) + line(34, 48, 58, 42) + line(34, 48, 58, 58) + bar(62, 34, 62, 66) + bar(58, 38, 66, 38) + bar(58, 62, 66, 62),
-        head(22, 30) + line(22, 35, 36, 50) + line(36, 50, 70, 40) + line(36, 50, 70, 60) + bar(74, 32, 74, 68) + bar(70, 36, 78, 36) + bar(70, 64, 78, 64)
-      ],
-      legext: [
-        head(30, 20) + line(30, 25, 30, 48) + line(30, 48, 48, 48) + line(48, 48, 62, 70) + line(30, 35, 18, 48) + line(30, 35, 42, 42) + bar(14, 72, 70, 72),
-        head(30, 20) + line(30, 25, 30, 48) + line(30, 48, 48, 48) + line(48, 48, 68, 42) + line(30, 35, 18, 48) + line(30, 35, 42, 42) + bar(14, 72, 70, 72)
-      ],
-      legcurl: [
-        head(24, 28) + line(24, 33, 40, 40) + line(40, 40, 58, 40) + line(58, 40, 68, 58) + bar(18, 70, 72, 70),
-        head(24, 28) + line(24, 33, 40, 40) + line(40, 40, 58, 40) + line(58, 40, 62, 22) + bar(18, 70, 72, 70)
-      ],
-      calf: [
-        head(40, 14) + line(40, 19, 40, 50) + line(40, 28, 28, 40) + line(40, 28, 52, 40) + line(40, 50, 34, 78) + line(40, 50, 46, 78) + line(34, 78, 32, 90) + line(46, 78, 48, 90) + bar(26, 92, 54, 92),
-        head(40, 12) + line(40, 17, 40, 48) + line(40, 26, 28, 38) + line(40, 26, 52, 38) + line(40, 48, 34, 72) + line(40, 48, 46, 72) + line(34, 72, 34, 84) + line(46, 72, 46, 84) + bar(26, 92, 54, 92)
-      ],
-      rdl: [
-        head(40, 16) + line(40, 21, 40, 48) + line(40, 32, 24, 32) + line(40, 32, 56, 32) + bar(20, 32, 60, 32) + line(40, 48, 32, 88) + line(40, 48, 48, 88),
-        head(52, 28) + line(52, 33, 40, 52) + line(40, 42, 26, 48) + line(40, 42, 54, 50) + bar(22, 50, 58, 54) + line(40, 52, 32, 88) + line(40, 52, 48, 88)
-      ],
-      hipthrust: [
-        head(22, 42) + line(22, 47, 40, 50) + line(40, 50, 58, 50) + line(58, 50, 68, 70) + line(40, 50, 40, 70) + bar(18, 72, 72, 72),
-        head(22, 28) + line(22, 33, 40, 36) + line(40, 36, 58, 36) + line(58, 36, 68, 70) + line(40, 36, 40, 70) + bar(18, 72, 72, 72)
-      ],
-      wallsit: [
-        head(34, 18) + line(34, 23, 34, 48) + line(34, 48, 52, 48) + line(52, 48, 52, 78) + line(34, 32, 24, 42) + line(34, 32, 48, 38) + bar(56, 14, 56, 90),
-        head(34, 18) + line(34, 23, 34, 48) + line(34, 48, 52, 48) + line(52, 48, 52, 78) + line(34, 32, 22, 40) + line(34, 32, 46, 36) + bar(56, 14, 56, 90)
-      ],
-      bench: [
-        head(22, 28) + line(22, 33, 40, 36) + line(40, 36, 58, 36) + line(40, 28, 28, 20) + line(40, 28, 52, 20) + bar(16, 48, 64, 48) + line(40, 36, 40, 48),
-        head(22, 28) + line(22, 33, 40, 36) + line(40, 36, 58, 36) + line(40, 28, 24, 12) + line(40, 28, 56, 12) + bar(16, 48, 64, 48) + line(40, 36, 40, 48) + bar(22, 12, 58, 12)
-      ],
-      incline: [
-        head(26, 22) + line(26, 27, 42, 36) + line(42, 36, 58, 42) + line(42, 30, 30, 18) + line(42, 30, 54, 22) + bar(20, 56, 66, 42) + line(42, 36, 48, 50),
-        head(26, 22) + line(26, 27, 42, 36) + line(42, 36, 58, 42) + line(42, 30, 26, 10) + line(42, 30, 58, 16) + bar(20, 56, 66, 42) + bar(24, 10, 60, 16)
-      ],
-      fly: [
-        head(40, 22) + line(40, 27, 40, 48) + line(40, 36, 22, 28) + line(40, 36, 58, 28) + bar(18, 56, 62, 56),
-        head(40, 22) + line(40, 27, 40, 48) + line(40, 36, 18, 42) + line(40, 36, 62, 42) + bar(18, 56, 62, 56)
-      ],
-      chestpress: [
-        head(28, 24) + line(28, 29, 42, 36) + line(42, 36, 56, 36) + line(42, 30, 30, 22) + line(42, 30, 54, 22) + bar(22, 48, 64, 48),
-        head(28, 24) + line(28, 29, 42, 36) + line(42, 36, 56, 36) + line(42, 30, 26, 14) + line(42, 30, 58, 14) + bar(22, 48, 64, 48)
-      ],
-      pushup: [
-        head(18, 36) + line(18, 40, 40, 40) + line(40, 40, 62, 40) + line(28, 40, 24, 56) + line(50, 40, 54, 56) + line(40, 40, 36, 58) + line(40, 40, 48, 58) + bar(12, 62, 68, 62),
-        head(18, 28) + line(18, 32, 40, 30) + line(40, 30, 62, 32) + line(28, 30, 22, 52) + line(50, 30, 58, 52) + line(40, 30, 34, 54) + line(40, 30, 50, 54) + bar(12, 62, 68, 62)
-      ],
-      closebench: [
-        head(22, 28) + line(22, 33, 40, 36) + line(40, 36, 58, 36) + line(40, 28, 34, 18) + line(40, 28, 46, 18) + bar(16, 48, 64, 48) + bar(32, 18, 48, 18),
-        head(22, 28) + line(22, 33, 40, 36) + line(40, 36, 58, 36) + line(40, 28, 36, 12) + line(40, 28, 44, 12) + bar(16, 48, 64, 48) + bar(34, 12, 46, 12)
-      ],
-      lat: [
-        head(40, 18) + line(40, 23, 40, 50) + line(40, 32, 22, 20) + line(40, 32, 58, 20) + bar(18, 18, 62, 18) + line(40, 50, 32, 88) + line(40, 50, 48, 88),
-        head(40, 18) + line(40, 23, 40, 50) + line(40, 32, 26, 36) + line(40, 32, 54, 36) + bar(24, 34, 56, 34) + line(40, 50, 32, 88) + line(40, 50, 48, 88)
-      ],
-      row: [
-        head(54, 22) + line(54, 27, 40, 46) + line(40, 40, 28, 34) + line(40, 40, 28, 46) + bar(18, 36, 30, 40) + line(40, 46, 34, 86) + line(40, 46, 48, 86),
-        head(54, 22) + line(54, 27, 40, 46) + line(40, 40, 22, 28) + line(40, 40, 22, 42) + bar(12, 30, 24, 36) + line(40, 46, 34, 86) + line(40, 46, 48, 86)
-      ],
-      pullover: [
-        head(28, 30) + line(28, 35, 44, 40) + line(44, 40, 58, 40) + line(44, 34, 36, 18) + line(44, 34, 52, 18) + bar(34, 14, 54, 14) + bar(20, 52, 66, 52),
-        head(28, 30) + line(28, 35, 44, 40) + line(44, 40, 58, 40) + line(44, 34, 58, 28) + line(44, 34, 62, 36) + bar(56, 26, 68, 34) + bar(20, 52, 66, 52)
-      ],
-      shrug: [
-        head(40, 22) + line(40, 27, 40, 55) + line(40, 36, 24, 48) + line(40, 36, 56, 48) + line(40, 55, 32, 88) + line(40, 55, 48, 88),
-        head(40, 18) + line(40, 23, 40, 52) + line(40, 32, 24, 36) + line(40, 32, 56, 36) + line(40, 52, 32, 88) + line(40, 52, 48, 88)
-      ],
-      ohp: [
-        head(40, 28) + line(40, 33, 40, 55) + line(40, 40, 28, 48) + line(40, 40, 52, 48) + bar(24, 50, 56, 50) + line(40, 55, 32, 88) + line(40, 55, 48, 88),
-        head(40, 22) + line(40, 27, 40, 52) + line(40, 34, 30, 18) + line(40, 34, 50, 18) + bar(26, 16, 54, 16) + line(40, 52, 32, 88) + line(40, 52, 48, 88)
-      ],
-      lateral: [
-        head(40, 18) + line(40, 23, 40, 52) + line(40, 34, 24, 48) + line(40, 34, 56, 48) + line(40, 52, 32, 88) + line(40, 52, 48, 88),
-        head(40, 18) + line(40, 23, 40, 52) + line(40, 34, 16, 34) + line(40, 34, 64, 34) + line(40, 52, 32, 88) + line(40, 52, 48, 88)
-      ],
-      front: [
-        head(40, 18) + line(40, 23, 40, 52) + line(40, 34, 28, 48) + line(40, 34, 52, 48) + line(40, 52, 32, 88) + line(40, 52, 48, 88),
-        head(40, 18) + line(40, 23, 40, 52) + line(40, 34, 28, 22) + line(40, 34, 52, 22) + bar(24, 20, 56, 20) + line(40, 52, 32, 88) + line(40, 52, 48, 88)
-      ],
-      rear: [
-        head(48, 20) + line(48, 25, 40, 50) + line(40, 36, 26, 28) + line(40, 36, 26, 42) + line(40, 50, 34, 88) + line(40, 50, 48, 88),
-        head(48, 20) + line(48, 25, 40, 50) + line(40, 36, 18, 30) + line(40, 36, 18, 44) + line(40, 50, 34, 88) + line(40, 50, 48, 88)
-      ],
-      curl: [
-        head(40, 16) + line(40, 21, 40, 50) + line(40, 34, 28, 52) + line(40, 34, 52, 52) + bar(24, 54, 56, 54) + line(40, 50, 32, 88) + line(40, 50, 48, 88),
-        head(40, 16) + line(40, 21, 40, 50) + line(40, 34, 30, 28) + line(40, 34, 50, 28) + bar(26, 26, 54, 26) + line(40, 50, 32, 88) + line(40, 50, 48, 88)
-      ],
-      hammer: [
-        head(40, 16) + line(40, 21, 40, 50) + line(40, 34, 30, 54) + line(40, 34, 50, 54) + line(40, 50, 32, 88) + line(40, 50, 48, 88),
-        head(40, 16) + line(40, 21, 40, 50) + line(40, 34, 30, 26) + line(40, 34, 50, 26) + line(40, 50, 32, 88) + line(40, 50, 48, 88)
-      ],
-      pushdown: [
-        head(40, 18) + line(40, 23, 40, 50) + line(40, 32, 30, 24) + line(40, 32, 50, 24) + bar(28, 20, 52, 20) + line(40, 50, 32, 88) + line(40, 50, 48, 88),
-        head(40, 18) + line(40, 23, 40, 50) + line(40, 32, 30, 44) + line(40, 32, 50, 44) + bar(28, 20, 52, 20) + line(40, 50, 32, 88) + line(40, 50, 48, 88)
-      ],
-      crunch: [
-        head(22, 48) + line(22, 52, 40, 58) + line(40, 58, 62, 58) + line(40, 58, 36, 74) + line(40, 58, 48, 74) + bar(16, 78, 68, 78),
-        head(28, 36) + line(28, 40, 44, 52) + line(44, 52, 62, 58) + line(44, 52, 38, 74) + line(44, 52, 52, 74) + bar(16, 78, 68, 78)
-      ],
-      backext: [
-        head(22, 42) + line(22, 46, 40, 50) + line(40, 50, 60, 52) + line(40, 50, 36, 70) + line(40, 50, 48, 70) + bar(16, 74, 68, 74),
-        head(28, 28) + line(28, 32, 42, 44) + line(42, 44, 60, 52) + line(42, 44, 36, 70) + line(42, 44, 50, 70) + bar(16, 74, 68, 74)
-      ],
-      generic: [
-        head(40, 16) + line(40, 21, 40, 52) + line(40, 34, 26, 44) + line(40, 34, 54, 44) + line(40, 52, 32, 88) + line(40, 52, 48, 88),
-        head(40, 16) + line(40, 21, 40, 52) + line(40, 34, 24, 34) + line(40, 34, 56, 34) + line(40, 52, 32, 88) + line(40, 52, 48, 88)
-      ]
-    };
-    return poses[kind] || poses.generic;
+  function demoId(name) {
+    const text = String(name || '');
+    for (const [rule, id] of DEMO_RULES) {
+      if (rule.test(text)) return id;
+    }
+    return null;
   }
 
   function demoFrame(name) {
-    const kind = stickKind(name);
-    const [a, b] = stickPair(kind);
-    return `<div class="ex-frame stick-anim relative w-full h-28 rounded-xl bg-slate-900 overflow-hidden border border-slate-800" data-on="a">
-      <svg viewBox="0 0 80 100" class="stick-a absolute inset-0 w-full h-full p-1" fill="none">${a}</svg>
-      <svg viewBox="0 0 80 100" class="stick-b absolute inset-0 w-full h-full p-1 opacity-0" fill="none">${b}</svg>
+    const id = demoId(name);
+    if (!id) return '';
+    const a = DEMO_BASE + id + '/0.jpg';
+    const b = DEMO_BASE + id + '/1.jpg';
+    return `<div class="ex-demo-media relative overflow-hidden rounded-2xl border border-slate-700 bg-slate-900">
+      <img class="ex-frame w-full h-44 object-cover object-center" src="${a}" data-a="${a}" data-b="${b}" data-on="a" alt="${String(name || '').replace(/"/g, '')}" loading="lazy" onerror="this.closest('.ex-demo')?.remove()">
+      <div class="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
     </div>`;
   }
 
   function demoRow(name) {
     const sides = exerciseSides(name);
-    const cards = sides.map((side) => `
-      <div class="ex-demo min-w-0">
-        ${demoFrame(side)}
-        <p class="text-[8px] text-center text-slate-500 mt-1 uppercase truncate">${escapeHtml(side)}</p>
-      </div>`).join('');
-    const cols = sides.length > 2 ? 'grid-cols-3' : sides.length > 1 ? 'grid-cols-2' : 'grid-cols-1';
-    return `<div class="grid ${cols} gap-2">${cards}</div>`;
+    const cards = sides.map((side) => {
+      const frame = demoFrame(side);
+      if (!frame) return '';
+      return `<div class="ex-demo min-w-0 space-y-1.5">
+        ${frame}
+        <p class="text-[9px] text-center text-slate-300 font-bold uppercase tracking-wide truncate px-1">${escapeHtml(side)}</p>
+      </div>`;
+    }).filter(Boolean);
+    if (!cards.length) return '';
+    const cols = cards.length > 2 ? 'grid-cols-3' : cards.length > 1 ? 'grid-cols-2' : 'grid-cols-1';
+    return `<div class="grid ${cols} gap-2">${cards.join('')}</div>`;
   }
 
   function pesoChoices(current) {
@@ -827,16 +720,13 @@
   }
 
   setInterval(() => {
-    document.querySelectorAll('.stick-anim').forEach((box) => {
-      const a = box.querySelector('.stick-a');
-      const b = box.querySelector('.stick-b');
-      if (!a || !b) return;
-      const useB = box.dataset.on !== 'b';
-      box.dataset.on = useB ? 'b' : 'a';
-      a.classList.toggle('opacity-0', useB);
-      b.classList.toggle('opacity-0', !useB);
+    document.querySelectorAll('img.ex-frame').forEach((img) => {
+      if (!img.dataset.a || !img.dataset.b) return;
+      const useB = img.dataset.on !== 'b';
+      img.dataset.on = useB ? 'b' : 'a';
+      img.src = useB ? img.dataset.b : img.dataset.a;
     });
-  }, 900);
+  }, 850);
 
   global.exerciseSides = exerciseSides;
   global.demoRow = demoRow;
