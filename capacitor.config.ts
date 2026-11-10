@@ -10,12 +10,12 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     preferredContentMode: 'mobile',
-    backgroundColor: '#111827',
+    backgroundColor: '#000000',
   },
   plugins: {
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#111827',
+      backgroundColor: '#000000',
     },
   },
 };

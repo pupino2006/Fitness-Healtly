@@ -11,7 +11,7 @@ export class WorkoutBridgeWeb extends WebPlugin implements WorkoutBridgePlugin {
     return { ok: false };
   }
 
-  async endNativeWorkout() {
+  async endNativeWorkout(_options?: { sessionId?: string }) {
     return { ok: false, activeCalories: null, averageHeartRate: null, durationSeconds: 0 };
   }
 
@@ -24,6 +24,10 @@ export class WorkoutBridgeWeb extends WebPlugin implements WorkoutBridgePlugin {
   }
 
   async syncGroupsToWatch(_options: { groups: string[] }) {
+    return { ok: false, count: 0 };
+  }
+
+  async syncPlansToWatch(_options: { plans: unknown[]; phoneEdited?: boolean }) {
     return { ok: false, count: 0 };
   }
 

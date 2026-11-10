@@ -14,14 +14,17 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         CAPPluginMethod(name: "getLiveMetrics", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "syncSessionToWatch", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "syncGroupsToWatch", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "syncPlansToWatch", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startWatchRecovery", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "stopWatchRecovery", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "isNativeAvailable", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "isNativeAvailable", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getTodaySummary", returnType: CAPPluginReturnPromise)
     ]
 
     private let healthStore = HKHealthStore()
     private var workoutBuilder: HKWorkoutBuilder?
     private var workoutStart: Date?
+    private var currentSessionId: String?
     private var heartRateQuery: HKAnchoredObjectQuery?
     private var latestHeartRate: Double?
     private var caloriesQuery: HKStatisticsQuery?
@@ -58,6 +61,12 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
             share.insert(energy)
             read.insert(energy)
         }
+        if let steps = HKObjectType.quantityType(forIdentifier: .stepCount) {
+            read.insert(steps)
+        }
+        if let exercise = HKObjectType.quantityType(forIdentifier: .appleExerciseTime) {
+            read.insert(exercise)
+        }
 
         healthStore.requestAuthorization(toShare: share, read: read) { granted, error in
             DispatchQueue.main.async {
@@ -79,6 +88,7 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
 
         let start = Date()
         self.workoutStart = start
+        self.currentSessionId = sessionId
         self.latestCalories = 0
         self.latestHeartRate = nil
 
@@ -109,7 +119,18 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
     }
 
     @objc public func endNativeWorkout(_ call: CAPPluginCall) {
+        let endedSessionId = call.getString("sessionId") ?? currentSessionId
         guard let builder = workoutBuilder, let start = workoutStart else {
+            // Phone may have adopted a Watch-owned session without starting HealthKit locally.
+            // Still tell the Watch to stop that specific session (id-scoped).
+            var payload: [String: Any] = [
+                "type": "nativeWorkoutEnded",
+                "durationSeconds": 0,
+                "activeCalories": NSNull()
+            ]
+            if let endedSessionId { payload["sessionId"] = endedSessionId }
+            sendToWatch(payload)
+            currentSessionId = nil
             call.resolve([
                 "ok": false,
                 "activeCalories": NSNull(),
@@ -138,14 +159,17 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
                     let kcal = workout?.totalEnergyBurned?.doubleValue(for: .kilocalorie())
                         ?? self.latestCalories
 
-                    self.sendToWatch([
+                    var payload: [String: Any] = [
                         "type": "nativeWorkoutEnded",
                         "durationSeconds": duration,
                         "activeCalories": kcal
-                    ])
+                    ]
+                    if let endedSessionId { payload["sessionId"] = endedSessionId }
+                    self.sendToWatch(payload)
 
                     self.workoutBuilder = nil
                     self.workoutStart = nil
+                    self.currentSessionId = nil
 
                     call.resolve([
                         "ok": true,
@@ -193,6 +217,18 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         call.resolve(["ok": true, "count": groups.count])
     }
 
+    @objc public func syncPlansToWatch(_ call: CAPPluginCall) {
+        let plans = call.options["plans"] ?? []
+        let phoneEdited = call.getBool("phoneEdited") ?? false
+        sendToWatch([
+            "type": "plansSync",
+            "plans": plans,
+            "phoneEdited": phoneEdited
+        ])
+        let count = (plans as? [Any])?.count ?? 0
+        call.resolve(["ok": true, "count": count])
+    }
+
     @objc public func startWatchRecovery(_ call: CAPPluginCall) {
         let seconds = call.getInt("seconds") ?? 60
         let name = call.getString("exerciseName") ?? ""
@@ -218,6 +254,49 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
             "available": true,
             "watchReachable": reachable
         ])
+    }
+
+    @objc public func getTodaySummary(_ call: CAPPluginCall) {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            call.resolve([
+                "steps": 0,
+                "activeCalories": 0,
+                "exerciseMinutes": 0
+            ])
+            return
+        }
+
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: Date())
+        let end = Date()
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+
+        let group = DispatchGroup()
+        var steps: Double = 0
+        var kcal: Double = 0
+        var exerciseMin: Double = 0
+
+        func fetch(_ id: HKQuantityTypeIdentifier, unit: HKUnit, assign: @escaping (Double) -> Void) {
+            guard let type = HKQuantityType.quantityType(forIdentifier: id) else { return }
+            group.enter()
+            let q = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, stats, _ in
+                assign(stats?.sumQuantity()?.doubleValue(for: unit) ?? 0)
+                group.leave()
+            }
+            self.healthStore.execute(q)
+        }
+
+        fetch(.stepCount, unit: .count()) { steps = $0 }
+        fetch(.activeEnergyBurned, unit: .kilocalorie()) { kcal = $0 }
+        fetch(.appleExerciseTime, unit: .minute()) { exerciseMin = $0 }
+
+        group.notify(queue: .main) {
+            call.resolve([
+                "steps": Int(steps.rounded()),
+                "activeCalories": Int(kcal.rounded()),
+                "exerciseMinutes": Int(exerciseMin.rounded())
+            ])
+        }
     }
 
     // MARK: - HealthKit observers
@@ -278,12 +357,20 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
     private func sendToWatch(_ payload: [String: Any]) {
         guard WCSession.isSupported() else { return }
         let session = WCSession.default
+        let type = payload["type"] as? String ?? ""
+        let durable = type == "plansSync" || type == "sessionSync" || type == "availableGroups"
+        if durable {
+            session.transferUserInfo(payload)
+            try? session.updateApplicationContext(payload)
+        }
         if session.isReachable {
             session.sendMessage(payload, replyHandler: nil) { error in
                 print("WC sendMessage error:", error.localizedDescription)
-                session.transferUserInfo(payload)
+                if !durable {
+                    session.transferUserInfo(payload)
+                }
             }
-        } else {
+        } else if !durable {
             session.transferUserInfo(payload)
             try? session.updateApplicationContext(payload)
         }

@@ -30,7 +30,7 @@ export interface WorkoutBridgePlugin {
   }): Promise<{ ok: boolean }>;
 
   /** Termina sessione HealthKit e restituisce metriche finali. */
-  endNativeWorkout(): Promise<{
+  endNativeWorkout(options?: { sessionId?: string }): Promise<{
     ok: boolean;
     activeCalories: number | null;
     averageHeartRate: number | null;
@@ -46,6 +46,9 @@ export interface WorkoutBridgePlugin {
   /** Invia l'elenco schede disponibili all'Apple Watch. */
   syncGroupsToWatch(options: { groups: string[] }): Promise<{ ok: boolean; count?: number }>;
 
+  /** Copia sul Watch esercizi, serie, pesi e recupero, così parte anche col telefono bloccato. */
+  syncPlansToWatch(options: { plans: unknown[]; phoneEdited?: boolean }): Promise<{ ok: boolean; count?: number }>;
+
   /** Avvia timer recupero sul Watch (+ haptic). */
   startWatchRecovery(options: { seconds: number; exerciseName?: string }): Promise<{ ok: boolean }>;
 
@@ -54,6 +57,13 @@ export interface WorkoutBridgePlugin {
 
   /** True se siamo in Capacitor iOS nativo. */
   isNativeAvailable(): Promise<{ available: boolean; watchReachable: boolean }>;
+
+  /** Riepilogo giornaliero da HealthKit (passi, kcal, minuti allenamento). */
+  getTodaySummary(): Promise<{
+    steps: number;
+    activeCalories: number;
+    exerciseMinutes: number;
+  }>;
 
   addListener(
     eventName: 'watchEvent',
