@@ -58,6 +58,13 @@ export interface WorkoutBridgePlugin {
   /** True se siamo in Capacitor iOS nativo. */
   isNativeAvailable(): Promise<{ available: boolean; watchReachable: boolean }>;
 
+  /** Riepilogo giornaliero da HealthKit (passi, kcal, minuti allenamento). */
+  getTodaySummary(): Promise<{
+    steps: number;
+    activeCalories: number;
+    exerciseMinutes: number;
+  }>;
+
   addListener(
     eventName: 'watchEvent',
     listenerFunc: (event: {

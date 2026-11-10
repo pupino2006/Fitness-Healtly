@@ -38,6 +38,20 @@ struct IdleView: View {
                         .font(.headline.weight(.bold))
                 }
 
+                ActivityRingsView(
+                    move: health.todayMoveKcal / max(health.moveGoalKcal, 1),
+                    exercise: health.todayExerciseMin / max(health.exerciseGoalMin, 1),
+                    steps: health.todaySteps / max(health.stepsGoal, 1)
+                )
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
+
+                HStack(spacing: 8) {
+                    ringStat(title: "MUOVI", value: "\(Int(health.todayMoveKcal))", tint: .pink)
+                    ringStat(title: "ALLENA", value: "\(Int(health.todayExerciseMin))m", tint: .green)
+                    ringStat(title: "PASSI", value: formatSteps(health.todaySteps), tint: .cyan)
+                }
+
                 Label(
                     bridge.plansReady ? "Schede pronte" : "Sincronizza da iPhone",
                     systemImage: bridge.plansReady ? "checkmark.circle.fill" : "arrow.triangle.2.circlepath"
@@ -100,8 +114,62 @@ struct IdleView: View {
             }
             .padding(.horizontal, 2)
         }
-        .navigationTitle("Fitness")
+        .onAppear { health.refreshTodayRings() }
     }
+
+    private func ringStat(title: String, value: String, tint: Color) -> some View {
+        VStack(spacing: 1) {
+            Text(title)
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(tint)
+            Text(value)
+                .font(.caption2.weight(.bold))
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct ActivityRingsView: View {
+    let move: Double
+    let exercise: Double
+    let steps: Double
+
+    var body: some View {
+        ZStack {
+            ring(progress: move, color: .pink, width: 8, inset: 0)
+            ring(progress: exercise, color: .green, width: 8, inset: 11)
+            ring(progress: steps, color: .cyan, width: 8, inset: 22)
+            Image(systemName: "figure.strengthtraining.traditional")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.green)
+        }
+        .frame(width: 92, height: 92)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func ring(progress: Double, color: Color, width: CGFloat, inset: CGFloat) -> some View {
+        let p = min(max(progress, 0), 1.05)
+        return Circle()
+            .stroke(color.opacity(0.2), lineWidth: width)
+            .padding(inset)
+            .overlay(
+                Circle()
+                    .trim(from: 0, to: p)
+                    .stroke(color, style: StrokeStyle(lineWidth: width, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .padding(inset)
+            )
+    }
+}
+
+func formatSteps(_ steps: Double) -> String {
+    let n = Int(steps.rounded())
+    if n >= 1000 {
+        let k = Double(n) / 1000.0
+        return String(format: k.rounded() == k ? "%.0fk" : "%.1fk", k)
+    }
+    return "\(n)"
 }
 
 // MARK: - Countdown 3-2-1-Via

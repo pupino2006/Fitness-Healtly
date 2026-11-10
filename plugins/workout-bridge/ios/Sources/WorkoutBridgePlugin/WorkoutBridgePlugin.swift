@@ -17,7 +17,8 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         CAPPluginMethod(name: "syncPlansToWatch", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startWatchRecovery", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "stopWatchRecovery", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "isNativeAvailable", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "isNativeAvailable", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getTodaySummary", returnType: CAPPluginReturnPromise)
     ]
 
     private let healthStore = HKHealthStore()
@@ -59,6 +60,12 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
         if let energy = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) {
             share.insert(energy)
             read.insert(energy)
+        }
+        if let steps = HKObjectType.quantityType(forIdentifier: .stepCount) {
+            read.insert(steps)
+        }
+        if let exercise = HKObjectType.quantityType(forIdentifier: .appleExerciseTime) {
+            read.insert(exercise)
         }
 
         healthStore.requestAuthorization(toShare: share, read: read) { granted, error in
@@ -247,6 +254,49 @@ public class WorkoutBridgePlugin: CAPPlugin, CAPBridgedPlugin, WCSessionDelegate
             "available": true,
             "watchReachable": reachable
         ])
+    }
+
+    @objc public func getTodaySummary(_ call: CAPPluginCall) {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            call.resolve([
+                "steps": 0,
+                "activeCalories": 0,
+                "exerciseMinutes": 0
+            ])
+            return
+        }
+
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: Date())
+        let end = Date()
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+
+        let group = DispatchGroup()
+        var steps: Double = 0
+        var kcal: Double = 0
+        var exerciseMin: Double = 0
+
+        func fetch(_ id: HKQuantityTypeIdentifier, unit: HKUnit, assign: @escaping (Double) -> Void) {
+            guard let type = HKQuantityType.quantityType(forIdentifier: id) else { return }
+            group.enter()
+            let q = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, stats, _ in
+                assign(stats?.sumQuantity()?.doubleValue(for: unit) ?? 0)
+                group.leave()
+            }
+            self.healthStore.execute(q)
+        }
+
+        fetch(.stepCount, unit: .count()) { steps = $0 }
+        fetch(.activeEnergyBurned, unit: .kilocalorie()) { kcal = $0 }
+        fetch(.appleExerciseTime, unit: .minute()) { exerciseMin = $0 }
+
+        group.notify(queue: .main) {
+            call.resolve([
+                "steps": Int(steps.rounded()),
+                "activeCalories": Int(kcal.rounded()),
+                "exerciseMinutes": Int(exerciseMin.rounded())
+            ])
+        }
     }
 
     // MARK: - HealthKit observers

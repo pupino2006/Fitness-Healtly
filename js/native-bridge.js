@@ -118,6 +118,21 @@
       }
     },
 
+    async getTodaySummary() {
+      const p = this.plugin();
+      if (!p || !this.available) {
+        return { steps: 0, activeCalories: 0, exerciseMinutes: 0 };
+      }
+      try {
+        if (typeof p.getTodaySummary === 'function') {
+          return await p.getTodaySummary();
+        }
+      } catch (e) {
+        console.warn('NativeWorkout.getTodaySummary', e);
+      }
+      return { steps: 0, activeCalories: 0, exerciseMinutes: 0 };
+    },
+
     buildWatchPayload(gruppo, sessionId, startedAt) {
       const cards = [...document.querySelectorAll('#workout-exercises .glass-card')];
       const exercises = [];

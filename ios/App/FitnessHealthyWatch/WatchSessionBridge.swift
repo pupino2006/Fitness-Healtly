@@ -23,7 +23,7 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
     @Published var pendingGroupLabel: String = ""
 
     private var recoveryTimer: Timer?
-    private var countdownTimer: Timer?
+    private var countdownTask: Task<Void, Never>?
     private var pendingStartGroup: String?
     private var localRevision: Int = 0
     private var weightsDirty = false
@@ -62,37 +62,38 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
     func beginCountdown(for gruppo: String) {
         summary = nil
         stopRecovery()
-        countdownTimer?.invalidate()
+        countdownTask?.cancel()
         pendingStartGroup = gruppo
         pendingGroupLabel = gruppo
-        countdownValue = 3
-        WKInterfaceDevice.current().play(.click)
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] t in
-            guard let self = self else { return }
-            guard let current = self.countdownValue else {
-                t.invalidate()
-                return
+
+        countdownTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let steps = [3, 2, 1, 0]
+            for (idx, value) in steps.enumerated() {
+                if Task.isCancelled { return }
+                self.countdownValue = value
+                WKInterfaceDevice.current().play(value == 0 ? .start : .click)
+                let ns: UInt64 = value == 0 ? 750_000_000 : 1_000_000_000
+                try? await Task.sleep(nanoseconds: ns)
+                if Task.isCancelled { return }
+                // Ultimo step: esci dal loop e avvia
+                if idx == steps.count - 1 { break }
             }
-            if current <= 0 {
-                t.invalidate()
-                self.countdownTimer = nil
-                self.countdownValue = nil
-                let group = self.pendingStartGroup
-                self.pendingStartGroup = nil
-                self.pendingGroupLabel = ""
-                if let group {
-                    self.startWorkoutNow(group)
-                }
-                return
+            guard !Task.isCancelled else { return }
+            let group = self.pendingStartGroup
+            self.countdownValue = nil
+            self.countdownTask = nil
+            self.pendingStartGroup = nil
+            self.pendingGroupLabel = ""
+            if let group {
+                self.startWorkoutNow(group)
             }
-            self.countdownValue = current - 1
-            WKInterfaceDevice.current().play(current - 1 == 0 ? .start : .click)
         }
     }
 
     func cancelCountdown() {
-        countdownTimer?.invalidate()
-        countdownTimer = nil
+        countdownTask?.cancel()
+        countdownTask = nil
         countdownValue = nil
         pendingStartGroup = nil
         pendingGroupLabel = ""

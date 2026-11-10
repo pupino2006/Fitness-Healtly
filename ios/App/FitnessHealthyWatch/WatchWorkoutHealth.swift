@@ -12,6 +12,13 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
     @Published var averageHeartRate: Double?
     @Published var activeCalories: Double = 0
     @Published var authOk = false
+    /// Anelli giornalieri stile Fitness
+    @Published var todayMoveKcal: Double = 0
+    @Published var todayExerciseMin: Double = 0
+    @Published var todaySteps: Double = 0
+    var moveGoalKcal: Double = 500
+    var exerciseGoalMin: Double = 30
+    var stepsGoal: Double = 10_000
 
     private let store = HKHealthStore()
     private var session: HKWorkoutSession?
@@ -29,11 +36,37 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
         let read: Set<HKObjectType> = [
             HKObjectType.workoutType(),
             HKQuantityType.quantityType(forIdentifier: .heartRate)!,
-            HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
+            HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!,
+            HKQuantityType.quantityType(forIdentifier: .stepCount)!,
+            HKQuantityType.quantityType(forIdentifier: .appleExerciseTime)!
         ]
         store.requestAuthorization(toShare: share, read: read) { ok, _ in
-            DispatchQueue.main.async { self.authOk = ok }
+            DispatchQueue.main.async {
+                self.authOk = ok
+                self.refreshTodayRings()
+            }
         }
+    }
+
+    func refreshTodayRings() {
+        guard HKHealthStore.isHealthDataAvailable() else { return }
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: Date())
+        let end = Date()
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+
+        func sum(_ id: HKQuantityTypeIdentifier, unit: HKUnit, assign: @escaping (Double) -> Void) {
+            guard let type = HKQuantityType.quantityType(forIdentifier: id) else { return }
+            let q = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, stats, _ in
+                let value = stats?.sumQuantity()?.doubleValue(for: unit) ?? 0
+                DispatchQueue.main.async { assign(value) }
+            }
+            self.store.execute(q)
+        }
+
+        sum(.activeEnergyBurned, unit: .kilocalorie()) { self.todayMoveKcal = $0 }
+        sum(.appleExerciseTime, unit: .minute()) { self.todayExerciseMin = $0 }
+        sum(.stepCount, unit: .count()) { self.todaySteps = $0 }
     }
 
     func startWorkout() {

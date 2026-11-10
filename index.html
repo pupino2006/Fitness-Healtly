@@ -98,6 +98,18 @@
         #login-screen, #register-screen { transition: opacity 0.3s; background-color: var(--fit-bg) !important; }
         
         .serie-container { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+        .cal-day {
+            aspect-ratio: 1;
+            border-radius: 9999px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #f5f5f7; position: relative;
+        }
+        .cal-day.empty { visibility: hidden; }
+        .cal-day.has-session { background: rgba(48, 209, 88, 0.14); }
+        .cal-day.selected { background: #30D158; color: #000; }
+        .cal-day.today:not(.selected) { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35); }
+        .cal-dot { width: 4px; height: 4px; border-radius: 9999px; background: #30D158; margin-top: 2px; }
+        .cal-day.selected .cal-dot { background: #000; }
         .serie-container:first-child { margin-top: 8px; }
         .serie-fields { display: grid; grid-template-columns: 30px 1fr 1fr 2fr; gap: 4px; align-items: center; padding: 8px 12px; background: var(--fit-elevated); border-radius: 10px; }
         .serie-num { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.7rem; background: var(--fit-card); border: 2px solid #3A3A3C; }
@@ -365,12 +377,52 @@
 
                 <div class="glass-card p-4 rounded-2xl">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Ultime sessioni</h3>
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Attività di oggi</h3>
+                        <span class="text-[10px] font-bold text-slate-500">Salute</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2" id="today-activity-summary">
+                        <div class="rounded-xl bg-slate-800/80 p-3 text-center">
+                            <p class="text-[9px] font-bold uppercase text-pink-400 tracking-wide">Muovi</p>
+                            <p id="today-kcal" class="text-lg font-extrabold text-white">—</p>
+                            <p class="text-[9px] text-slate-500">kcal</p>
+                        </div>
+                        <div class="rounded-xl bg-slate-800/80 p-3 text-center">
+                            <p class="text-[9px] font-bold uppercase text-emerald-400 tracking-wide">Allena</p>
+                            <p id="today-exercise-min" class="text-lg font-extrabold text-white">—</p>
+                            <p class="text-[9px] text-slate-500">min</p>
+                        </div>
+                        <div class="rounded-xl bg-slate-800/80 p-3 text-center">
+                            <p class="text-[9px] font-bold uppercase text-cyan-400 tracking-wide">Passi</p>
+                            <p id="today-steps" class="text-lg font-extrabold text-white">—</p>
+                            <p class="text-[9px] text-slate-500">oggi</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 rounded-2xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Calendario sessioni</h3>
                         <span id="session-count-badge" class="text-[10px] font-bold text-slate-500">0</span>
                     </div>
-                    <div id="recent-sessions-list" class="space-y-2 max-h-64 overflow-y-auto">
-                        <p class="text-[11px] text-slate-500">Nessuna sessione ancora. Premi Inizia Workout.</p>
+                    <div class="flex items-center justify-between mb-2">
+                        <button type="button" onclick="shiftSessionsCalendar(-1)" class="w-9 h-9 rounded-full bg-slate-800 text-slate-300 active:scale-90"><i class="fas fa-chevron-left text-xs"></i></button>
+                        <p id="sessions-cal-title" class="text-sm font-extrabold text-white capitalize">—</p>
+                        <button type="button" onclick="shiftSessionsCalendar(1)" class="w-9 h-9 rounded-full bg-slate-800 text-slate-300 active:scale-90"><i class="fas fa-chevron-right text-xs"></i></button>
                     </div>
+                    <div class="grid grid-cols-7 gap-1 mb-1 text-center">
+                        <span class="text-[9px] font-bold text-slate-500">L</span>
+                        <span class="text-[9px] font-bold text-slate-500">M</span>
+                        <span class="text-[9px] font-bold text-slate-500">M</span>
+                        <span class="text-[9px] font-bold text-slate-500">G</span>
+                        <span class="text-[9px] font-bold text-slate-500">V</span>
+                        <span class="text-[9px] font-bold text-slate-500">S</span>
+                        <span class="text-[9px] font-bold text-slate-500">D</span>
+                    </div>
+                    <div id="sessions-calendar-grid" class="grid grid-cols-7 gap-1"></div>
+                    <div id="sessions-day-list" class="mt-3 space-y-2">
+                        <p class="text-[11px] text-slate-500">Tocca un giorno con il punto verde per vedere le sessioni.</p>
+                    </div>
+                    <div id="recent-sessions-list" class="hidden"></div>
                 </div>
             </div>
 
@@ -930,9 +982,89 @@
             }
         }
 
-        function showSection(id) {
+        // ===== NAV STACK + SWIPE INDIETRO (stile iOS) =====
+        const navStack = [];
+
+        function currentSectionId() {
+            const open = [...document.querySelectorAll('main > div')].find(d => !d.classList.contains('hidden'));
+            return open?.id?.replace(/-section$/, '') || 'home';
+        }
+
+        function pushNav(action) {
+            if (typeof action === 'function') navStack.push(action);
+        }
+
+        function appGoBack() {
+            if (document.getElementById('session-detail-overlay') && !document.getElementById('session-detail-overlay').classList.contains('hidden')) {
+                closeSessionDetail();
+                return true;
+            }
+            if (document.getElementById('live-summary-overlay') && !document.getElementById('live-summary-overlay').classList.contains('hidden')) {
+                return false;
+            }
+            if (document.getElementById('live-workout-overlay') && !document.getElementById('live-workout-overlay').classList.contains('hidden')) {
+                return false;
+            }
+            if (navStack.length) {
+                const action = navStack.pop();
+                try { action(); } catch (e) { console.warn('nav back', e); }
+                return true;
+            }
+            const section = currentSectionId();
+            if (section === 'workout') {
+                const hub = document.getElementById('workout-hub');
+                if (hub && hub.classList.contains('hidden')) {
+                    showWorkoutHub();
+                    return true;
+                }
+                if (section !== 'home') {
+                    showSection('home', { skipStack: true });
+                    return true;
+                }
+            } else if (section !== 'home') {
+                showSection('home', { skipStack: true });
+                return true;
+            }
+            return false;
+        }
+
+        function setupEdgeBackGesture() {
+            let startX = 0;
+            let startY = 0;
+            let tracking = false;
+            document.addEventListener('touchstart', (e) => {
+                const t = e.touches?.[0];
+                if (!t || t.clientX > 28) { tracking = false; return; }
+                tracking = true;
+                startX = t.clientX;
+                startY = t.clientY;
+            }, { passive: true });
+            document.addEventListener('touchend', (e) => {
+                if (!tracking) return;
+                tracking = false;
+                const t = e.changedTouches?.[0];
+                if (!t) return;
+                const dx = t.clientX - startX;
+                const dy = Math.abs(t.clientY - startY);
+                if (dx > 70 && dy < 60) appGoBack();
+            }, { passive: true });
+
+            try {
+                if (window.Capacitor?.Plugins?.App?.addListener) {
+                    window.Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
+                        if (!appGoBack() && canGoBack) window.history.back();
+                    });
+                }
+            } catch (_) {}
+        }
+
+        function showSection(id, opts = {}) {
             try {
                 console.log('showSection called with id:', id);
+                const prev = currentSectionId();
+                if (!opts.skipStack && prev && prev !== id) {
+                    pushNav(() => showSection(prev, { skipStack: true }));
+                }
                 document.querySelectorAll('main > div').forEach(d => d.classList.add('hidden'));
                 const section = document.getElementById(id + '-section');
                 if(section) {
@@ -1970,6 +2102,7 @@
         }
 
         function showSchedeEditSelection() {
+            pushNav(() => showWorkoutHub());
             schedaEditMode = true;
             document.getElementById('workout-hub').classList.add('hidden');
             document.getElementById('workout-list').classList.add('hidden');
@@ -2102,6 +2235,114 @@
             await openSchedaEditor(gruppo === 'Tutta la scheda' ? 'all' : gruppo);
         }
 
+        let sessionsCalCursor = new Date();
+        sessionsCalCursor.setDate(1);
+        let sessionsCalSelectedKey = null;
+
+        function dayKeyFromDate(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function sessionDayKey(s) {
+            const raw = s.endedAt || s.startedAt;
+            if (!raw) return '';
+            const d = new Date(raw);
+            if (Number.isNaN(d.getTime())) return String(raw).slice(0, 10);
+            return dayKeyFromDate(d);
+        }
+
+        function shiftSessionsCalendar(delta) {
+            sessionsCalCursor.setMonth(sessionsCalCursor.getMonth() + delta);
+            renderSessionsCalendar();
+        }
+
+        function selectSessionsCalendarDay(key) {
+            sessionsCalSelectedKey = key;
+            renderSessionsCalendar();
+        }
+
+        function renderSessionsCalendar() {
+            const history = getSessionsStore().history || [];
+            const badge = document.getElementById('session-count-badge');
+            if (badge) badge.textContent = history.length + ' tot.';
+
+            const title = document.getElementById('sessions-cal-title');
+            const grid = document.getElementById('sessions-calendar-grid');
+            const dayList = document.getElementById('sessions-day-list');
+            if (!grid || !title || !dayList) return;
+
+            title.textContent = sessionsCalCursor.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+
+            const byDay = {};
+            history.forEach((s) => {
+                const key = sessionDayKey(s);
+                if (!key) return;
+                if (!byDay[key]) byDay[key] = [];
+                byDay[key].push(s);
+            });
+
+            const year = sessionsCalCursor.getFullYear();
+            const month = sessionsCalCursor.getMonth();
+            const first = new Date(year, month, 1);
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            // Monday-first
+            let startPad = (first.getDay() + 6) % 7;
+            const todayKey = dayKeyFromDate(new Date());
+            if (!sessionsCalSelectedKey) {
+                const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+                sessionsCalSelectedKey = Object.keys(byDay).filter(k => k.startsWith(monthPrefix)).sort().pop() || todayKey;
+            }
+
+            let html = '';
+            for (let i = 0; i < startPad; i++) html += '<div class="cal-day empty"></div>';
+            for (let day = 1; day <= daysInMonth; day++) {
+                const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const has = !!(byDay[key] && byDay[key].length);
+                const classes = ['cal-day'];
+                if (has) classes.push('has-session');
+                if (key === sessionsCalSelectedKey) classes.push('selected');
+                if (key === todayKey) classes.push('today');
+                html += `<button type="button" class="${classes.join(' ')}" onclick="selectSessionsCalendarDay('${key}')">
+                    <span>${day}</span>
+                    ${has ? '<span class="cal-dot"></span>' : ''}
+                </button>`;
+            }
+            grid.innerHTML = html;
+
+            const selected = byDay[sessionsCalSelectedKey] || [];
+            if (!selected.length) {
+                dayList.innerHTML = `<p class="text-[11px] text-slate-500">Nessuna sessione il ${new Date(sessionsCalSelectedKey + 'T12:00:00').toLocaleDateString('it-IT')}.</p>`;
+            } else {
+                dayList.innerHTML = selected.map(s => sessionCardHtml(s)).join('');
+            }
+
+            // Keep hidden list updated for any legacy callers
+            const list = document.getElementById('recent-sessions-list');
+            if (list) list.innerHTML = history.slice(0, 12).map(s => sessionCardHtml(s)).join('');
+        }
+
+        async function refreshTodayActivitySummary() {
+            const stepsEl = document.getElementById('today-steps');
+            const kcalEl = document.getElementById('today-kcal');
+            const exEl = document.getElementById('today-exercise-min');
+            if (!stepsEl || !kcalEl || !exEl) return;
+            try {
+                const summary = (window.NativeWorkout && typeof NativeWorkout.getTodaySummary === 'function')
+                    ? await NativeWorkout.getTodaySummary()
+                    : { steps: 0, activeCalories: 0, exerciseMinutes: 0 };
+                stepsEl.textContent = (summary.steps || 0).toLocaleString('it-IT');
+                kcalEl.textContent = summary.activeCalories != null ? summary.activeCalories : '—';
+                exEl.textContent = summary.exerciseMinutes != null ? summary.exerciseMinutes : '—';
+            } catch (_) {
+                stepsEl.textContent = '—';
+                kcalEl.textContent = '—';
+                exEl.textContent = '—';
+            }
+        }
+
         function renderWorkoutHub() {
             const store = getSessionsStore();
             const banner = document.getElementById('active-session-banner');
@@ -2113,15 +2354,8 @@
             } else {
                 banner.classList.add('hidden');
             }
-
-            const history = store.history || [];
-            document.getElementById('session-count-badge').textContent = history.length + ' tot.';
-            const list = document.getElementById('recent-sessions-list');
-            if(!history.length) {
-                list.innerHTML = '<p class="text-[10px] text-slate-500 italic">Nessuna sessione ancora. Premi Inizia Workout.</p>';
-                return;
-            }
-            list.innerHTML = history.slice(0, 12).map(s => sessionCardHtml(s)).join('');
+            renderSessionsCalendar();
+            refreshTodayActivitySummary();
         }
 
         function escHtml(value) {
@@ -3535,6 +3769,7 @@
         }
 
         function showGroupSelection() {
+            pushNav(() => showWorkoutHub());
             schedaEditMode = false;
             document.getElementById('workout-hub').classList.add('hidden');
             document.getElementById('select-group').classList.remove('hidden');
@@ -3740,6 +3975,7 @@
                     clearWorkoutSessions(false);
                     localStorage.setItem('wipe_sessions_20261027', '1');
                 }
+                setupEdgeBackGesture();
                 if (window.NativeWorkout) {
                     NativeWorkout.init().then((ok) => {
                         console.log('NativeWorkout:', ok ? 'ready' : 'web-only');
@@ -3747,6 +3983,7 @@
                             NativeWorkout.syncGroupsToWatch(WATCH_GROUPS);
                         }
                         if (ok) setTimeout(() => schedulePlansSync(false), 1600);
+                        if (ok) refreshTodayActivitySummary();
                     });
                 }
                 console.log('App initialized successfully');
