@@ -77,7 +77,7 @@
     if (!id) return '';
     const a = DEMO_BASE + id + '/0.jpg';
     const b = DEMO_BASE + id + '/1.jpg';
-    return `<div class="ex-demo-media relative overflow-hidden rounded-2xl border border-slate-700 bg-slate-900">
+    return `<div class="ex-demo-media relative overflow-hidden rounded-2xl border border-slate-700 bg-slate-800">
       <img class="ex-frame w-full h-44 object-cover object-center" src="${a}" data-a="${a}" data-b="${b}" data-on="a" alt="${String(name || '').replace(/"/g, '')}" loading="lazy" onerror="this.closest('.ex-demo')?.remove()">
       <div class="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
     </div>`;
@@ -108,7 +108,7 @@
   function selectHtml(values, current, onchange, tone) {
     const opts = values.map((n) => `<option value="${n}" ${n == current ? 'selected' : ''}>${n || '—'}</option>`).join('');
     const color = tone === 'orange' ? 'text-orange-400' : 'text-white';
-    return `<select onchange="${onchange}" class="w-full bg-slate-900/80 rounded-xl py-2 text-center text-sm font-black ${color} outline-none border border-slate-700">${opts}</select>`;
+    return `<select onchange="${onchange}" class="w-full bg-slate-800 rounded-xl py-2 text-center text-sm font-black ${color} outline-none border border-slate-700">${opts}</select>`;
   }
 
   function loadControlsHtml(ex, set) {

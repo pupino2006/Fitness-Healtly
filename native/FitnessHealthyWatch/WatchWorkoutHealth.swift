@@ -7,6 +7,7 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
     static let shared = WatchWorkoutHealth()
 
     @Published var isActive = false
+    @Published var isPaused = false
     @Published var heartRate: Double?
     @Published var averageHeartRate: Double?
     @Published var activeCalories: Double = 0
@@ -58,6 +59,7 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
             b.beginCollection(withStart: start) { _, _ in }
             DispatchQueue.main.async {
                 self.isActive = true
+                self.isPaused = false
                 self.averageHeartRate = nil
                 self.heartRate = nil
                 self.activeCalories = 0
@@ -67,12 +69,25 @@ final class WatchWorkoutHealth: NSObject, ObservableObject {
         }
     }
 
+    func pauseWorkout() {
+        guard let session, isActive, !isPaused else { return }
+        session.pause()
+        DispatchQueue.main.async { self.isPaused = true }
+    }
+
+    func resumeWorkout() {
+        guard let session, isActive, isPaused else { return }
+        session.resume()
+        DispatchQueue.main.async { self.isPaused = false }
+    }
+
     func endWorkout() {
         session?.end()
         builder?.endCollection(withEnd: Date()) { [weak self] _, _ in
             self?.builder?.finishWorkout { _, _ in
                 DispatchQueue.main.async {
                     self?.isActive = false
+                    self?.isPaused = false
                     self?.session = nil
                     self?.builder = nil
                 }

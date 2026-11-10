@@ -16,8 +16,15 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
     @Published var plansReady: Bool = false
     @Published var statusText: String = ""
     @Published var plans: [WatchPlan] = []
+    /// Countdown stile Fitness: 3 → 2 → 1 → 0 ("Via"), poi parte la sessione.
+    @Published var countdownValue: Int? = nil
+    @Published var isPaused: Bool = false
+    @Published var showAddExercisePicker: Bool = false
+    @Published var pendingGroupLabel: String = ""
 
     private var recoveryTimer: Timer?
+    private var countdownTimer: Timer?
+    private var pendingStartGroup: String?
     private var localRevision: Int = 0
     private var weightsDirty = false
     private var lastFinishedId: String?
@@ -48,7 +55,52 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
     }
 
     func requestStartWorkout(_ gruppo: String) {
+        beginCountdown(for: gruppo)
+    }
+
+    /// Avvia il countdown 3-2-1-Via come Fitness, poi crea la sessione.
+    func beginCountdown(for gruppo: String) {
         summary = nil
+        stopRecovery()
+        countdownTimer?.invalidate()
+        pendingStartGroup = gruppo
+        pendingGroupLabel = gruppo
+        countdownValue = 3
+        WKInterfaceDevice.current().play(.click)
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] t in
+            guard let self = self else { return }
+            guard let current = self.countdownValue else {
+                t.invalidate()
+                return
+            }
+            if current <= 0 {
+                t.invalidate()
+                self.countdownTimer = nil
+                self.countdownValue = nil
+                let group = self.pendingStartGroup
+                self.pendingStartGroup = nil
+                self.pendingGroupLabel = ""
+                if let group {
+                    self.startWorkoutNow(group)
+                }
+                return
+            }
+            self.countdownValue = current - 1
+            WKInterfaceDevice.current().play(current - 1 == 0 ? .start : .click)
+        }
+    }
+
+    func cancelCountdown() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+        countdownValue = nil
+        pendingStartGroup = nil
+        pendingGroupLabel = ""
+    }
+
+    private func startWorkoutNow(_ gruppo: String) {
+        summary = nil
+        isPaused = false
         guard let plan = plans.first(where: { $0.gruppo == gruppo }) else {
             statusText = "Scheda non ancora sul Watch. Apri l'app sull'iPhone una volta, sbloccato."
             deliver([
@@ -80,8 +132,56 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
         persistSession()
         if !WatchWorkoutHealth.shared.isActive {
             WatchWorkoutHealth.shared.startWorkout()
+        } else if WatchWorkoutHealth.shared.isPaused {
+            WatchWorkoutHealth.shared.resumeWorkout()
         }
         pushStateToPhone()
+    }
+
+    func pauseOrResume() {
+        guard session != nil else { return }
+        let health = WatchWorkoutHealth.shared
+        if isPaused || health.isPaused {
+            health.resumeWorkout()
+            isPaused = false
+            WKInterfaceDevice.current().play(.start)
+        } else {
+            health.pauseWorkout()
+            isPaused = true
+            stopRecovery()
+            WKInterfaceDevice.current().play(.stop)
+        }
+    }
+
+    func addExtraExercise(name: String = "Esercizio extra", sets: Int = 3, reps: Int = 10, peso: Double = 20) {
+        guard var sess = session else { return }
+        let setCount = max(1, min(8, sets))
+        let builtSets = (1...setCount).map {
+            WatchExerciseSet(setNumber: $0, reps: max(1, reps), peso: max(0, peso), done: false)
+        }
+        let ex = WatchExercise(
+            exId: "extra_\(Int(Date().timeIntervalSince1970))",
+            name: name.isEmpty ? "Esercizio extra" : name,
+            sets: builtSets,
+            currentSet: 1,
+            recSec: 90
+        )
+        let insertAt = min(sess.currentExerciseIndex + 1, sess.exercises.count)
+        sess.exercises.insert(ex, at: insertAt)
+        sess.currentExerciseIndex = insertAt
+        showAddExercisePicker = false
+        commit(sess)
+        stopRecovery()
+        WKInterfaceDevice.current().play(.success)
+    }
+
+    func jumpToExercise(exId: String) {
+        guard var sess = session,
+              let idx = sess.exercises.firstIndex(where: { $0.exId == exId }) else { return }
+        sess.currentExerciseIndex = idx
+        showAddExercisePicker = false
+        commit(sess)
+        stopRecovery()
     }
 
     func completeCurrentSet() {
@@ -194,6 +294,8 @@ final class WatchSessionBridge: NSObject, ObservableObject, WCSessionDelegate {
         lastFinishedId = sess.id
         defaults.set(sess.id, forKey: finishedIdKey)
         session = nil
+        isPaused = false
+        showAddExercisePicker = false
         stopRecovery()
         clearPersistedSession()
         health.endWorkout()
