@@ -206,6 +206,7 @@
 				7802DE84E092362DED75D9F5 /* Sources */,
 				5AB178CF2C546C47FF4C29AA /* Frameworks */,
 				88DC148AFA93BD36CB015F48 /* Resources */,
+				A7E1C0DE5184F9B2C3D4E5F6 /* Strip CodeSign Xattrs */,
 			);
 			buildRules = (
 			);
@@ -309,6 +310,25 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-App/Pods-App-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		A7E1C0DE5184F9B2C3D4E5F6 /* Strip CodeSign Xattrs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Strip CodeSign Xattrs";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "APP_PATH=\"${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}\"\nif [ -d \"$APP_PATH\" ]; then\n  /usr/bin/xattr -cr \"$APP_PATH\" 2>/dev/null || true\n  /usr/bin/find \"$APP_PATH\" -exec /usr/bin/xattr -c {} \\; 2>/dev/null || true\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
